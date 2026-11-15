@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "title": "Piston Forge",
+  "description": "Build an engine from bare parts, fit it into nine car body types, remap a standalone ECU, then prove it on the dyno, drag strip and handling course.",
+  "defaultCaptions": {
+    "x": "Piston Forge — build it, map it, prove it. An original 3D engine-building and ECU tuning sandbox: assemble the internals, fit the body, remap fuel and ignition, then survive the dyno and the strip. #PistonForge #GameDev",
+    "facebook": "Piston Forge is a 3D engine-building and tuning sandbox. Assemble an engine from the crank up, fit it into nine body styles, remap the ECU, and prove the build on the dyno, quarter mile and handling course.",
+    "reddit": "I built Piston Forge, a browser-based 3D engine-building and ECU remapping sandbox. You can assemble an engine part by part, fit it to nine car bodies, tune fuel and ignition maps, then run the dyno, drag strip and handling course. Feedback welcome.",
+    "discord": "Piston Forge — a 3D engine-building and ECU remapping sandbox. Build it, map it, prove it on the dyno, strip and handling course."
+  },
+  "assets": {
+    "og": "assets/share/og.png",
+    "favicon": "assets/share/favicon.png"
+  }
+}

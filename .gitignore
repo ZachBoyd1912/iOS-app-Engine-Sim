@@ -1,0 +1,14 @@
+# Local tooling state
+.remember/
+.omc/
+# Original Manus export, kept locally as a backup only
+PistonForge-project.zip
+
+node_modules/
+dist/
+shots/
+.env
+.env.*
+*.p8
+*.p12
+*.mobileprovision

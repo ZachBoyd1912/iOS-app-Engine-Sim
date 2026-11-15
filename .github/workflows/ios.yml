@@ -1,0 +1,80 @@
+name: iOS build
+
+# Proves the iOS project compiles on a real Mac with Xcode 26, without needing an
+# Apple Developer account: it is an UNSIGNED iOS Simulator build. It cannot be
+# installed on a phone or uploaded to TestFlight. The signed archive + TestFlight
+# upload is a separate step that needs the Apple Developer Program membership and
+# an App Store Connect API key (see docs/ios-release.md).
+#
+# macOS runner minutes are free on public repositories and billed at a much higher
+# rate than Linux on private ones, so this runs on demand and on changes that
+# affect the native shell, not on every push.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'PistonForge/ios/**'
+      - 'PistonForge/capacitor.config.ts'
+      - 'PistonForge/package.json'
+      - '.github/workflows/ios.yml'
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: PistonForge
+
+jobs:
+  simulator-build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: PistonForge/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: PistonForge/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web bundle
+        run: pnpm build:web
+
+      - name: Copy web bundle into the iOS project
+        run: pnpm exec cap sync ios
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Build for iOS Simulator (unsigned)
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: PistonForge-simulator-app
+          path: PistonForge/build/ios/Build/Products/Debug-iphonesimulator/App.app
+          if-no-files-found: warn

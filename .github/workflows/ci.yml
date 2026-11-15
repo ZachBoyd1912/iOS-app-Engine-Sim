@@ -1,0 +1,73 @@
+name: CI
+
+# Typecheck, unit tests, production web build (with size budgets) and a headless
+# play-through of the real game loop. The production build runs here, never on the
+# 8 GB development machine.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: PistonForge
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: PistonForge/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: PistonForge/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Production web build + size budgets
+        run: pnpm build:web
+
+      - name: Install browser for smoke test
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke test (plays the built game)
+        run: pnpm smoke
+        env:
+          SMOKE_TARGET: preview
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshots
+          path: PistonForge/shots
+          if-no-files-found: ignore
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: PistonForge/dist
