@@ -1,8 +1,9 @@
 name: iOS build
 
 # Proves the iOS project compiles on a real Mac with Xcode 26, without needing an
-# Apple Developer account: it is an UNSIGNED iOS Simulator build. It cannot be
-# installed on a phone or uploaded to TestFlight. The signed archive + TestFlight
+# Apple Developer account. Two unsigned builds: one for the iOS Simulator (compile
+# proof) and one for a real iPhone, packaged as an .ipa for sideloading with a free
+# Apple ID. Neither can be uploaded to TestFlight. The signed archive + TestFlight
 # upload is a separate step that needs the Apple Developer Program membership and
 # an App Store Connect API key (see docs/ios-release.md).
 #
@@ -78,3 +79,25 @@ jobs:
           name: PistonForge-simulator-app
           path: PistonForge/build/ios/Build/Products/Debug-iphonesimulator/App.app
           if-no-files-found: warn
+
+      # An unsigned build for a real iPhone. It cannot be installed as it is: a sideloading
+      # tool (Sideloadly, AltStore) signs it with the tester's own free Apple ID when it
+      # installs it over USB. That gives a real-device test without the paid Developer
+      # Program; the install expires after 7 days. See docs/ios-release.md.
+      - name: Build for iPhone (unsigned)
+        run: |
+          xcodebuild             -project ios/App/App.xcodeproj             -scheme App             -configuration Release             -sdk iphoneos             -destination 'generic/platform=iOS'             -derivedDataPath build/device             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             CODE_SIGN_IDENTITY=""             build
+
+      - name: Package unsigned .ipa
+        run: |
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R build/device/Build/Products/Release-iphoneos/App.app build/ipa/Payload/
+          cd build/ipa && zip -qry PistonForge-unsigned.ipa Payload
+          ls -lh PistonForge-unsigned.ipa
+
+      - name: Upload unsigned .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: PistonForge-unsigned-ipa
+          path: PistonForge/build/ipa/PistonForge-unsigned.ipa
+          if-no-files-found: error
