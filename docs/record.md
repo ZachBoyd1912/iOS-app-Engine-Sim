@@ -28,8 +28,9 @@ are generated in code.
 ## Money
 
 - Nothing spent and nothing earned as of 15/11/2026.
-- Known upcoming cost: Apple Developer Program, USD 99 a year (Apple's listed price; not yet paid).
-- No price set for the game.
+- Known upcoming cost: Apple Developer Program, USD 99 a year (Apple's listed price). Not paid; Zach will buy it when it is needed, which is not yet.
+- GitHub repository is private, so macOS build minutes are billed at GitHub's higher macOS rate. The iOS build runs only when the native shell changes; the first run took 48 seconds.
+- The game is fully free for now: no price, no purchases, no ads (Zach, 15/11/2026).
 
 ## Minimalist Entrepreneur stage
 
@@ -43,12 +44,14 @@ freeze new building until Sell moves. This project is new building; Zach chose t
 | --- | --- | --- |
 | 2026-11-15 | Start Piston Forge as an internal product; Claude Code orchestrates the build from the Manus MVP. | Zach |
 | 2026-11-15 | Wrap the web game with Capacitor 8 instead of rewriting it natively; build iOS in CI because there is no Mac. | Agent (reversible) |
-| 2026-11-15 | Bundle ID `ie.zbautomations.pistonforge` set as a proposal; needs Zach's yes before the App Store Connect record is created. | Agent, pending Zach |
+| 2026-11-15 | Bundle ID is `ie.zbautomations.pistonforge`. | Zach |
+| 2026-11-15 | GitHub repository is private (`ZachBoyd1912/iOS-app-Engine-Sim`). | Zach |
+| 2026-11-15 | Apple Developer Program: buy it when it is needed, not now. Testing continues without it. | Zach |
+| 2026-11-15 | Pricing: fully free game for now. | Zach |
 
 ## Open decisions (Zach)
 
-See `docs/ios-release.md`, "Open decisions for Zach": GitHub repo visibility, Apple Developer
-Program payment, bundle ID, pricing, analytics, iPad support.
+See `docs/ios-release.md`, "Open decisions for Zach": analytics in v1, iPad support at launch.
 
 ## Progress
 

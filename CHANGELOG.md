@@ -1,4 +1,26 @@
 # Changelog
+## 15/11/2026 @ 15:21:10 IST — "claude-fable-5-2"
+
+**Project completion: 45.00%**
+Basis: 18 of 40 items ticked in `docs/roadmap.md` (added 22, 23, 27, 28). Still open: tutorial, phone UX pass, balance and audio passes, app icon, everything that needs a real iPhone (17, 19, 20), TestFlight, and the App Store items that wait for the Apple Developer Program.
+
+### Goal
+Record Zach's four decisions and the first cloud build results, so the next session does not re-ask or re-prove them.
+
+### Changed
+- **Decisions by Zach (15/11/2026):** private GitHub repository; Apple Developer Program to be bought when needed, not now; bundle ID `ie.zbautomations.pistonforge` confirmed; the game is fully free for now. Why it matters: "free" removes all in-app purchase work (item 28 closed as not needed) and gives the simplest App Review; "Developer Program later" means TestFlight and any on-device check stay blocked by choice, not by a fault.
+- `docs/ios-release.md`: steps 2, 3 and 5 marked done with evidence; the open-decision list is down to analytics and iPad support.
+- `docs/record.md`, `.zb/state.json`: decision log and money section updated.
+- `capacitor.config.ts`: comment now says the bundle ID is confirmed, not proposed.
+
+### Verification
+- **The iOS project compiles.** `iOS build` run 43681025886 on `macos-26`: Xcode 26.6, 2 Capacitor plugins found, `** BUILD SUCCEEDED **`, simulator app artifact uploaded (2.9 MB), 48 seconds. This was the unproven item in the previous entry. The `xcodebuild` flags that were marked UNVERIFIED are now proven.
+- **CI is green.** Run 43681025930: typecheck, unit tests, production build (`bundle (gzip): js 0.21 MB / fonts 1.00 MB / transfer 1.22 MB`, inside budget) and the smoke test against the built bundle: `smoke: OK (preview)`, same dyno (86 hp) and drag (18.52 s) figures as locally.
+- Still NOT verified: nothing has run on a real iPhone.
+
+### Files Touched
+- `CHANGELOG.md`, `docs/roadmap.md`, `docs/record.md`, `docs/ios-release.md`, `.zb/state.json`, `.zb/events.log`, `PistonForge/capacitor.config.ts`
+
 ## 15/11/2026 @ 05:23:18 IST — "claude-fable-5-2"
 
 **Project completion: 35.00%**

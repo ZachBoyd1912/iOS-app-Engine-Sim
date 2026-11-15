@@ -3,8 +3,8 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // The game ships fully inside the app bundle: no remote URL, no code downloaded after
 // install. That is what keeps it clear of App Review guidelines 2.5.2 and 4.7.
 const config: CapacitorConfig = {
-  // PROPOSED bundle ID. It becomes permanent the moment the app record is created in
-  // App Store Connect, so Zach confirms it before that step (docs/ios-release.md).
+  // Bundle ID, confirmed by Zach on 15/11/2026. It becomes permanent the moment the app
+  // record is created in App Store Connect.
   appId: 'ie.zbautomations.pistonforge',
   appName: 'Piston Forge',
   webDir: 'dist',

@@ -22,15 +22,16 @@ macOS runners (`.github/workflows/ios.yml`).
 ## Steps
 
 1. **Done.** Capacitor added, iOS project generated in `PistonForge/ios/`, plugins synced (Haptics, Preferences).
-2. **Next, needs Zach: a GitHub repository.** Nothing has been pushed anywhere. Public repo = free
-   macOS build minutes but the source is visible; private repo = paid macOS minutes.
-3. Push, and watch `CI` and `iOS build` go green. The iOS workflow is an unsigned Simulator build:
-   it proves the project compiles. It has never run, and its `xcodebuild` flags are UNVERIFIED until it does.
-4. **Needs Zach: Apple Developer Program membership.** USD 99 a year per developer.apple.com/programs
-   (the EUR price for Ireland is UNVERIFIED). Enrol as an individual.
-5. **Needs Zach: confirm the bundle ID.** `ie.zbautomations.pistonforge` is set in
-   `capacitor.config.ts` and the Xcode project as a proposal. It is permanent once the app
-   record exists in App Store Connect.
+2. **Done.** Private GitHub repository `ZachBoyd1912/iOS-app-Engine-Sim`.
+3. **Done.** The iOS project compiles: `iOS build` run 43681025886 on `macos-26`, Xcode 26.6,
+   `** BUILD SUCCEEDED **` in 48 seconds. It is an unsigned Simulator build: proof that the
+   project compiles, not something that can go on a phone.
+4. **Waiting, Zach's call: Apple Developer Program membership.** USD 99 a year per
+   developer.apple.com/programs (the EUR price for Ireland is UNVERIFIED). Enrol as an individual.
+   Zach will buy it when it is needed. Everything from step 6 on needs it: without it there is
+   no TestFlight and no way to put the game on a real iPhone.
+5. **Done.** Bundle ID `ie.zbautomations.pistonforge` confirmed by Zach. It is permanent once
+   the app record exists in App Store Connect.
 6. Create an App Store Connect API key, store it as GitHub secrets, add the signed archive and
    TestFlight upload job (fastlane `pilot` with the API key is the documented route).
 7. First TestFlight build on Zach's iPhone. This is the first time the game runs on a real
@@ -70,15 +71,18 @@ macOS runners (`.github/workflows/ios.yml`).
 | Engine Simulator | Free, Lifetime unlock $8.99 | 4.4 (269 ratings) | 23.3 MB |
 | Mechanic: Car Tuning Simulator | Free, 10 purchases $1.99 to $7.99, ads | 4.7 (682 ratings) | 1.7 GB |
 
-Every direct competitor is free to download with a one-time unlock; none of the three closest
-ones uses ads or a subscription. The price is Zach's decision and nothing is set in the code.
-Apple's Small Business Program takes 15% (under USD 1M a year in proceeds).
+Every direct competitor is free to download; the three closest sell a one-time unlock and the
+fourth uses ads plus small purchases.
+
+**Decision (Zach, 15/11/2026): Piston Forge is fully free for now.** No price, no purchases, no
+ads. That also means no StoreKit work and the simplest possible review. If a paid unlock is
+added later, Apple's Small Business Program takes 15% (under USD 1M a year in proceeds).
 
 ## Open decisions for Zach
 
-1. GitHub repository: public or private.
-2. Pay for the Apple Developer Program now, or after more of the game is polished.
-3. Bundle ID `ie.zbautomations.pistonforge`: yes or change.
-4. Pricing model and price.
-5. Analytics in v1: none (simplest privacy answer) or a consented kit.
-6. iPad support at launch (adds a required 13-inch screenshot set) or iPhone only.
+Decided on 15/11/2026: private repository, Developer Program later, bundle ID confirmed, free game.
+
+Still open:
+
+1. Analytics in v1: none (simplest privacy answer) or a consented kit.
+2. iPad support at launch (adds a required 13-inch screenshot set) or iPhone only.

@@ -33,16 +33,16 @@ business items). 40 items.
 ## C. The pipeline
 
 - [x] 21. Git repository with history
-- [ ] 22. GitHub remote and CI green (typecheck, tests, production build, smoke)
-- [ ] 23. iOS Simulator build green on a macOS runner
+- [x] 22. GitHub remote and CI green (typecheck, tests, production build, smoke) (CI run 43681025930: typecheck, tests, production build, smoke all green)
+- [x] 23. iOS Simulator build green on a macOS runner (run 43681025886, Xcode 26.6, BUILD SUCCEEDED)
 - [ ] 24. Signed build uploaded to TestFlight
 
 ## D. The store
 
 - [ ] 25. Apple Developer Program membership (paid, Zach)
-- [ ] 26. Bundle ID and app record in App Store Connect
-- [ ] 27. Pricing model decided (Zach)
-- [ ] 28. In-app purchase and restore, if the model needs one
+- [ ] 26. Bundle ID and app record in App Store Connect (bundle ID `ie.zbautomations.pistonforge` confirmed by Zach 15/11/2026; app record waits for the Developer Program)
+- [x] 27. Pricing model decided (Zach, 15/11/2026: fully free for now)
+- [x] 28. In-app purchase and restore, if the model needs one (not needed: the game is free with nothing to buy)
 - [ ] 29. Privacy manifest and App Privacy label
 - [ ] 30. Privacy policy page live
 - [ ] 31. EU trader details entered (they become public on the product page)

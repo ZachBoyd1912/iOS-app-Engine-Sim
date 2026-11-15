@@ -8,15 +8,46 @@
   "waiting_since": "",
   "stage": "building",
   "services": [
-    { "type": "ios-game", "tier": "internal", "price": null, "monthly": null, "status": "building" }
+    {
+      "type": "ios-game",
+      "tier": "internal",
+      "price": null,
+      "monthly": null,
+      "status": "building"
+    }
   ],
   "completed_steps": [],
-  "dates": { "lead": "2026-11-15T04:34:00+00:00", "discovery": "", "proposal": "", "deposit": "", "build": "2026-11-15T04:34:00+00:00", "preview": "", "launch": "" },
-  "contacts": { "name": "", "whatsapp": "", "email": "" },
+  "dates": {
+    "lead": "2026-11-15T04:34:00+00:00",
+    "discovery": "",
+    "proposal": "",
+    "deposit": "",
+    "build": "2026-11-15T04:34:00+00:00",
+    "preview": "",
+    "launch": ""
+  },
+  "contacts": {
+    "name": "",
+    "whatsapp": "",
+    "email": ""
+  },
   "proposal_path": "",
   "decision_log": [
-    { "date": "2026-11-15T04:34:00+00:00", "decision": "Internal ZB Automations product, not a client. Money gates D/H/I do not apply (no deposit, no client invoice). Zach commissioned the first MVP from Manus and told the agent to proceed with the build framework.", "who": "zach" },
-    { "date": "2026-11-15T04:53:00+00:00", "decision": "Service type 'ios-game' and tier 'internal' are outside the schema v1 enums on purpose: no client service or price exists. funnel doctor will flag this; it is expected.", "who": "agent" }
+    {
+      "date": "2026-11-15T04:34:00+00:00",
+      "decision": "Internal ZB Automations product, not a client. Money gates D/H/I do not apply (no deposit, no client invoice). Zach commissioned the first MVP from Manus and told the agent to proceed with the build framework.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-15T04:53:00+00:00",
+      "decision": "Service type 'ios-game' and tier 'internal' are outside the schema v1 enums on purpose: no client service or price exists. funnel doctor will flag this; it is expected.",
+      "who": "agent"
+    },
+    {
+      "date": "2026-11-15T05:31:00+00:00",
+      "decision": "Private GitHub repo. Apple Developer Program to be bought when needed, not now. Bundle ID ie.zbautomations.pistonforge confirmed. Game is fully free for now.",
+      "who": "zach"
+    }
   ],
   "legacy_pricing": false,
   "source": "internal"
