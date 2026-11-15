@@ -90,6 +90,26 @@ try {
   await page.waitForTimeout(700)
   await page.screenshot({ path: `${out}/02-garage.png` })
 
+  // Phones take the GPU context away in the background. Take it away here and check the
+  // scene comes back and keeps drawing without errors.
+  const context = await page.evaluate(async () => {
+    const canvas = document.getElementById('game')
+    const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl')
+    const ext = gl?.getExtension('WEBGL_lose_context')
+    if (!gl || !ext) return 'unsupported'
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+    ext.loseContext()
+    await wait(400)
+    const wasLost = gl.isContextLost()
+    ext.restoreContext()
+    await wait(1200)
+    return wasLost && !gl.isContextLost() ? 'restored' : 'not-restored'
+  })
+  if (context !== 'restored') throw new Error(`WebGL context loss was not recovered (${context})`)
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: `${out}/02b-garage-after-context-loss.png` })
+  console.log('smoke: WebGL context lost and restored, scene still drawing')
+
   await act(page, 'go-engine')
   await screenIs(page, 'engine')
   await page.waitForTimeout(700)

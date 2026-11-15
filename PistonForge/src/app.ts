@@ -1,4 +1,5 @@
 import { SoundEngine } from './audio/sound'
+import { HapticEngine } from './platform/haptics'
 import { GameLoop } from './engine/loop'
 import { Stage, type Quality } from './game/stage'
 import { AERO, BODIES, BRAKES, FUELS, GEARBOXES, INDUCTIONS, SUSPENSIONS, TIRES, WEIGHT_REDUCTION, bodyById, partOption } from './sim/data'
@@ -88,6 +89,7 @@ export class App {
   readonly store: GameStore
   readonly stage: Stage
   readonly sound: SoundEngine
+  readonly haptics: HapticEngine
   readonly loop: GameLoop
   state: GameState
   screen: Screen = 'title'
@@ -118,10 +120,11 @@ export class App {
   private firstFrame = true
   private simClock = 0
 
-  constructor(store: GameStore, stage: Stage, sound: SoundEngine) {
+  constructor(store: GameStore, stage: Stage, sound: SoundEngine, haptics: HapticEngine = new HapticEngine(null)) {
     this.store = store
     this.stage = stage
     this.sound = sound
+    this.haptics = haptics
     this.state = store.data
     this.applySettings()
     this.stage.setView('title')
@@ -1043,6 +1046,7 @@ export class App {
     if (this.drag.phase === 'running') {
       this.shiftQueued = true
       this.sound.shiftCue()
+      this.haptics.cue('shift')
       this.ui?.render()
     }
   }
@@ -1068,6 +1072,7 @@ export class App {
         this.drag.treeTime = 2.05
         this.stage.setTree('green')
         this.sound.ui('green')
+        this.haptics.cue('launch')
         this.dragSim = createDragSim(this.activeBuild().ecu.launchRpm)
         this.dragCurve = this.curve(this.activeBuild())
         this.ui?.render()
@@ -1360,6 +1365,7 @@ export class App {
     this.sound.setVolumes(settings.engineVolume, settings.sfxVolume, settings.musicVolume)
     this.stage.setQuality(settings.quality as Quality)
     this.stage.setReducedMotion(settings.reducedMotion)
+    this.haptics.enabled = settings.haptics
   }
 
   resetGame(): void {
@@ -1380,6 +1386,7 @@ export class App {
   }
 
   toast(text: string, tone: 'ok' | 'warn' | 'bad' = 'ok'): void {
+    if (tone !== 'ok') this.haptics.cue('warning')
     this.ui?.toast(text, tone)
   }
 

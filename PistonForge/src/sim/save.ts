@@ -28,6 +28,59 @@ import type {
 } from './types'
 
 export const SAVE_KEY = 'pistonforge.save.v1'
+/** Last save that loaded cleanly. Used when the main save is missing or unreadable. */
+export const BACKUP_KEY = `${SAVE_KEY}.bak`
+/** A save written by a newer build than this one is parked here, never overwritten. */
+export const NEWER_KEY = `${SAVE_KEY}.newer`
+/** Schema version this build reads and writes. Bump it together with a MIGRATIONS entry. */
+export const SAVE_VERSION = 1
+
+type RawSave = Record<string, unknown>
+
+/**
+ * Upgrade steps, keyed by the version they upgrade FROM. `MIGRATIONS[1]` turns a version-1
+ * save into version 2, and so on. Each step is a pure function. Empty while there is only
+ * one schema version; the chain and its tests are in place so the first format change after
+ * launch cannot strand players' saves.
+ */
+export const MIGRATIONS: Record<number, (data: RawSave) => RawSave> = {}
+
+export type DecodedSave =
+  | { status: 'ok'; data: RawSave }
+  /** Nothing stored. */
+  | { status: 'empty' }
+  /** Stored text is not a save this game can read. */
+  | { status: 'corrupt' }
+  /** Written by a newer build; this build must not guess at it. */
+  | { status: 'newer'; version: number }
+
+/** Parse stored text and bring it up to the current schema version. Never throws. */
+export function decodeSave(raw: string | null, migrations: Record<number, (data: RawSave) => RawSave> = MIGRATIONS, target = SAVE_VERSION): DecodedSave {
+  if (raw === null || raw === '') return { status: 'empty' }
+  let data: RawSave
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { status: 'corrupt' }
+    data = parsed as RawSave
+  } catch {
+    return { status: 'corrupt' }
+  }
+  let version = data.version
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) return { status: 'corrupt' }
+  if (version > target) return { status: 'newer', version }
+  while (version < target) {
+    const step = migrations[version]
+    if (!step) return { status: 'corrupt' }
+    try {
+      data = step(structuredClone(data))
+    } catch {
+      return { status: 'corrupt' }
+    }
+    version += 1
+    data.version = version
+  }
+  return { status: 'ok', data }
+}
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 const num = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback)
 
@@ -102,16 +155,9 @@ function sanitizeJob(raw: unknown): JobState | null {
 
 export function parseState(raw: string | null): GameState {
   const base = defaultState()
-  if (!raw) return base
-  let data: Record<string, unknown>
-  try {
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return base
-    data = parsed as Record<string, unknown>
-  } catch {
-    return base
-  }
-  if (data.version !== 1) return base
+  const decoded = decodeSave(raw)
+  if (decoded.status !== 'ok') return base
+  const data = decoded.data
 
   const careerFallback = startingBuild()
   const builds = Array.isArray(data.careerBuilds)
@@ -140,6 +186,7 @@ export function parseState(raw: string | null): GameState {
     quality: ['low', 'medium', 'high'].includes(String(settingsRaw.quality)) ? settingsRaw.quality : base.settings.quality,
     reducedMotion: settingsRaw.reducedMotion === true,
     autoShift: settingsRaw.autoShift !== false,
+    haptics: settingsRaw.haptics !== false,
   }
   const job = sanitizeJob(data.job)
 
@@ -169,17 +216,64 @@ export function parseState(raw: string | null): GameState {
   }
 }
 
+/** How the save was found when the game started. */
+export type LoadStatus =
+  /** No save anywhere: a first launch. */
+  | 'fresh'
+  /** The main save loaded normally. */
+  | 'loaded'
+  /** The main save was missing or unreadable and the backup was used. */
+  | 'recovered'
+  /** The main save was unreadable and there was no usable backup; progress started over. */
+  | 'lost'
+  /** The main save came from a newer build. It was set aside untouched and a new game started. */
+  | 'newer'
+
 export class GameStore {
   data: GameState
+  readonly loadStatus: LoadStatus
 
   constructor(private readonly storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | undefined = safeStorage()) {
-    let raw: string | null = null
-    try {
-      raw = this.storage?.getItem(SAVE_KEY) ?? null
-    } catch {
-      raw = null
+    const raw = this.read(SAVE_KEY)
+    const main = decodeSave(raw)
+    if (main.status === 'ok') {
+      // Keep the last save that is known to load, so one bad write cannot cost the career.
+      if (this.read(BACKUP_KEY) !== raw) this.write(BACKUP_KEY, raw as string)
+      this.data = parseState(raw)
+      this.loadStatus = 'loaded'
+      return
     }
-    this.data = parseState(raw)
+    if (main.status === 'newer') {
+      this.write(NEWER_KEY, raw as string)
+      this.data = parseState(null)
+      this.loadStatus = 'newer'
+      return
+    }
+    const backupRaw = this.read(BACKUP_KEY)
+    if (decodeSave(backupRaw).status === 'ok') {
+      this.data = parseState(backupRaw)
+      this.write(SAVE_KEY, backupRaw as string)
+      this.loadStatus = 'recovered'
+      return
+    }
+    this.data = parseState(null)
+    this.loadStatus = main.status === 'empty' ? 'fresh' : 'lost'
+  }
+
+  private read(key: string): string | null {
+    try {
+      return this.storage?.getItem(key) ?? null
+    } catch {
+      return null
+    }
+  }
+
+  private write(key: string, value: string): void {
+    try {
+      this.storage?.setItem(key, value)
+    } catch {
+      // Private browsing or quota: the session keeps working in memory.
+    }
   }
 
   save(state: GameState): void {
@@ -194,6 +288,7 @@ export class GameStore {
   reset(): GameState {
     try {
       this.storage?.removeItem(SAVE_KEY)
+      this.storage?.removeItem(BACKUP_KEY)
     } catch {
       // ignore; an in-memory reset is still useful
     }

@@ -18,6 +18,7 @@ export function defaultSettings(): GameState['settings'] {
     quality: 'high',
     reducedMotion: false,
     autoShift: true,
+    haptics: true,
   }
 }
 

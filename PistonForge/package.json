@@ -5,23 +5,30 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/manus-game-sharing/build.mjs",
-    "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "smoke": "node scripts/smoke.mjs",
+    "build:web": "tsc --noEmit && vite build && node scripts/check-size.mjs",
+    "preview": "vite preview --port 4173 --strictPort",
+    "ios:sync": "cap sync ios",
+    "build": "node scripts/manus-game-sharing/build.mjs",
     "manus:build-source": "tsc --noEmit && vite build && node scripts/check-size.mjs"
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.21.0",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.6.2",
+    "@capacitor/preferences": "8.0.1",
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.2",
     "@types/three": "^0.186.0",
     "playwright": "^1.63.0",
     "typescript": "^5.9.3",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"
   },
-  "packageManager": "pnpm@10.18.0"
+  "packageManager": "pnpm@10.18.0",
+  "description": "Piston Forge: build an engine, map the ECU, prove it on the dyno and the strip."
 }

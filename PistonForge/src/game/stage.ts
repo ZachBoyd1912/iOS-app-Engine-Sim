@@ -75,6 +75,19 @@ export class Stage {
   private readonly onWheel: (event: WheelEvent) => void
   private readonly onContextMenu: (event: Event) => void
   private readonly onResize: () => void
+  /** True between the browser taking the GPU context away and giving it back. */
+  private contextLost = false
+  private readonly onContextLost = (event: Event) => {
+    // Without preventDefault the browser never restores the context.
+    event.preventDefault()
+    this.contextLost = true
+  }
+  private readonly onContextRestored = () => {
+    // three.js re-uploads geometry and textures on the next draw; shadow maps need a nudge.
+    this.contextLost = false
+    this.renderer.shadowMap.needsUpdate = true
+    this.onResize()
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -119,6 +132,9 @@ export class Stage {
     canvas.addEventListener('wheel', this.onWheel, { passive: false })
     canvas.addEventListener('contextmenu', this.onContextMenu)
     window.addEventListener('resize', this.onResize)
+    // Phones reclaim the GPU when the app sits in the background or memory runs short.
+    canvas.addEventListener('webglcontextlost', this.onContextLost)
+    canvas.addEventListener('webglcontextrestored', this.onContextRestored)
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.resize())
       this.resizeObserver.observe(canvas)
@@ -412,6 +428,7 @@ export class Stage {
   }
 
   render(): void {
+    if (this.contextLost) return
     this.renderer.render(this.activeScene, this.camera)
   }
 
@@ -473,6 +490,8 @@ export class Stage {
     this.canvas.removeEventListener('wheel', this.onWheel)
     this.canvas.removeEventListener('contextmenu', this.onContextMenu)
     window.removeEventListener('resize', this.onResize)
+    this.canvas.removeEventListener('webglcontextlost', this.onContextLost)
+    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored)
     this.resizeObserver?.disconnect()
     this.car?.dispose()
     this.car = null

@@ -5,7 +5,7 @@ import { consoleHead, rangeRow, section, type View } from './shared'
 export function settingsView(app: App): View {
   const settings = app.state.settings
   const qualityButtons = (['low', 'medium', 'high'] as const).map(level => `<button type="button" data-action="set-quality" data-value="${level}" class="${settings.quality === level ? 'active' : ''}" aria-pressed="${settings.quality === level}">${level}</button>`).join('')
-  const toggle = (key: 'reducedMotion' | 'autoShift', label: string, hint: string) => `<div class="toggle-row"><div><b>${label}</b><small>${hint}</small></div><button type="button" class="switch ${settings[key] ? 'on' : ''}" data-action="toggle-setting" data-key="${key}" aria-pressed="${settings[key]}" aria-label="${label}"><i></i></button></div>`
+  const toggle = (key: 'reducedMotion' | 'autoShift' | 'haptics', label: string, hint: string) => `<div class="toggle-row"><div><b>${label}</b><small>${hint}</small></div><button type="button" class="switch ${settings[key] ? 'on' : ''}" data-action="toggle-setting" data-key="${key}" aria-pressed="${settings[key]}" aria-label="${label}"><i></i></button></div>`
 
   const consoleHtml = `${consoleHead('SETTINGS / WORKSHOP', 'Machine settings', 'Audio, display and driving assists. Saved locally.', '')}
   <div class="console-scroll">
@@ -17,6 +17,7 @@ export function settingsView(app: App): View {
     ${section('DISPLAY', `
       <div class="segmented-row"><span class="field-label">Render quality</span><div class="segmented" role="group" aria-label="Render quality">${qualityButtons}</div><small>Lower quality disables shadows and caps pixel ratio.</small></div>
       ${toggle('reducedMotion', 'Reduced motion', 'Disables camera shake and auto orbit.')}
+      ${toggle('haptics', 'Vibration', 'Taps on shifts, launches and results. Phones only.')}
     `)}
     ${section('DRIVING', `
       ${toggle('autoShift', 'Automatic shifting', 'The drag car shifts at the limiter. Turn off for manual launches.')}

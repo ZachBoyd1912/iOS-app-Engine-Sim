@@ -46,7 +46,7 @@ export class SoundEngine {
 
   async unlock(): Promise<void> {
     if (this.unlocked || this.failed) {
-      if (this.ctx?.state === 'suspended') await this.ctx.resume()
+      await this.resume()
       return
     }
     try {
@@ -191,6 +191,28 @@ export class SoundEngine {
 
   stopEngine(fade = 0.4): void {
     this.stopVoice(fade)
+  }
+
+  /** Freeze all audio. Called when the app goes to the background so the engine does not drone on. */
+  suspend(): void {
+    if (!this.ctx || this.ctx.state !== 'running') return
+    void this.ctx.suspend().catch(() => {})
+  }
+
+  /**
+   * Bring audio back after the app returns or after an interruption (a call, Siri).
+   * iOS can refuse outside a touch; callers also retry from the next pointer event.
+   */
+  async resume(): Promise<void> {
+    if (!this.ctx || !this.unlocked) return
+    // iOS reports "interrupted" as well as the standard states.
+    const state = this.ctx.state as string
+    if (state === 'running' || state === 'closed') return
+    try {
+      await this.ctx.resume()
+    } catch {
+      // Still blocked: the next touch will try again.
+    }
   }
 
   private stopVoice(fade: number): void {

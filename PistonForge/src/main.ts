@@ -2,7 +2,8 @@ import './styles/forge.css'
 import { App } from './app'
 import { SoundEngine } from './audio/sound'
 import { Stage } from './game/stage'
-import { GameStore } from './sim/save'
+import { bindLifecycle, createHaptics, isNativeApp, prepareSaveStorage } from './platform'
+import { BACKUP_KEY, GameStore, SAVE_KEY } from './sim/save'
 import { UI } from './ui/ui'
 
 function fail(message: string): void {
@@ -18,11 +19,14 @@ async function boot(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('#game')
   const root = document.getElementById('ui')
   if (!canvas || !root) throw new Error('Missing game canvas or UI root.')
+  if (isNativeApp()) document.documentElement.dataset.native = 'true'
 
-  const store = new GameStore()
+  // In the app, put the save back from native storage if the web view lost it.
+  const saves = await prepareSaveStorage([SAVE_KEY, BACKUP_KEY])
+  const store = new GameStore(saves.storage)
   const stage = new Stage(canvas)
   const sound = new SoundEngine()
-  const app = new App(store, stage, sound)
+  const app = new App(store, stage, sound, createHaptics())
   const ui = new UI(app, root)
   app.attachUI(ui)
 
@@ -42,18 +46,22 @@ async function boot(): Promise<void> {
     })
   }
 
-  const unlock = () => {
-    void sound.unlock()
-    window.removeEventListener('pointerdown', unlock)
-    window.removeEventListener('keydown', unlock)
-  }
-  window.addEventListener('pointerdown', unlock, { once: true })
-  window.addEventListener('keydown', unlock, { once: true })
+  if (store.loadStatus === 'recovered' || saves.outcome === 'restored') app.toast('Your shop was restored from the backup save.', 'ok')
+  else if (store.loadStatus === 'lost') app.toast('The save could not be read, so a new shop was started.', 'warn')
+  else if (store.loadStatus === 'newer') app.toast('This save is from a newer version. It was kept safe; update the game to use it.', 'warn')
 
-  const save = () => app.saveNow()
-  window.addEventListener('pagehide', save)
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) save()
+  // Audio can only start from a touch or key press. Keep listening after the first one:
+  // iOS suspends audio again after a call or a trip to the background, and the next touch
+  // is what brings it back.
+  const wake = () => { void sound.unlock() }
+  window.addEventListener('pointerdown', wake, { passive: true })
+  window.addEventListener('keydown', wake)
+
+  bindLifecycle({
+    save: () => app.saveNow(),
+    suspendAudio: () => sound.suspend(),
+    resumeAudio: () => { void sound.resume() },
+    resetClock: () => app.loop.resetAccumulator(),
   })
 
   const debug = { app, ui, store, stage, sound }

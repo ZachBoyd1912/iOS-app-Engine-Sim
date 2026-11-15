@@ -123,6 +123,7 @@ export class UI {
   showModal(modal: ResultModal): void {
     this.state.modal = modal
     this.app.sound.ui(modal.tone === 'bad' ? 'error' : 'confirm')
+    this.app.haptics.cue(modal.tone === 'bad' ? 'failure' : modal.tone === 'warn' ? 'warning' : 'success')
     this.render()
   }
 
@@ -201,6 +202,7 @@ export class UI {
     const action = target.dataset.action ?? ''
     this.app.sound.unlock()
     if (action !== 'confirm-reset') this.app.sound.ui(action === 'deliver' ? 'confirm' : 'click')
+    this.app.haptics.cue('tap')
     const data = target.dataset
     switch (action) {
       case 'start-career': this.app.startCareer(); break
@@ -258,7 +260,7 @@ export class UI {
       case 'abandon': this.app.abandon(); break
       case 'set-quality': if (data.value) this.app.updateSetting('quality', data.value as 'low' | 'medium' | 'high'); break
       case 'toggle-setting': {
-        const key = data.key as 'reducedMotion' | 'autoShift'
+        const key = data.key as 'reducedMotion' | 'autoShift' | 'haptics'
         if (key) this.app.updateSetting(key, !this.app.state.settings[key])
         break
       }

@@ -245,6 +245,8 @@ export type Settings = {
   quality: 'low' | 'medium' | 'high'
   reducedMotion: boolean
   autoShift: boolean
+  /** Vibration feedback on phones. Has no effect on devices without a haptic engine. */
+  haptics: boolean
 }
 
 export type Bests = {
