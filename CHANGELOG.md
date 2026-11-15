@@ -1,4 +1,37 @@
 # Changelog
+## 15/11/2026 @ 16:28:44 IST — "claude-fable-5-2"
+
+**Project completion: 52.50%**
+Basis: 21 of 40 items ticked in `docs/roadmap.md` (added 33, screenshots). Item 29 stays open on purpose: the privacy manifest half is done, but the App Privacy label can only be answered inside App Store Connect. Still open: phone UX pass, economy balance, audio pass, everything on a real iPhone, TestFlight, and the App Store Connect items that wait for the Developer Program.
+
+### Goal
+Close the three App Store compliance gaps raised in the last entry (rights to the Manus-built code, the missing privacy manifest, screenshots for every device the app targets) and settle how the game is tested on a real phone.
+
+### Added
+- **Privacy manifest** (`PistonForge/ios/App/App/PrivacyInfo.xcprivacy`, added to the Xcode project's resources). No tracking, no collected data, UserDefaults declared with reason CA92.1. Why: Apple does not accept apps that use a required-reason API without declaring it. The Preferences plugin uses `UserDefaults.standard` and ships no manifest; Capacitor core's manifest declares nothing, so the app has to. The code and its wording were confirmed from Apple's documentation, not from memory.
+- **App Store screenshots from the real game** (`scripts/store-screenshots.mjs`, `pnpm store:screenshots`): 15 images in `docs/store/screenshots/`, five screens in three sets (iPhone 1320 x 2868, iPhone 1206 x 2622, iPad 2064 x 2752). The script fails if a file is the wrong pixel size or has an alpha channel. Why iPad: the project targets iPhone and iPad, and Apple requires a 13-inch iPad set for any app that runs on iPad.
+- **`docs/legal/manus-rights.md`** and a dated text copy of Manus's Terms of Use. Finding: section 5.2 says the user owns the output and Manus claims no ownership; nothing read restricts App Store release. Our own risks are recorded: no warranty against third-party rights, output may not be unique, Manus trademarks must not be used, and Manus's preview tooling in `scripts/manus-*` is theirs (checked: none of it is inside the built app).
+
+### Changed
+- **Phone testing:** the Safari route is dropped on Zach's instruction, because players will run the installed app. The guide now covers only the sideloaded app, with steps quoted from Apple's and Sideloadly's own pages. It also records that TestFlight needs the paid membership (Apple's programs overview lists TestFlight as a membership resource), which corrects the assumption that it could be used for free.
+
+### Removed
+- `public/fonts/ManusCC0SansCJKSC-Regular.woff2` (943 KB). Why: the game is English only and nothing referenced the file, but it shipped inside the app.
+
+### Verification
+- `pnpm typecheck`: 0 errors. `pnpm test`: 63 of 63 passed.
+- Screenshot script: exit 0 for all three sets after one real failure. The first run timed out on the iPad set (software rendering a 2064 x 2752 scene took longer than the 30 s capture limit); the limit was raised and the set recaptured. Images were opened and looked at.
+- Known weak spot: the strip screenshot has the car out of frame and shows two small UI bugs (a "SPACE" key hint on a touch screen, a "READY" badge during a run). It should be redone before submission.
+- The Xcode project edit is unproven until the cloud build runs; see the next entry or the run for this commit.
+- NOT verified: nothing installed on a phone; the rights finding is a reading of published terms, not legal advice.
+
+### Files Touched
+- `PistonForge/ios/App/App/PrivacyInfo.xcprivacy`, `PistonForge/ios/App/App.xcodeproj/project.pbxproj`
+- `PistonForge/scripts/store-screenshots.mjs`, `PistonForge/scripts/check-size.mjs`, `PistonForge/package.json`
+- `docs/store/screenshots/**`, `docs/legal/manus-rights.md`, `docs/legal/manus-terms-of-use-2026-11-15.txt`
+- `docs/ios-release.md`, `docs/roadmap.md`, `CHANGELOG.md`, `.zb/events.log`
+- Deleted: `PistonForge/public/fonts/ManusCC0SansCJKSC-Regular.woff2`
+
 ## 15/11/2026 @ 15:42:23 IST — "claude-fable-5-2"
 
 **Project completion: 50.00%**

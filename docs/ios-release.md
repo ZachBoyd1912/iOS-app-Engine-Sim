@@ -40,24 +40,46 @@ macOS runners (`.github/workflows/ios.yml`).
 
 ## Testing on a real iPhone without the Developer Program
 
-TestFlight needs the paid membership. These two routes do not.
+**TestFlight is not available without the paid membership.** Apple: "The program provides
+access to membership resources, like Certificates, Identifiers & Profiles, TestFlight, and App
+Store Connect" (developer.apple.com/help/account/membership/programs-overview). What a free
+Apple account can do, per developer.apple.com/support/compare-memberships: install your own
+app on your own device, up to 3 apps per device, and "Provisioning profiles ... will expire 7
+days from issuance. You'll need to rebuild and reinstall your app to your device after expiration."
 
-**Route 1: Safari on the phone.** From `PistonForge/` run `node node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5173`,
-then on the iPhone (same Wi-Fi) open `http://<this PC's Wi-Fi address>:5173`. Share, then Add to
-Home Screen gives full screen. Same WebKit engine as the app, so it is a real test of frame
-rate, touch, sound and layout. It does not test haptics or the native save copy. If the page
-does not load, Windows Firewall is blocking Node.js on the "Public" network profile.
+So the free route is: CI builds the real app unsigned, and a sideloading tool on the PC signs
+it with Zach's own Apple ID and installs it over USB. The result is the real installed app on
+the home screen, the same thing a player gets from the App Store. Testing in Safari was
+dropped on Zach's instruction (15/11/2026): it is not how players will run the game.
 
-**Route 2: the real app, sideloaded.** The `iOS build` workflow uploads an artifact called
-`PistonForge-unsigned-ipa`. Download it with `gh run download <run id> -n PistonForge-unsigned-ipa -D builds`.
-Install it over USB with Sideloadly (or AltStore), which signs it with the tester's own free
-Apple ID. Then on the phone trust the Apple ID under Settings, General, VPN & Device Management,
-and turn on Developer Mode under Settings, Privacy & Security. A free Apple ID install expires
-after 7 days. These install steps are from memory and were not checked against the tools'
-own sites on 15/11/2026 (UNVERIFIED).
+### One-time setup on the PC (nothing Apple was installed on 15/11/2026)
 
-First proven build: run 43730456447, `** BUILD SUCCEEDED **` for `iphoneos`, 1.8 MB .ipa, contents
-checked (app binary, game bundle, Capacitor framework). Not yet installed on a phone.
+1. Install iTunes and iCloud **from Apple's website, not the Microsoft Store**. Sideloadly's
+   FAQ: "uninstall the Microsoft Store version of iTunes and install the normal/web version".
+   Restart the PC.
+2. Install Sideloadly from sideloadly.io.
+
+### Each install (and again every 7 days)
+
+1. Get the latest build: `gh run download <run id> -n PistonForge-unsigned-ipa -D builds`
+   (the newest is kept at `builds/PistonForge-unsigned.ipa`).
+2. Plug the iPhone in by USB, unlock it, tap Trust.
+3. Open Sideloadly, drag the .ipa in, enter the Apple ID, press Start. Sideloadly's own steps:
+   "Load IPA: Drag & drop your app file. Apple ID: Enter your free or paid Apple ID. Sideload:
+   Install directly on your device." How it handles two-factor codes is UNVERIFIED.
+4. On the phone: "Settings > General > Profiles/VPN & Device Management ... tap on the email you
+   used to sideload, then trust it" (Sideloadly FAQ).
+5. On the phone: Settings, Privacy & Security, Developer Mode, on. The phone restarts and asks
+   again (Apple, "Enabling Developer Mode on a device"). Apple notes the switch "only appears in
+   Settings if you initiate pairing", so do step 3 first.
+
+Limits on a free Apple ID: the app stops opening after 7 days until it is installed again, and
+at most 3 sideloaded apps per device. Sideloadly can refresh automatically, but only while the
+PC is on and the phone is reachable by USB or Wi-Fi. AltStore is the alternative; it needs a
+companion app on the phone and a server on the PC, so it is more moving parts for one app.
+
+Proven so far: `** BUILD SUCCEEDED **` for `iphoneos` and the .ipa contents were unpacked and
+checked. NOT yet done: an actual install on a phone.
 
 ## Must be checked on a real iPhone (cannot be proven from Windows)
 
@@ -76,9 +98,18 @@ checked (app binary, game bundle, Capacitor framework). Not yet installed on a p
   Piston Forge's defence is real: a full simulation, 3D scenes, offline play, haptics, native
   save. Keep the store listing about the game, never about the technology.
 - **Guideline 2.5.2.** No code may be downloaded after install. The game loads nothing remote. Keep it so.
-- **Privacy.** The game collects nothing. It still needs a privacy manifest covering the
-  UserDefaults API that the Preferences plugin uses (reason code CA92.1 is UNVERIFIED), an
-  App Privacy answer of "Data Not Collected", and very likely a privacy policy URL.
+- **Privacy.** The game collects nothing. The privacy manifest is in the app
+  (`ios/App/App/PrivacyInfo.xcprivacy`): no tracking, no collected data, and the UserDefaults
+  API declared with reason CA92.1, which Apple defines as "to read and write information that
+  is only accessible to the app itself". It is needed because the Preferences plugin uses
+  UserDefaults and ships no manifest of its own, and Capacitor core's manifest declares nothing.
+  Still to do in App Store Connect: the App Privacy answer "Data Not Collected" and a public
+  privacy policy URL.
+- **Screenshots.** Apple requires at least one for "iPhone with Dynamic Island (medium display)"
+  and, because the app runs on iPad, one for the 13-inch iPad. Three sets are captured from the
+  real game in `docs/store/screenshots/` (1320 x 2868, 1206 x 2622, 2064 x 2752) with
+  `pnpm store:screenshots`.
+- **Rights to the Manus-built code.** See `docs/legal/manus-rights.md`.
 - **EU trader details.** Selling in the EU means an address, phone number and email are shown
   publicly on the product page. For an individual these are entered by hand (a P.O. Box is
   allowed with proof). Zach decides what goes there.

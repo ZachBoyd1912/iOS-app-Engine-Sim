@@ -1,6 +1,6 @@
 // Checks JS and font budgets while reporting the total shipped bundle size.
 // Game assets do not have an aggregate transfer-size limit. JS/CSS are measured gzipped;
-// TTF/WOFF2 fonts are measured as shipped and budgeted separately because CJK coverage is large.
+// TTF/WOFF2 fonts are measured as shipped and budgeted separately from the code.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'

@@ -43,11 +43,11 @@ business items). 40 items.
 - [ ] 26. Bundle ID and app record in App Store Connect (bundle ID `ie.zbautomations.pistonforge` confirmed by Zach 15/11/2026; app record waits for the Developer Program)
 - [x] 27. Pricing model decided (Zach, 15/11/2026: fully free for now)
 - [x] 28. In-app purchase and restore, if the model needs one (not needed: the game is free with nothing to buy)
-- [ ] 29. Privacy manifest and App Privacy label
+- [ ] 29. Privacy manifest and App Privacy label (manifest done and in the app; the App Privacy label waits for App Store Connect)
 - [ ] 30. Privacy policy page live
 - [ ] 31. EU trader details entered (they become public on the product page)
 - [ ] 32. Age-rating questionnaire answered
-- [ ] 33. Screenshots in the required sizes
+- [x] 33. Screenshots in the required sizes (15 real-game captures: iPhone 1320x2868 and 1206x2622, iPad 2064x2752; the strip shot is weak and should be redone before submission)
 - [ ] 34. Name, subtitle, keywords, description
 - [ ] 35. TestFlight with at least 10 real players, feedback logged
 - [ ] 36. App Review passed
