@@ -187,6 +187,7 @@ export function parseState(raw: string | null): GameState {
     reducedMotion: settingsRaw.reducedMotion === true,
     autoShift: settingsRaw.autoShift !== false,
     haptics: settingsRaw.haptics !== false,
+    tips: settingsRaw.tips !== false,
   }
   const job = sanitizeJob(data.job)
 

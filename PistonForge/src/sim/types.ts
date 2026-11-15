@@ -247,6 +247,8 @@ export type Settings = {
   autoShift: boolean
   /** Vibration feedback on phones. Has no effect on devices without a haptic engine. */
   haptics: boolean
+  /** Next-step coach cards in career mode. Off hides them until it is turned back on in Setup. */
+  tips: boolean
 }
 
 export type Bests = {

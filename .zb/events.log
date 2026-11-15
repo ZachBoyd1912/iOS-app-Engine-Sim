@@ -2,3 +2,4 @@
 2026-11-15T04:53:00+00:00 · PHASE_ENTERED · Phase F (build). Internal project: money gates not applicable. Baseline verified: typecheck clean, 19/19 unit tests
 2026-11-15T05:23:18+00:00 · PHASE_ENTERED · Phase F build: Capacitor 8 iOS project, phone layer (haptics, lifecycle, durable save), save protection. 51/51 unit tests, smoke test green. Checklist 14 of 40
 2026-11-15T15:21:10+00:00 · PHASE_ENTERED · Decisions by Zach: private repo, Developer Program later, bundle ID confirmed, free game. First cloud builds green: CI 43681025930, iOS Simulator build 43681025886 (BUILD SUCCEEDED). Checklist 18 of 40
+2026-11-15T15:42:24+00:00 · PHASE_ENTERED · Unsigned iPhone .ipa from CI for sideload testing; coach card, app icon, store drafts, UX and economy audit, notch fix. 63/63 tests, smoke green. Checklist 20 of 40

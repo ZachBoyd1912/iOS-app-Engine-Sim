@@ -2,6 +2,7 @@ import type { App, Screen } from '../app'
 import { reputationProgress } from '../sim/career'
 import { bodyById } from '../sim/data'
 import { engineLabel } from '../sim/builds'
+import { nextTip } from '../sim/tutorial'
 import type { AeroId, InteriorId, PaintFinish, PartSlot, WheelStyle } from '../sim/types'
 import { esc, icon, money, num, wordmark } from './components'
 import type { ResultAction, ResultModal, UiState } from './types'
@@ -14,7 +15,7 @@ import { settingsView } from './views/settings'
 import { shopView } from './views/shop'
 import { testView } from './views/test'
 import { titleView } from './views/title'
-import type { View } from './views/shared'
+import { tipCard, type View } from './views/shared'
 
 const SCREEN_LABEL: Record<Screen, string> = {
   title: 'Title',
@@ -145,6 +146,13 @@ export class UI {
       <button type="button" data-action="mode-career" class="${state.mode === 'career' ? 'active' : ''}" ${state.mode === 'career' ? 'aria-current="true"' : ''}>Career</button>
       <button type="button" data-action="mode-sandbox" class="${state.mode === 'sandbox' ? 'active' : ''}" ${state.mode === 'sandbox' ? 'aria-current="true"' : ''}>Sandbox</button>
     </div>`
+    // One place for the coach card: between the console head and the scrolling content on every screen.
+    const tip = nextTip(state)
+    const tipHtml = tip ? tipCard(tip, screen) : ''
+    const scrollAt = view.console.indexOf('<div class="console-scroll">')
+    const consoleHtml = scrollAt < 0
+      ? `${tipHtml}${view.console}`
+      : `${view.console.slice(0, scrollAt)}${tipHtml}${view.console.slice(scrollAt)}`
     const nav = NAV.map(item => {
       const active = screen === item.screen || (item.screen === 'test' && screen === 'test')
       const badge = item.screen === 'jobs' && job ? '<i class="nav-badge"></i>' : ''
@@ -163,7 +171,7 @@ export class UI {
       </header>
       <nav class="rail" aria-label="Workshop sections">${nav}<div class="rail-gap"></div><button type="button" class="rail-item ${screen === 'settings' ? 'active' : ''}" data-action="go-settings" ${screen === 'settings' ? 'aria-current="page"' : ''}>${icon('settings')}<span>Setup</span></button></nav>
       <main class="workspace">
-        <section class="console" aria-label="${SCREEN_LABEL[screen]}">${view.console}</section>
+        <section class="console" aria-label="${SCREEN_LABEL[screen]}">${consoleHtml}</section>
         <div class="stage-overlay">${view.overlay}<div class="stage-hint">DRAG TO ORBIT · SCROLL TO ZOOM</div></div>
         <div class="car-caption"><span>${esc(bodyById(app.activeBuild().bodyId).name)}</span><em>${esc(engineLabel(app.activeBuild()))}</em></div>
       </main>
@@ -260,10 +268,14 @@ export class UI {
       case 'abandon': this.app.abandon(); break
       case 'set-quality': if (data.value) this.app.updateSetting('quality', data.value as 'low' | 'medium' | 'high'); break
       case 'toggle-setting': {
-        const key = data.key as 'reducedMotion' | 'autoShift' | 'haptics'
+        const key = data.key as 'reducedMotion' | 'autoShift' | 'haptics' | 'tips'
         if (key) this.app.updateSetting(key, !this.app.state.settings[key])
         break
       }
+      case 'hide-tips':
+        this.app.updateSetting('tips', false)
+        this.app.toast('Tips hidden. Turn them back on in Setup.', 'ok')
+        break
       case 'open-reset': this.showModal({
         kind: 'confirm', eyebrow: 'DESTRUCTIVE ACTION', title: 'Reset all progress?', subtitle: 'Career cash, reputation, every build, record and setting will be wiped from this device.',
         badge: 'NO UNDO', tone: 'bad', stats: [

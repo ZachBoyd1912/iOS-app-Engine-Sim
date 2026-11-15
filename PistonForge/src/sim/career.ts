@@ -19,6 +19,7 @@ export function defaultSettings(): GameState['settings'] {
     reducedMotion: false,
     autoShift: true,
     haptics: true,
+    tips: true,
   }
 }
 

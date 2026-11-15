@@ -1,6 +1,24 @@
+import type { Screen } from '../../app'
+import type { Tip } from '../../sim/tutorial'
 import { esc } from '../components'
 
 export type View = { console: string; overlay: string; className?: string }
+
+/**
+ * Next-step card for career mode. The primary button is left out on the screen the action
+ * leads to, so the card never points at where the player already is.
+ */
+export function tipCard(tip: Tip, screen: Screen): string {
+  const primary = tip.action === `go-${screen}`
+    ? ''
+    : `<button type="button" class="btn btn-primary tip-primary" data-action="${tip.action}">${esc(tip.actionLabel)}</button>`
+  return `<aside class="tip-card" aria-label="Next step">
+    <span class="tip-kicker">NEXT STEP</span>
+    <b class="tip-title">${esc(tip.title)}</b>
+    <p class="tip-body">${esc(tip.body)}</p>
+    <div class="tip-actions">${primary}<button type="button" class="tip-hide" data-action="hide-tips">Hide tips</button></div>
+  </aside>`
+}
 
 export function consoleHead(kicker: string, title: string, sub: string, right = ''): string {
   return `<header class="console-head">

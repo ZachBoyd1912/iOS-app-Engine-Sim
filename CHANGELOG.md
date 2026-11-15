@@ -1,4 +1,44 @@
 # Changelog
+## 15/11/2026 @ 15:42:23 IST — "claude-fable-5-2"
+
+**Project completion: 50.00%**
+Basis: 20 of 40 items ticked in `docs/roadmap.md` (added 7 and 18). Caveats on what was ticked: item 7 is a "next step" coach card, lighter than a full tutorial (it does not walk through building an engine); item 18's icon is technically valid but the mark reads a little like a clock at icon size, which is Zach's call. Still open: phone UX pass (18 audit findings logged), economy balance (12 findings logged), audio pass, everything on a real iPhone, TestFlight, and the App Store items that wait for the Developer Program.
+
+### Goal
+Get the game onto Zach's iPhone 13 without the paid Developer Program, and move the next items that need neither a phone nor an Apple account, using a four-agent workflow (Haiku agents, separate files each) with the orchestrator verifying the result.
+
+### Added
+- **Unsigned iPhone .ipa from CI** (`.github/workflows/ios.yml`). Why: TestFlight needs the paid membership, which Zach is buying later. A sideloading tool signs this build with a free Apple ID at install time, so the real app (haptics, native save) can be tested now.
+- **Two phone-testing routes documented** in `docs/ios-release.md`: Safari over Wi-Fi from the dev server, and the sideloaded .ipa.
+- **"Next step" coach card** for career mode (`src/sim/tutorial.ts`, rendered once in `src/ui/ui.ts`): first dyno pull, first strip run, first contract, deliver it. Derived only from existing game state, so there is no new save data to migrate. A "Tips" setting turns it off and "Hide tips" on the card does the same with a toast saying where to turn it back on. Why: a new player landed in the garage with seven tabs and no hint of what to do first.
+- **App icon and launch screen** from the brand mark (`scripts/make-icons.mjs`, `pnpm icons`), replacing Capacitor's defaults. The launch screen background now matches the game so there is no white flash.
+- **Store drafts** in `docs/store/`: listing (name, subtitle, 98-byte keyword field, description, captions, review notes), privacy policy with placeholders for contact details, and suggested App Store Connect answers. Drafts only; nothing entered anywhere.
+- **`docs/audit-2026-11-15.md`**: 18 phone UX findings against the ZB UX standard and 12 career-economy findings, with file and line evidence.
+
+### Fixed
+- **The console sat under the notch.**
+  - Cause: the page draws edge to edge (`viewport-fit=cover`) and the top bar had no top inset; only the title screen and the bottom rail used the safe-area values. Found by the audit and confirmed in `forge.css` (`.topbar{top:0}` with no inset).
+  - Fix: the whole console shell is inset by the top, left and right safe areas, with the strip behind the status bar filled. In a desktop browser the insets are 0, so nothing moves.
+  - Verification: smoke screenshots unchanged at desktop and phone sizes. NOT verified on a device; that is what the phone test is for.
+
+### Verified from the audit (checked against the code, not yet fixed)
+- Total contract payouts are 30,400 and starting cash is 4,800, so the 48,000 supercar can never be bought in career.
+- Total reputation on offer is 485, so the Legend tier at 550 can never be reached.
+
+### Verification
+- `pnpm typecheck`: 0 errors. `pnpm test`: 4 files, 63 of 63 passed.
+- `node scripts/smoke.mjs`: exit 0 on the final run (`smoke: OK (dev)`, 86 hp, 18.52 s). The run before it FAILED with a 30 s timeout while switching to the test screen; it happened while the stylesheet was being edited mid-run on a loaded machine and did not repeat. Treated as a timing stall, not proven to be one.
+- iOS run 43730456447: `** BUILD SUCCEEDED **` for both the simulator and `iphoneos`; the 1.8 MB .ipa was downloaded and its contents checked.
+- Icon files: 1024x1024 and 2732x2732, PNG colour type 2 (RGB, no alpha channel).
+- Agents' reports were not taken on trust: file scope was checked with `git status`, and typecheck, tests and smoke were rerun by the orchestrator.
+- NOT verified: the .ipa has not been installed on a phone; store copy has not been checked against the live App Store Connect forms.
+
+### Files Touched
+- `.github/workflows/ios.yml`, `.gitignore`, `CHANGELOG.md`, `.zb/events.log`
+- `docs/ios-release.md`, `docs/roadmap.md`, `docs/audit-2026-11-15.md`, `docs/store/{listing,privacy-policy,app-store-connect-answers}.md`
+- `PistonForge/src/sim/{tutorial,types,career,save}.ts`, `src/ui/ui.ts`, `src/ui/views/{shared,settings}.ts`, `src/styles/forge.css`, `tests/tutorial.test.ts`
+- `PistonForge/scripts/make-icons.mjs`, `PistonForge/package.json`, `PistonForge/ios/App/App/Assets.xcassets/**`, `ios/App/App/Base.lproj/LaunchScreen.storyboard`
+
 ## 15/11/2026 @ 15:21:10 IST — "claude-fable-5-2"
 
 **Project completion: 45.00%**

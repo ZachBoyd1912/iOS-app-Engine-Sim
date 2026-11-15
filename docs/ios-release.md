@@ -38,6 +38,27 @@ macOS runners (`.github/workflows/ios.yml`).
    device; the device checklist below is worked through here.
 8. Store listing, privacy answers, screenshots, age rating, then App Review.
 
+## Testing on a real iPhone without the Developer Program
+
+TestFlight needs the paid membership. These two routes do not.
+
+**Route 1: Safari on the phone.** From `PistonForge/` run `node node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5173`,
+then on the iPhone (same Wi-Fi) open `http://<this PC's Wi-Fi address>:5173`. Share, then Add to
+Home Screen gives full screen. Same WebKit engine as the app, so it is a real test of frame
+rate, touch, sound and layout. It does not test haptics or the native save copy. If the page
+does not load, Windows Firewall is blocking Node.js on the "Public" network profile.
+
+**Route 2: the real app, sideloaded.** The `iOS build` workflow uploads an artifact called
+`PistonForge-unsigned-ipa`. Download it with `gh run download <run id> -n PistonForge-unsigned-ipa -D builds`.
+Install it over USB with Sideloadly (or AltStore), which signs it with the tester's own free
+Apple ID. Then on the phone trust the Apple ID under Settings, General, VPN & Device Management,
+and turn on Developer Mode under Settings, Privacy & Security. A free Apple ID install expires
+after 7 days. These install steps are from memory and were not checked against the tools'
+own sites on 15/11/2026 (UNVERIFIED).
+
+First proven build: run 43730456447, `** BUILD SUCCEEDED **` for `iphoneos`, 1.8 MB .ipa, contents
+checked (app binary, game bundle, Capacitor framework). Not yet installed on a phone.
+
 ## Must be checked on a real iPhone (cannot be proven from Windows)
 
 - Frame rate, heat and memory on the 3D scenes at High quality.

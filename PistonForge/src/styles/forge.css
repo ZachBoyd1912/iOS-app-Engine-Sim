@@ -299,3 +299,22 @@ input[type=number],input[type=text]{font-size:12px}
   .map-tools{grid-template-columns:1fr 1fr}
   .run-controls{grid-template-columns:1fr}
 }
+
+/* next-step coach card (career). Static on purpose: no entrance animation, because render()
+   rebuilds the console on every click. One accent only: the amber primary button. */
+.tip-card{flex:0 0 auto;display:grid;gap:4px;min-width:0;margin:10px 14px 0;padding:9px 11px 10px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2)}
+.tip-kicker{font:6.5px var(--mono);letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.tip-title{font:700 11px var(--display);color:var(--cream);overflow-wrap:anywhere}
+.tip-body{margin:0;font-size:10px;line-height:1.45;color:var(--dim);overflow-wrap:anywhere}
+.tip-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:4px;min-width:0}
+.tip-card .btn{min-height:44px}
+.tip-hide{min-height:44px;margin-left:auto;padding:0 4px;border:0;background:none;color:var(--muted);font:7.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;text-decoration:underline;text-underline-offset:3px}
+.tip-hide:hover{color:var(--cream)}
+
+/* Notch and Dynamic Island. The whole console (top bar, rail, panels) is moved clear of the
+   top and side cut-outs, and the strip behind the status bar is filled so the 3D scene does
+   not show through it. The bottom inset is handled per element with --safe-b. In a desktop
+   browser every inset is 0 and nothing moves. */
+:root{--safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px)}
+.shell{top:var(--safe-t);left:var(--safe-l);right:var(--safe-r)}
+.shell::before{content:"";position:absolute;left:calc(-1 * var(--safe-l));right:calc(-1 * var(--safe-r));bottom:100%;height:var(--safe-t);background:rgba(8,11,12,.96)}
