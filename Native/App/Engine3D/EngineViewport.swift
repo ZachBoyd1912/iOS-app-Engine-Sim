@@ -42,7 +42,7 @@ struct EngineViewport: View {
                 root.components.set(EngineMotionComponent(crankAngle: state.crankAngle))
             }
             if let camera = content.entities.first(where: { $0.name == "camera" }) {
-                let distance = focus.radius * 2.4 * zoom
+                let distance = focus.radius * 3.2 * zoom
                 let eye = focus.center + SIMD3<Float>(
                     distance * cos(pitch) * sin(yaw),
                     distance * sin(pitch),

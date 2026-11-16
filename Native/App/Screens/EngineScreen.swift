@@ -40,11 +40,13 @@ struct EngineScreen: View {
                         .font(.title2.weight(.heavy))
                         .foregroundStyle(Theme.textPrimary)
                         .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("label.engineName")
                     Text("\(build.layout.spec.name) · \(build.induction.displayName) · \(Int(build.displacementCc.rounded())) cc")
                         .font(.subheadline)
                         .foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, minHeight: Theme.hitTarget, alignment: .leading)
             }
@@ -64,12 +66,16 @@ struct EngineScreen: View {
 
     private var controls: some View {
         VStack(spacing: Theme.Space.m) {
-            HStack(spacing: Theme.Space.m) {
-                Readout(label: "Engine speed", value: "\(Int(state.rpm.rounded()))", unit: "rpm")
-                    .accessibilityIdentifier("label.rpm")
-                Readout(label: "Power", value: "\(Int(max(state.powerHp, 0).rounded()))", unit: "hp")
-                Readout(label: "Air-fuel", value: state.afr > 0 ? String(format: "%.1f", state.afr) : "–", unit: "AFR", status: afrStatus)
-                Readout(label: "Boost", value: String(format: "%.1f", state.boostPsi), unit: "psi")
+            Grid(horizontalSpacing: Theme.Space.m, verticalSpacing: Theme.Space.s) {
+                GridRow {
+                    Readout(label: "Engine speed", value: "\(Int(state.rpm.rounded()))", unit: "rpm")
+                        .accessibilityIdentifier("label.rpm")
+                    Readout(label: "Power", value: "\(Int(max(state.powerHp, 0).rounded()))", unit: "hp")
+                }
+                GridRow {
+                    Readout(label: "Air-fuel", value: state.afr > 0 ? String(format: "%.1f", state.afr) : "–", unit: "AFR", status: afrStatus)
+                    Readout(label: "Boost", value: String(format: "%.1f", state.boostPsi), unit: "psi")
+                }
             }
             if state.isRunning {
                 VStack(alignment: .leading, spacing: Theme.Space.xs) {
@@ -87,7 +93,7 @@ struct EngineScreen: View {
                 .accessibilityIdentifier("button.start")
         }
         .padding(Theme.Space.l)
-        .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.Radius.l))
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.l))
     }
 
     private var afrStatus: Status? {

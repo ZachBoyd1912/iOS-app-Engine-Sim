@@ -98,7 +98,7 @@ enum EngineModelBuilder {
             case 1: tilts = [0]
             case 2: tilts = [-angle / 2, angle / 2]
             default:
-                let narrow: Float = 7.5 * .pi / 180
+                let narrow: Float = 15 * .pi / 180
                 let wide = angle / 2
                 tilts = [-wide - narrow, -wide + narrow, wide - narrow, wide + narrow]
             }
@@ -340,7 +340,7 @@ enum EngineModelBuilder {
                 parts.tube(.exhaust, .exhaust, through: [port, out, drop, collector], radius: g.bore * 0.16)
             }
             if !b.induction.isTurbo {
-                let tail = collector + SIMD3<Float>(0.18, -0.12, 0)
+                let tail = collector + SIMD3<Float>(0.12, -0.08, 0)
                 parts.tube(.exhaust, .exhaust, through: [collector, collector + SIMD3<Float>(0.08, -0.03, 0), tail], radius: g.bore * 0.24)
             }
         }
@@ -373,8 +373,8 @@ enum EngineModelBuilder {
                 let compressor = turbine - outer * 0.09
                 parts.cylinder(.induction, .aluminium, from: compressor - SIMD3<Float>(0, 0, 0.03), to: compressor + SIMD3<Float>(0, 0, 0.03), radius: radius * 1.12)
                 parts.cylinder(.induction, .steel, from: turbine, to: compressor, radius: radius * 0.35)
-                let downpipe = turbine + SIMD3<Float>(0.22, -0.18, 0)
-                parts.tube(.exhaust, .exhaust, through: [turbine, turbine + SIMD3<Float>(0.08, -0.05, 0), downpipe], radius: g.bore * 0.26)
+                let downpipe = turbine + SIMD3<Float>(0.12, -0.1, 0)
+                parts.tube(.exhaust, .exhaust, through: [turbine, turbine + SIMD3<Float>(0.05, -0.03, 0), downpipe], radius: g.bore * 0.26)
                 parts.cylinder(.induction, .steel, from: turbine + SIMD3<Float>(0, radius, 0), to: turbine + SIMD3<Float>(0, radius + 0.04, 0), radius: 0.016)
                 outlets.append(compressor + SIMD3<Float>(0, radius * 1.1, 0))
             }

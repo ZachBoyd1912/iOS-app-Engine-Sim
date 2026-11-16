@@ -45,8 +45,8 @@ struct GarageSheet: View {
                         Button(role: .destructive) { onDelete(build.id) } label: { Label("Delete", systemImage: "trash") }
                     }
                 }
-            } header: { Text("Your engines") } footer: {
-                Text("Swipe left on an engine to duplicate or delete it. A deleted engine can be brought back for 10 seconds.")
+            } header: { SectionTitle("Your engines") } footer: {
+                SectionNote("Swipe left on an engine to duplicate or delete it. A deleted engine can be brought back for 10 seconds.")
             }
         }
         .scrollContentBackground(.hidden)

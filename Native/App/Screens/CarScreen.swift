@@ -38,8 +38,8 @@ struct CarScreen: View {
                     }
                     .buttonStyle(.plain)
                 }
-            } header: { Text("Body") } footer: {
-                Text("An engine that doesn't fit the bay can't be installed. Pick another body or a smaller engine.")
+            } header: { SectionTitle("Body") } footer: {
+                SectionNote("An engine that doesn't fit the bay can't be installed. Pick another body or a smaller engine.")
             }
             Section {
                 Picker("Gearbox", selection: $car.gearbox) {
@@ -56,8 +56,8 @@ struct CarScreen: View {
                         Text(String(format: "%.2f:1", car.finalDrive)).monospacedDigit().foregroundStyle(Theme.textSecondary)
                     }
                 }
-            } header: { Text("Gearing") } footer: {
-                Text("A higher final drive number pulls harder off the line and runs out of revs sooner.")
+            } header: { SectionTitle("Gearing") } footer: {
+                SectionNote("A higher final drive number pulls harder off the line and runs out of revs sooner.")
             }
             Section {
                 Picker("Compound", selection: $car.tyre.compound) {
@@ -74,7 +74,7 @@ struct CarScreen: View {
                         Text("\(Int(car.tyre.widthMm)) mm").monospacedDigit().foregroundStyle(Theme.textSecondary)
                     }
                 }
-            } header: { Text("Tyres") }
+            } header: { SectionTitle("Tyres") }
         }
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())

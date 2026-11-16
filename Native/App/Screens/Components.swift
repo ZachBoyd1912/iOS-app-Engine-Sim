@@ -57,6 +57,7 @@ struct PreviewTag: View {
             Text(rules)
                 .font(.caption2)
                 .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -112,6 +113,7 @@ struct Readout: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 if let status {
                     Image(systemName: status.icon)
@@ -140,6 +142,7 @@ struct WarningBanner: View {
             VStack(alignment: .leading, spacing: Theme.Space.xs) {
                 ForEach(warnings, id: \.self) { warning in
                     StatusLabel(status: severity(warning), text: warning.message)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .padding(Theme.Space.m)
@@ -217,5 +220,32 @@ extension Failure {
         case .overRev: "Bent the valves (over-revved)"
         case .oilStarvation: "Spun a bearing (oil too hot)"
         }
+    }
+}
+
+/// A Form section heading in the theme's secondary ink (system grey fails contrast here).
+struct SectionTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Theme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A Form section footnote in the theme's secondary ink, wrapping at any text size.
+struct SectionNote: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .font(.footnote)
+            .foregroundStyle(Theme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

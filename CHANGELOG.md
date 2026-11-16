@@ -40,6 +40,15 @@ Stage 1 plan, Task 11: preview every screen with sample data, for Zach to approv
   - Six preview screens rendered.
   - The engine screens crashed inside RealityKit's own start-up (`re::Engine::init`, a divide-by-zero), read from the crash report in the test results. Intel runners have no GPU; on Apple silicon RealityKit rendered in Task 0.
   - The accessibility audit flagged contrast and Dynamic Type issues. The audit now names each element, so they can be fixed without a Mac.
+- **Apple-silicon run 43922004468** (`macos-15`): the 3D engine renders on all ten layouts, iPhone and iPad.
+- **That run's audit findings, now fixed:**
+  - System-grey section headings and notes failed contrast, so they now use theme inks.
+  - The engine screen's live readouts clipped, so they are now a 2×2 grid on an opaque panel.
+  - Long titles now wrap.
+- **3D fixes:**
+  - The camera now sits further back, so the engine is no longer cut off.
+  - The W16's banks are spread to 15° so all four show.
+  - The turbo downpipes are shorter.
 
 ### Files Touched
 - `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `.github/workflows/native.yml`, `CHANGELOG.md`

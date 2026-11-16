@@ -26,12 +26,12 @@ struct PartsScreen: View {
                         effect: "Higher makes more power per drop of fuel but knocks sooner on boost.")
                 stepper("Bore", value: $build.bore, range: EngineBuild.boreRange, step: 1, format: "%.0f mm", effect: "Wider cylinders: more capacity, a longer engine.")
                 stepper("Stroke", value: $build.stroke, range: EngineBuild.strokeRange, step: 1, format: "%.0f mm", effect: "Longer stroke: more torque, a lower safe redline.")
-            } header: { Text("Block and crank") }
+            } header: { SectionTitle("Block and crank") }
             Section {
                 level("Cylinder head", \.head, effect: "Better ports let more air in at every rpm.")
                 level("Camshafts", \.cams, effect: "Bigger cams move the power up the rev range and cost low-down pull.")
                 level("Valves and springs", \.valves, effect: "Stop the valves floating when you rev past redline.")
-            } header: { Text("Head and cams") }
+            } header: { SectionTitle("Head and cams") }
             Section {
                 Picker("Induction", selection: inductionBinding) {
                     ForEach(Self.inductionChoices, id: \.0) { choice in
@@ -49,7 +49,7 @@ struct PartsScreen: View {
                 level("Head gasket", \.gasket, effect: "Holds more boost before it blows.", names: ["Stock", "Multi-layer", "Copper-ringed", "Copper-ringed"])
                 level("Intake", \.intake, effect: "Freer intake: more air at high rpm.")
                 level("Exhaust", \.exhaust, effect: "Freer exhaust: more power and a louder note.")
-            } header: { Text("Air in and out") }
+            } header: { SectionTitle("Air in and out") }
             Section {
                 Picker("Fuel", selection: $build.fuel) {
                     ForEach(Fuel.allCases, id: \.self) { Text($0.spec.name).tag($0) }
@@ -59,7 +59,7 @@ struct PartsScreen: View {
                         effect: "Too small and the engine runs lean at the top end.")
                 stepper("Fuel pump", value: $build.parts.pumpLph, range: PartChoices.pumpRange, step: 10, format: "%.0f L/h",
                         effect: "Has to keep up with every injector at once.")
-            } header: { Text("Fuel") }
+            } header: { SectionTitle("Fuel") }
             Section {
                 Picker("Mass airflow sensor", selection: Binding(get: { build.sensors.maf?.rawValue ?? "none" }, set: { build.sensors.maf = MafSize(rawValue: $0) })) {
                     Text("None (speed-density only)").tag("none")
@@ -74,8 +74,8 @@ struct PartsScreen: View {
                 Toggle("Knock sensor", isOn: $build.sensors.knock)
                 Toggle("Exhaust temperature probe", isOn: $build.sensors.egt)
                 Toggle("Oil pressure and temperature", isOn: $build.sensors.oil)
-            } header: { Text("Sensors") } footer: {
-                Text("Each sensor protects or corrects the engine. Remove one and you lose its warning.")
+            } header: { SectionTitle("Sensors") } footer: {
+                SectionNote("Each sensor protects or corrects the engine. Remove one and you lose its warning.")
             }
             Section {
                 Toggle("Nitrous kit fitted", isOn: Binding(
@@ -93,7 +93,7 @@ struct PartsScreen: View {
                     stepper("Arms at", value: Binding(get: { kit.armRpm }, set: { build.nitrous?.armRpm = $0 }), range: NitrousKit.armRpmRange, step: 250, format: "%.0f rpm",
                             effect: "Below this it never sprays.")
                 }
-            } header: { Text("Nitrous") }
+            } header: { SectionTitle("Nitrous") }
         }
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
