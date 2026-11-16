@@ -42,8 +42,9 @@ public func volumetricEfficiency(_ b: EngineBuild, rpm: Double) -> Double {
     let redline = b.mechanicalRedline
     let speed = bounded(rpm, 0...30_000)
 
-    var peak = 0.93 + 0.03 * Double(parts.head) + 0.02 * Double(parts.cams)
-        + 0.015 * Double(parts.intake) + 0.015 * Double(parts.exhaust)
+    let headAndCams: Double = 0.03 * Double(parts.head) + 0.02 * Double(parts.cams)
+    let pipes: Double = 0.015 * Double(parts.intake) + 0.015 * Double(parts.exhaust)
+    var peak: Double = 0.93 + headAndCams + pipes
     switch b.layout {
     case .v8Flat: peak += 0.02
     case .v8Cross: peak -= 0.02
@@ -53,7 +54,8 @@ public func volumetricEfficiency(_ b: EngineBuild, rpm: Double) -> Double {
     peak = min(peak, 1.12)
 
     let low = peak * (0.78 - 0.05 * Double(parts.cams))
-    let peakRpm = redline * min(0.62 + 0.06 * Double(parts.cams) + 0.02 * Double(parts.head) + 0.015 * Double(parts.intake), 0.9)
+    let peakShift: Double = 0.06 * Double(parts.cams) + 0.02 * Double(parts.head) + 0.015 * Double(parts.intake)
+    let peakRpm: Double = redline * min(0.62 + peakShift, 0.9)
 
     let ve: Double
     if speed <= peakRpm {

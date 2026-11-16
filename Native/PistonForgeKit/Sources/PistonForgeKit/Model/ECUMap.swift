@@ -166,18 +166,25 @@ extension ECUMap {
     /// - Nitrous: a dry kit gets full enrichment; any kit gets timing taken out for its shot.
     public static func autoBase(for b: EngineBuild) -> ECUMap {
         let redline = b.mechanicalRedline
-        let rpmAxis = (0..<rpmCount).map { 800 + (redline + 300 - 800) * Double($0) / Double(rpmCount - 1) }
+        let span: Double = redline + 300 - 800
+        let steps = Double(rpmCount - 1)
+        let rpmAxis: [Double] = (0..<rpmCount).map { (index: Int) -> Double in
+            800 + span * Double(index) / steps
+        }
         let loadAxis = defaultLoadAxis
         let stoich = b.fuel.spec.stoichAfr
 
-        let afr = loadAxis.map { load in Array(repeating: baseLambda(loadKpa: load) * stoich, count: rpmCount) }
-        let ignition = loadAxis.map { load in
-            rpmAxis.map { rpm in
+        let afr: [[Double]] = loadAxis.map { (load: Double) -> [Double] in
+            Array(repeating: baseLambda(loadKpa: load) * stoich, count: rpmCount)
+        }
+        let ignition: [[Double]] = loadAxis.map { (load: Double) -> [Double] in
+            rpmAxis.map { (rpm: Double) -> Double in
                 // The boost that produces this load, and the charge heat that comes with it.
-                let psi = max(0, (load / 101.3 - 1) * 14.7)
-                let heat = chargeTempC(b, boostPsi: psi)
-                let limit = knockLimitDegrees(b, rpm: rpm, loadKpa: load, iatC: heat, nitrousHpPerCylinder: 0)
-                return min(max(min(mbtDegrees(b, rpm: rpm, loadKpa: load), limit - 2), 0), 45)
+                let psi: Double = max(0, (load / 101.3 - 1) * 14.7)
+                let heat: Double = chargeTempC(b, boostPsi: psi)
+                let limit: Double = knockLimitDegrees(b, rpm: rpm, loadKpa: load, iatC: heat, nitrousHpPerCylinder: 0)
+                let best: Double = min(mbtDegrees(b, rpm: rpm, loadKpa: load), limit - 2)
+                return min(max(best, 0), 45)
             }
         }
 

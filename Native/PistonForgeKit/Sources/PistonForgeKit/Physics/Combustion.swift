@@ -37,13 +37,12 @@ public func mbtDegrees(_ b: EngineBuild, rpm: Double, loadKpa: Double) -> Double
 /// raise it; compression, boost, charge heat and nitrous lower it.
 public func knockLimitDegrees(_ b: EngineBuild, rpm: Double, loadKpa: Double, iatC: Double, nitrousHpPerCylinder: Double) -> Double {
     let fraction = min(bounded(rpm, 0...30_000) / b.mechanicalRedline, 1)
-    let limit = 12 + (b.fuel.spec.octane - 90)
-        + 14 * fraction
-        - (b.compression - 10) * 2.5
-        - max(0, bounded(loadKpa, 0...600) - 100) * 0.09
-        - max(0, bounded(iatC, -40...300, or: 25) - 30) * 0.08
-        - bounded(nitrousHpPerCylinder, 0...100) * 0.4
-    return bounded(limit, -30...60)
+    let octane: Double = 12 + (b.fuel.spec.octane - 90) + 14 * fraction
+    let compression: Double = (b.compression - 10) * 2.5
+    let boost: Double = max(0, bounded(loadKpa, 0...600) - 100) * 0.09
+    let heat: Double = max(0, bounded(iatC, -40...300, or: 25) - 30) * 0.08
+    let nitrous: Double = bounded(nitrousHpPerCylinder, 0...100) * 0.4
+    return bounded(octane - compression - boost - heat - nitrous, -30...60)
 }
 
 /// Indicated thermal efficiency from the compression ratio (an Otto-cycle shape, scaled).
@@ -84,9 +83,9 @@ public func combust(_ b: EngineBuild, rpm: Double, airflowGps: Double, fuel: Fue
     let mapTiming = bounded(b.ecu.value(\.ignitionTable, rpm: speed, loadKpa: load), -10...50) - retard
 
     func knock(_ timing: Double) -> Double {
-        let spark = max(0, (timing - limit + 3) / 7)
-        let lean = max(0, lambda - 0.92) * 8 * min(load / 100, 2.5)
-        let heat = max(0, iat - 80) * 0.01
+        let spark: Double = max(0, (timing - limit + 3) / 7)
+        let lean: Double = max(0, lambda - 0.92) * 8 * min(load / 100, 2.5)
+        let heat: Double = max(0, iat - 80) * 0.01
         return bounded(spark + lean + heat, 0...2)
     }
     var timing = mapTiming
@@ -98,16 +97,17 @@ public func combust(_ b: EngineBuild, rpm: Double, airflowGps: Double, fuel: Fue
 
     let burnt = min(totalFuel, totalAir / spec.stoichAfr)
     let offMbt = timing - mbt
-    let efficiency = max(0, thermalEfficiency(b) * (1 - 0.0005 * offMbt * offMbt) * (1 - max(0, 0.82 - lambda) * 0.9))
+    let timingLoss: Double = 1 - 0.0005 * offMbt * offMbt
+    let richLoss: Double = 1 - max(0, 0.82 - lambda) * 0.9
+    let efficiency = max(0, thermalEfficiency(b) * timingLoss * richLoss)
     let powerW = burnt * spec.heatKJPerGram * efficiency * 1000
     let omega = speed * 2 * Double.pi / 60
     let torque = omega > 1 ? powerW / omega : 0
 
-    let egt = 400 + 250 * min(speed / b.mechanicalRedline, 1)
-        + 1.2 * max(0, load - 100)
-        + 900 * max(0, lambda - 0.86)
-        + 4 * max(0, mbt - timing)
-        - 600 * max(0, 0.86 - lambda)
+    let egtBase: Double = 400 + 250 * min(speed / b.mechanicalRedline, 1) + 1.2 * max(0, load - 100)
+    let egtMixture: Double = 900 * max(0, lambda - 0.86) - 600 * max(0, 0.86 - lambda)
+    let egtLate: Double = 4 * max(0, mbt - timing)
+    let egt = egtBase + egtMixture + egtLate
     return CombustionResult(
         torqueNm: torque,
         knockIndex: knockIndex,
