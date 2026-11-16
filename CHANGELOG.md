@@ -1,4 +1,49 @@
 # Changelog
+## 16/11/2026 @ 01:58:01 IST — "claude-opus-5-5"
+
+**Project completion: 10.87%**
+Basis: 5 of 46 items ticked in `docs/roadmap.md`. The figure drops from 52.50% on purpose, for two reasons. First, the roadmap was rewritten for the native Swift app, so the web game's ticks (typecheck, smoke test, Capacitor shell, haptics, save mirroring, WebGL recovery, web CI) no longer count. Second, items 41-46 were added for five verified bugs and the design gate. Still ticked: app icon, git history, pricing model, no in-app purchase needed, funnel state. Everything about the native app is open.
+
+### Goal
+Restart Piston Forge through the full ZB funnel on Zach's instruction, and record his decisions: iOS only forever, built natively in Swift, with a dark-grey (never black) theme. Remove the Manus tooling, find out what the Manus-built game is actually worth, and set up a build loop that works without a Mac.
+
+### Added
+- **`docs/plan/phase-e-plan.md`.** Inventory of every part of the code: origin, audit verdict, keep or rewrite. Also the five bugs that decide the plan, a game brief, the cut list, the Phase E steps for an internal product, and Zach's decisions. Why: "delete everything" or "keep everything" needed evidence, and nobody had audited the Manus code itself.
+- **Bugs reproduced by running the game's own code** (throwaway tests, deleted after):
+  1. The career cannot pass job 3: the customer engines for jobs 4 and 5 are 116 mm and 129 mm too long for their own cars.
+  2. The economy cannot be finished: jobs pay 35,200 in total, the supercar costs 48,000, and the Legend tier needs 550 rep with 485 available.
+  3. The second and third cam upgrades on the old fuel map seize the engine on the next pull.
+  4. A kilowatts-versus-watts mix-up pins every car's handling speed at 99 km/h.
+
+  A fifth bug, a possible double audio start, comes from reading the code only and has not been run.
+- **Golden fixtures** (`PistonForge/tests/export-fixtures.test.ts` writes `Native/PistonForgeKit/Tests/PistonForgeKitTests/Fixtures/sim-golden.json`, 18 cases). Why: the Swift port has to reproduce the model that was played and audited, number for number, until a fix changes a number on purpose. The exporter is skipped in normal test runs.
+- **Native build-loop scaffold** (`Native/`):
+  - A pure-Swift simulation package with the first ported formula (displacement) and a fixture test.
+  - A one-screen SwiftUI + RealityKit loop-test app on the approved dark-grey theme.
+  - An XcodeGen `project.yml`, so no project file is ever hand-edited.
+- **`.github/workflows/native.yml`.** `swift test` runs on Linux. A macOS job builds for the Simulator, launches the app, screenshots it and builds an unsigned `.ipa`. Why: there is no Mac or Swift toolchain on this PC, so the cloud screenshot is the only way to see the screens. RealityKit was chosen over SceneKit because Apple deprecated SceneKit for new apps at WWDC 2025.
+
+### Changed
+- **Funnel moved back from Phase F to Phase E** (`.zb/state.json`, `.zb/events.log`), with Zach's decisions logged as his and the agent's readings logged separately.
+- **`docs/roadmap.md`:** items 1-24 rewritten for the native app; item 1 (career unplayable past job 3) and item 33 (screenshots of an interface being replaced) unticked; items 41-46 added.
+- **`docs/legal/manus-rights.md`** records that the tooling was deleted.
+
+### Removed
+- **Manus preview tooling:** `PistonForge/scripts/__manus__/`, `manus-game-sharing/`, `manus-tuning/`, the Manus Vite plugin and preview hosts, and the `manus:build-source` script. Why: Zach's instruction. The tooling is Manus's own service code, not output generated for the game, and none of it was inside the built app.
+- **The `build` script name.** Why: on this 8 GB machine `pnpm build` must never run; the bundle is `pnpm build:web`, used only in CI.
+
+### Verification
+- `pnpm typecheck`: 0 errors.
+- `pnpm test`: 63 passed, 1 skipped (the fixture exporter).
+- `node scripts/smoke.mjs`: OK, after the tooling was removed.
+- NOT verified: none of the Swift has been compiled; the native workflow runs for the first time on this push. Nothing installed on a phone yet.
+
+### Files Touched
+- `Native/**` (new), `.github/workflows/native.yml` (new), `docs/plan/phase-e-plan.md` (new), `PistonForge/tests/export-fixtures.test.ts` (new)
+- `PistonForge/package.json`, `PistonForge/vite.config.ts`, `PistonForge/README.md`, `PistonForge/TODO.md`
+- `docs/roadmap.md`, `docs/legal/manus-rights.md`, `.zb/state.json`, `.zb/events.log`, `.gitignore`, `CHANGELOG.md`, `.github/workflows/ios.yml` (old Capacitor build made manual-only)
+- Deleted: `PistonForge/scripts/__manus__/**`, `PistonForge/scripts/manus-game-sharing/**`, `PistonForge/scripts/manus-tuning/**`
+
 ## 15/11/2026 @ 16:28:44 IST — "claude-fable-5-2"
 
 **Project completion: 52.50%**

@@ -14,3 +14,9 @@ shots/
 *.mobileprovision
 builds/
 *.ipa
+
+# Native app: the Xcode project is generated from Native/project.yml in CI
+Native/*.xcodeproj/
+Native/build/
+Native/shots/
+Native/PistonForgeKit/.build/

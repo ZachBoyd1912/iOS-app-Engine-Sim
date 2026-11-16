@@ -11,15 +11,10 @@ name: iOS build
 # rate than Linux on private ones, so this runs on demand and on changes that
 # affect the native shell, not on every push.
 
+# Retired 16/11/2026: the game is being rebuilt in native Swift (native.yml). Kept as a
+# manual run only, so it stops spending macOS minutes on every package.json change.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'PistonForge/ios/**'
-      - 'PistonForge/capacitor.config.ts'
-      - 'PistonForge/package.json'
-      - '.github/workflows/ios.yml'
 
 concurrency:
   group: ios-${{ github.ref }}

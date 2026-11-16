@@ -57,6 +57,6 @@
 
 ## 10. Delivery validation
 - Unit tests cover engine displacement/VE monotonicity, ECU interpolation, boost/knock behavior, drag physics, career payout/fault logic and save migration.
-- `pnpm build` passes typecheck, size and font budgets; production build loads with no console or network errors.
+- `pnpm build:web` (CI only) passes typecheck, size and font budgets; production build loads with no console or network errors.
 - Smoke test covers title → career → engine edit → ECU edit → dyno pull → drag run → save/reload, plus a phone viewport capture.
 - A read-only validation pass checks the delivered game against this ledger before checkpoint.

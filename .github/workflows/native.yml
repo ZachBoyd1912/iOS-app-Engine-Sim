@@ -1,0 +1,96 @@
+name: Native iOS (Swift)
+
+# The native Swift app. Two jobs:
+#  - sim-tests (Linux, cheap): `swift test` on PistonForgeKit, the pure-Swift simulation,
+#    checked against golden fixtures exported from the TypeScript sim.
+#  - app (macOS, billed at a higher rate on private repos): generate the Xcode project,
+#    build for the Simulator, launch it and screenshot it (the only way to see the UI without
+#    a Mac), then build an unsigned .ipa for sideloading with a free Apple ID.
+# macOS runs only when Native/** or this file changes, or on demand.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Native/**'
+      - '.github/workflows/native.yml'
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sim-tests:
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        working-directory: Native/PistonForgeKit
+        run: swift test
+
+  app:
+    needs: sim-tests
+    runs-on: macos-26
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: Native
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools
+        run: |
+          brew install xcodegen
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for iOS Simulator
+        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build
+
+      - name: Launch in the Simulator and screenshot
+        run: |
+          set -x
+          xcrun simctl list devices available
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r,l in d.items() if 'iOS' in r for x in l if x['name'].startswith('iPhone')))")
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
+          xcrun simctl launch "$DEVICE" ie.zbautomations.pistonforge
+          sleep 12
+          mkdir -p shots
+          xcrun simctl io "$DEVICE" screenshot shots/iphone-portrait.png
+          ls -l shots
+
+      - name: Upload Simulator screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-simulator-screenshot
+          path: Native/shots/
+          if-no-files-found: warn
+
+      - name: Build for iPhone (unsigned)
+        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+
+      - name: Package unsigned .ipa
+        run: |
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R build/device/Build/Products/Release-iphoneos/PistonForge.app build/ipa/Payload/
+          cd build/ipa && zip -qry PistonForge-native-unsigned.ipa Payload
+          ls -lh PistonForge-native-unsigned.ipa
+          unzip -l PistonForge-native-unsigned.ipa | grep -E "PrivacyInfo|Assets.car|PistonForge$"
+
+      - name: Upload unsigned .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: PistonForge-native-unsigned-ipa
+          path: Native/build/ipa/PistonForge-native-unsigned.ipa
+          if-no-files-found: error

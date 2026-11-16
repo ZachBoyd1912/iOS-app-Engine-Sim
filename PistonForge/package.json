@@ -12,8 +12,6 @@
     "preview": "vite preview --port 4173 --strictPort",
     "ios:sync": "cap sync ios",
     "icons": "node scripts/make-icons.mjs",
-    "build": "node scripts/manus-game-sharing/build.mjs",
-    "manus:build-source": "tsc --noEmit && vite build && node scripts/check-size.mjs",
     "store:screenshots": "node scripts/store-screenshots.mjs"
   },
   "dependencies": {

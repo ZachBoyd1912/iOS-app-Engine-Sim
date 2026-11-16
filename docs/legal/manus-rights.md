@@ -58,8 +58,10 @@ applicable laws and third-party rights." A help article is not the contract, but
    file ("ManusCC0"), which players never see.
 3. **Manus's preview tooling is not ours.** The folders `scripts/manus-tuning/`,
    `scripts/__manus__/` and `scripts/manus-game-sharing/` are Manus's own service code rather
-   than output generated for the game. They are development-only. The built app was unpacked
-   and checked on 15/11/2026: none of that tooling is inside it.
+   than output generated for the game. They were development-only (the built app was unpacked
+   and checked on 15/11/2026: none of that tooling was inside it), and they were deleted from
+   the repository on 15/11/2026 on Zach's instruction. The project can no longer be reopened
+   in Manus.
 4. **The font.** The export bundles "ManusCC0" fonts with a CC0 1.0 licence file, which
    allows any use including commercial. No public statement from Manus about the font's origin
    was found, so the licence file in the export is the only evidence.
@@ -79,7 +81,6 @@ applicable laws and third-party rights." A help article is not the contract, but
 
 1. Ask Manus support in writing: "May a game built in Manus be published on the Apple App
    Store, free and later paid, with all Manus tooling and branding removed?" Keep the reply.
-2. Before submission, delete the three Manus tooling folders and the Manus build scripts from
-   the repository so the shipped project is only our own code and CC0 fonts. This ends the
-   ability to reopen the project in Manus, so it is Zach's call.
+2. Done 15/11/2026: the three Manus tooling folders and the Manus build scripts were deleted,
+   so the project is the generated game code, our own code and the CC0 fonts.
 3. If the game earns money, have a solicitor read sections 5 and 10.

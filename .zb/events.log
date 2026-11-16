@@ -4,3 +4,5 @@
 2026-11-15T15:21:10+00:00 · PHASE_ENTERED · Decisions by Zach: private repo, Developer Program later, bundle ID confirmed, free game. First cloud builds green: CI 43681025930, iOS Simulator build 43681025886 (BUILD SUCCEEDED). Checklist 18 of 40
 2026-11-15T15:42:24+00:00 · PHASE_ENTERED · Unsigned iPhone .ipa from CI for sideload testing; coach card, app icon, store drafts, UX and economy audit, notch fix. 63/63 tests, smoke green. Checklist 20 of 40
 2026-11-15T16:28:44+00:00 · PHASE_ENTERED · Compliance: privacy manifest, iPhone and iPad screenshots, Manus rights reading. Testing route is the sideloaded app only. Checklist 21 of 40
+2026-11-15T20:32:55+00:00 · PHASE_ENTERED · Back to Phase E (Planning & Design) on Zach's instruction: full funnel restart. Manus tooling deleted. Waiting for design approval; no build before it.
+2026-11-16T01:33:19+00:00 · PHASE_ENTERED · Phase E: Zach chose native Swift, iOS only, dark-grey theme; keep/rewrite and cut lists approved. Design gate still open.

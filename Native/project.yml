@@ -1,0 +1,38 @@
+# XcodeGen spec for the native Swift app. The .xcodeproj is generated in CI from this file
+# (`xcodegen generate`) and never committed, so no hand-edited project.pbxproj exists.
+name: PistonForge
+options:
+  bundleIdPrefix: ie.zbautomations
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+packages:
+  PistonForgeKit:
+    path: PistonForgeKit
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  PistonForge:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    dependencies:
+      - package: PistonForgeKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ie.zbautomations.pistonforge
+        PRODUCT_NAME: PistonForge
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Piston Forge
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.racing-games
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

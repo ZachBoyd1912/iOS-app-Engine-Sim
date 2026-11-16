@@ -3,9 +3,9 @@
   "business": "Piston Forge",
   "folder": "C:/Users/zboyd/Desktop/iOS-app-Engine-Sim",
   "internal": true,
-  "phase": "F",
-  "gate": "PASSED",
-  "waiting_since": "",
+  "phase": "E",
+  "gate": "WAITING_FOR_DESIGN_APPROVAL",
+  "waiting_since": "2026-11-15T20:32:55+00:00",
   "stage": "building",
   "services": [
     {
@@ -47,6 +47,41 @@
       "date": "2026-11-15T05:31:00+00:00",
       "decision": "Private GitHub repo. Apple Developer Program to be bought when needed, not now. Bundle ID ie.zbautomations.pistonforge confirmed. Game is fully free for now.",
       "who": "zach"
+    },
+    {
+      "date": "2026-11-15T20:32:55+00:00",
+      "decision": "Restart Piston Forge through the full funnel: planning, preview, approve, build, test, fix, publish, monitor, improve. Delete what Manus built.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-15T20:32:55+00:00",
+      "decision": "Moved Phase F back to Phase E (WAITING_FOR_DESIGN_APPROVAL). Deleted the Manus preview tooling folders and build hook. Kept the Manus-generated game code (src/sim, src/game, src/audio, src/ui) on the advisor's recommendation until Zach approves the per-part keep/rewrite list in docs/plan/phase-e-plan.md. Stage stays building: the enum has no planning value for an internal product.",
+      "who": "agent"
+    },
+    {
+      "date": "2026-11-16T01:33:19+00:00",
+      "decision": "Approved the per-part keep/rewrite list (phase-e-plan section 1) and the v1 cut list (section 4: handling lap cut).",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T01:33:19+00:00",
+      "decision": "Piston Forge is iOS only, forever. Build natively in Swift using the Apple iOS skills; no web code, no Capacitor.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T01:33:19+00:00",
+      "decision": "Dark only, but not black: dark grey with game-colour hues in the background.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T01:33:19+00:00",
+      "decision": "Preview widths: 430 px phone and 1032 px iPad plus landscape phone.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T01:33:19+00:00",
+      "decision": "Reading of the Swift decision against the approved keep list: the TypeScript code is not kept; the simulation MODEL (formulas, constants, behaviour) is ported to Swift and checked against golden fixtures exported from the TS sim. Career and interface are redesigned as planned. 3D in RealityKit (SceneKit is deprecated for new apps since WWDC 2025). TS/Capacitor code stays until the Swift sim passes the fixtures. Gate E still not passed: design approval is separate.",
+      "who": "agent"
     }
   ],
   "legacy_pricing": false,
