@@ -38,15 +38,17 @@ public struct FuelSpec: Sendable {
     public let density: Double
     /// Effective octane; higher allows more timing and boost before knock.
     public let octane: Double
+    /// Energy released by burning it, kJ per gram (MJ/kg).
+    public let heatKJPerGram: Double
 }
 
 extension Fuel {
     public var spec: FuelSpec {
         switch self {
-        case .pump95: FuelSpec(name: "Pump 95", stoichAfr: 14.7, safeAfr: 11.0...13.2, density: 0.745, octane: 95)
-        case .pump98: FuelSpec(name: "Pump 98", stoichAfr: 14.7, safeAfr: 11.0...13.2, density: 0.75, octane: 98)
-        case .e85: FuelSpec(name: "E85", stoichAfr: 9.8, safeAfr: 7.3...8.8, density: 0.785, octane: 105)
-        case .race: FuelSpec(name: "Race fuel", stoichAfr: 14.6, safeAfr: 10.9...13.1, density: 0.72, octane: 110)
+        case .pump95: FuelSpec(name: "Pump 95", stoichAfr: 14.7, safeAfr: 11.0...13.2, density: 0.745, octane: 95, heatKJPerGram: 43)
+        case .pump98: FuelSpec(name: "Pump 98", stoichAfr: 14.7, safeAfr: 11.0...13.2, density: 0.75, octane: 98, heatKJPerGram: 43)
+        case .e85: FuelSpec(name: "E85", stoichAfr: 9.8, safeAfr: 7.3...8.8, density: 0.785, octane: 105, heatKJPerGram: 29.2)
+        case .race: FuelSpec(name: "Race fuel", stoichAfr: 14.6, safeAfr: 10.9...13.1, density: 0.72, octane: 110, heatKJPerGram: 44)
         }
     }
 }
@@ -127,6 +129,10 @@ public struct PartChoices: Codable, Equatable, Sendable {
     public static let levelNames = ["Stock", "Street", "Sport", "Race"]
     public static let injectorRange: ClosedRange<Double> = 150...2400
     public static let pumpRange: ClosedRange<Double> = 150...1000
+    /// Boost each head gasket level holds before it starts to fail, psi.
+    public static let gasketBoostLimitPsi: [Double] = [18, 26, 40, 40]
+    /// Share of compression heat each intercooler level removes (0 = none fitted).
+    public static let intercoolerCooling: [Double] = [0, 0.55, 0.7, 0.82]
 
     public var head: Int
     public var cams: Int

@@ -19,10 +19,28 @@ Stage 1 plan, Task 5: the tune (ECU map), combustion, knock and nitrous. The eng
 - **`PublicAPITests.swift`** uses only the public interface, as the app will. Why: a missing `public` passes on Linux but breaks the Mac build much later (advisor's catch).
 
 ### Verification
-- RED: pending (expected to fail to compile, because the API doesn't exist yet).
+- RED: run 43891959121 failed to compile, on the missing operating-point, load, MBT, nitrous and fuel-system functions, as expected.
+- GREEN: pending the run on the implementation commit.
+
+### Added (implementation)
+- **\`Model/ECUMap.swift\`:** 16 × 12 fuel and ignition tables with a bilinear, edge-clamped lookup that never traps. It also holds the boost target, rev and launch limits, fuel strategy, nitrous throttle window, dry-kit enrichment and nitrous timing retard.
+  - \`autoBase(for:)\`: a safe tune. λ 0.86 at full throttle, richening to 0.78 on boost.
+  - Timing is MBT, or 2° under the knock limit where that is lower.
+  - Turbo boost is capped by knock, the head gasket and the installed fuel system.
+  - Speed-density is used when the MAF would clip.
+- **\`Physics/Combustion.swift\`:** load, MBT, the knock limit (octane, rpm, compression, boost, charge heat, nitrous), and torque from the burnt fuel × efficiency (compression, timing vs MBT, over-rich). It also gives knock with knock-sensor retard, and EGT.
+- **\`Physics/Nitrous.swift\`:** a shot adds about 0.7 g/s of air-equivalent oxygen per rated hp; a wet kit brings its own fuel.
+- **\`Physics/OperatingPoint.swift\`:** one chain shared by the tests, the tune, the simulation and the dyno: charge temp → airflow → load → map → fuel → combustion → friction and supercharger drag. It also holds \`fuelSystemNeeds\` and \`withFuelSystemSized()\`.
+- **\`chargeTempC\`** (intercooler levels) and **\`steadyBoostPsi\`** in \`Physics/Induction.swift\`. The fuel heat value, gasket boost limits and intercooler cooling are in \`Catalog/Parts.swift\`.
+
+### Changed
+- **\`EngineBuild.starter\`** now loads the auto-base tune. **\`sanitized()\`** validates the tune (shape, finite numbers, rising axes) and rebuilds a malformed one; it no longer builds a whole starter to find fallbacks.
+- **Volumetric efficiency base raised from 0.88 to 0.93**, after calibrating against the old game in a local model. The stock I4 2.0 makes about 131 hp, the V8 6.0 about 363 hp and the W16 about 506 hp. The old game's street, turbo and big-block presets come out within about 10%.
+- **\`deliverFuel\`** takes an optional extra fuel amount (dry-nitrous enrichment through the injectors).
 
 ### Files Touched
 - `Native/PistonForgeKit/Tests/PistonForgeKitTests/CombustionTests.swift`, `PublicAPITests.swift` (new), `CHANGELOG.md`
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Model/ECUMap.swift`, `Physics/Combustion.swift`, `Physics/Nitrous.swift`, `Physics/OperatingPoint.swift` (new), `Physics/Induction.swift`, `Physics/Breathing.swift`, `Physics/Fuel.swift`, `Catalog/Parts.swift`, `Model/EngineBuild.swift`
 
 ## 16/11/2026 @ 14:52:04 IST — "claude-opus-5-5"
 

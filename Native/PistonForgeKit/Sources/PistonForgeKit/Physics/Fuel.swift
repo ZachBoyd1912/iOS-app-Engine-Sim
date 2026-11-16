@@ -29,7 +29,11 @@ public struct FuelResult: Equatable, Sendable {
 /// manifold pressure. A wideband applies `closedLoopTrim` (limited to ±25%); without one the
 /// trim is ignored. Injectors deliver what is asked up to 85% duty, then flatten out toward
 /// 92%; the pump caps the rest. The actual AFR is the real air over the fuel delivered.
-public func deliverFuel(_ b: EngineBuild, strategy: FuelStrategy, airflowGps: Double, rpm: Double, targetAfr: Double, closedLoopTrim: Double) -> FuelResult {
+/// `extraFuelGps` is fuel the ECU adds on top through the injectors (dry-nitrous enrichment).
+public func deliverFuel(
+    _ b: EngineBuild, strategy: FuelStrategy, airflowGps: Double, rpm: Double, targetAfr: Double,
+    closedLoopTrim: Double, extraFuelGps: Double = 0
+) -> FuelResult {
     let spec = b.fuel.spec
     let air = bounded(airflowGps, 0...5000)
     let target = bounded(targetAfr, 5...25, or: spec.stoichAfr * 0.85)
@@ -43,7 +47,7 @@ public func deliverFuel(_ b: EngineBuild, strategy: FuelStrategy, airflowGps: Do
     }
 
     let trim = b.sensors.wideband ? bounded(closedLoopTrim, -0.25...0.25) : 0
-    let wanted = measured / target * (1 + trim)
+    let wanted = measured / target * (1 + trim) + bounded(extraFuelGps, 0...500)
 
     let injectorCapacity = b.parts.injectorCcMin * Double(b.layout.spec.cylinders) * spec.density / 60
     let duty = injectorCapacity > 0 ? wanted / injectorCapacity : 1

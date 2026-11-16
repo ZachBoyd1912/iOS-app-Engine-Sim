@@ -44,9 +44,9 @@ public struct EngineBuild: Codable, Equatable, Identifiable, Sendable {
         self.ecu = ecu
     }
 
-    /// A sensible stock, naturally aspirated build for each layout: the engine the app opens on.
-    public static func starter(_ layout: EngineLayout) -> EngineBuild {
-        let (bore, stroke, compression): (Double, Double, Double) = switch layout {
+    /// Stock bore, stroke (mm) and compression for each layout.
+    static func stockGeometry(_ layout: EngineLayout) -> (bore: Double, stroke: Double, compression: Double) {
+        switch layout {
         case .i3: (75, 84, 10.5)
         case .i4: (86, 86, 10)
         case .i6: (86, 86, 10)
@@ -58,41 +58,57 @@ public struct EngineBuild: Codable, Equatable, Identifiable, Sendable {
         case .v12: (89, 80, 10.5)
         case .w16: (86, 86, 9)
         }
-        let cylinders = Double(layout.spec.cylinders)
-        let perCylinderCc = Double.pi / 4 * bore * bore * stroke / 1000
-        // Injectors sized with headroom for the stock engine; the pump feeds them with margin.
+    }
+
+    /// Stock injector (cc/min) and pump (L/h): injectors with headroom for the stock engine,
+    /// a pump that feeds them with margin.
+    static func stockFuelSystem(_ layout: EngineLayout) -> (injector: Double, pump: Double) {
+        let geometry = stockGeometry(layout)
+        let perCylinderCc = Double.pi / 4 * geometry.bore * geometry.bore * geometry.stroke / 1000
         let injector = (perCylinderCc * 0.65 / 10).rounded() * 10
-        let pump = (max(190, injector * cylinders * 60 / 1000 * 1.5) / 5).rounded() * 5
+        let pump = (max(190, injector * Double(layout.spec.cylinders) * 60 / 1000 * 1.5) / 5).rounded() * 5
+        return (injector, pump)
+    }
+
+    /// A sensible stock, naturally aspirated build for each layout, on its auto-base tune:
+    /// the engine the app opens on.
+    public static func starter(_ layout: EngineLayout) -> EngineBuild {
+        let geometry = stockGeometry(layout)
+        let fuelSystem = stockFuelSystem(layout)
         var build = EngineBuild(
             name: "",
             layout: layout,
-            bore: bore,
-            stroke: stroke,
-            compression: compression,
+            bore: geometry.bore,
+            stroke: geometry.stroke,
+            compression: geometry.compression,
             rodRatio: 1.65,
             induction: .natural,
             fuel: .pump95,
-            parts: PartChoices(injectorCcMin: injector, pumpLph: pump),
+            parts: PartChoices(injectorCcMin: fuelSystem.injector, pumpLph: fuelSystem.pump),
             sensors: SensorSet(maf: nil, map: true, iat: true, wideband: false, knock: true, egt: false, oil: true),
             nitrous: nil,
-            ecu: ECUMap()
+            ecu: .placeholder
         )
-        // Smallest MAF that reads the stock engine's peak airflow with 15% to spare.
+        // Smallest MAF that reads the stock engine's peak airflow (about 1.2 g per litre per
+        // intake stroke) with 15% to spare.
         let peakAirGps = build.displacementCc / 1000 * build.mechanicalRedline / 120 * 1.2
         build.sensors.maf = MafSize.allCases.first { $0.maxGps >= peakAirGps * 1.15 } ?? .xl
         build.name = "\(layout.spec.name) \(String(format: "%.1f", build.displacementCc / 1000))"
+        build.ecu = ECUMap.autoBase(for: build)
         return build
     }
 
     /// The same build with every number inside its safe range. Non-numbers (NaN, infinity),
-    /// from a corrupt save or a bad slider, fall back to the stock value for the layout.
+    /// from a corrupt save or a bad slider, fall back to the stock value for the layout. A
+    /// malformed tune is replaced by the auto-base tune for the cleaned build.
     public func sanitized() -> EngineBuild {
-        let stock = EngineBuild.starter(layout)
+        let geometry = Self.stockGeometry(layout)
+        let fuelSystem = Self.stockFuelSystem(layout)
         var clean = self
-        clean.bore = Self.clamp(bore, Self.boreRange, fallback: stock.bore)
-        clean.stroke = Self.clamp(stroke, Self.strokeRange, fallback: stock.stroke)
-        clean.compression = Self.clamp(compression, Self.compressionRange, fallback: stock.compression)
-        clean.rodRatio = Self.clamp(rodRatio, Self.rodRatioRange, fallback: stock.rodRatio)
+        clean.bore = Self.clamp(bore, Self.boreRange, fallback: geometry.bore)
+        clean.stroke = Self.clamp(stroke, Self.strokeRange, fallback: geometry.stroke)
+        clean.compression = Self.clamp(compression, Self.compressionRange, fallback: geometry.compression)
+        clean.rodRatio = Self.clamp(rodRatio, Self.rodRatioRange, fallback: 1.65)
         if case .supercharger(let kind, let pulley) = induction {
             clean.induction = .supercharger(kind, pulley: Self.clamp(pulley, SuperchargerKind.pulleyRange, fallback: 1))
         }
@@ -101,13 +117,14 @@ public struct EngineBuild: Codable, Equatable, Identifiable, Sendable {
         for path in paths {
             clean.parts[keyPath: path] = min(max(parts[keyPath: path], levels.lowerBound), levels.upperBound)
         }
-        clean.parts.injectorCcMin = Self.clamp(parts.injectorCcMin, PartChoices.injectorRange, fallback: stock.parts.injectorCcMin)
-        clean.parts.pumpLph = Self.clamp(parts.pumpLph, PartChoices.pumpRange, fallback: stock.parts.pumpLph)
+        clean.parts.injectorCcMin = Self.clamp(parts.injectorCcMin, PartChoices.injectorRange, fallback: fuelSystem.injector)
+        clean.parts.pumpLph = Self.clamp(parts.pumpLph, PartChoices.pumpRange, fallback: fuelSystem.pump)
         if var kit = nitrous {
             kit.shotHp = Self.clamp(kit.shotHp, NitrousKit.shotRange, fallback: 100)
             kit.armRpm = Self.clamp(kit.armRpm, NitrousKit.armRpmRange, fallback: 3000)
             clean.nitrous = kit
         }
+        clean.ecu = ecu.sanitized(for: clean)
         return clean
     }
 

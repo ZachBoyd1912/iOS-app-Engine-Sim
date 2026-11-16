@@ -18,6 +18,11 @@ func smoothstep(_ edge0: Double, _ edge1: Double, _ x: Double) -> Double {
 /// density (raised by boost, lowered by charge heat) x volumetric efficiency x throttle.
 /// A closed throttle still passes a 6% idle trickle.
 public func airflowGps(_ b: EngineBuild, rpm: Double, throttle: Double, boostPsi: Double, chargeTempC: Double) -> Double {
+    intakeAirGps(b, rpm: rpm, throttle: throttle, boostPsi: boostPsi, chargeTempC: chargeTempC)
+}
+
+/// Same as `airflowGps`; a separate name so functions with an `airflowGps` parameter can call it.
+func intakeAirGps(_ b: EngineBuild, rpm: Double, throttle: Double, boostPsi: Double, chargeTempC: Double) -> Double {
     let speed = bounded(rpm, 0...30_000)
     let litres = b.displacementCc / 1000
     let pressureRatio = (14.7 + bounded(boostPsi, 0...60)) / 14.7
@@ -37,7 +42,7 @@ public func volumetricEfficiency(_ b: EngineBuild, rpm: Double) -> Double {
     let redline = b.mechanicalRedline
     let speed = bounded(rpm, 0...30_000)
 
-    var peak = 0.88 + 0.03 * Double(parts.head) + 0.02 * Double(parts.cams)
+    var peak = 0.93 + 0.03 * Double(parts.head) + 0.02 * Double(parts.cams)
         + 0.015 * Double(parts.intake) + 0.015 * Double(parts.exhaust)
     switch b.layout {
     case .v8Flat: peak += 0.02
