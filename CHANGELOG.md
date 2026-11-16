@@ -1,4 +1,32 @@
 # Changelog
+## 16/11/2026 @ 15:10:30 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the dyno is in.
+
+### Goal
+Stage 1 plan, Task 6: the running engine. Crank speed from torque and inertia at a fixed 480 Hz; idle control; the rev limiter; turbo spool; closed-loop fuel; damage with plain-words causes; warnings.
+
+### Added
+- **`EngineSimTests.swift`**, run red first:
+  - Idle holds within 80 rpm from an I3 to a W16.
+  - The limiter caps free revving within 150 rpm.
+  - A lean run on boost melts a piston, gives its cause, and won't restart until repaired.
+  - A 30-second step moves the engine no more than a 0.1 s step, and bad inputs stay finite (Review Focus 3).
+  - A cam change never seizes the engine without a warning (Review Focus 5 and the old game's bug).
+  - Riskier parts on an old tune warn that the map is out of date.
+  - A blower on a stock fuel system warns that the fuel system is too small.
+  - The crank angle matches rpm; a stopped engine spins down.
+  - Knock warnings need a knock sensor.
+- **`Physics/Damage.swift`:** failures with explanations, warnings with messages.
+- **`Physics/EngineSim.swift`:** `EngineState` and `EngineSim`.
+
+### Verification
+- RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/EngineSim.swift`, `Physics/Damage.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineSimTests.swift` (new), `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:01:31 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -21,7 +49,7 @@ Stage 1 plan, Task 5: the tune (ECU map), combustion, knock and nitrous. The eng
 ### Verification
 - RED: run 43891959121 failed to compile, on the missing operating-point, load, MBT, nitrous and fuel-system functions, as expected.
 - Run 43892681781: the compiler timed out type-checking one long arithmetic line. A fix-up commit splits the long expressions into typed steps.
-- GREEN: pending.
+- GREEN: run 43893106111 passed all 49 tests on Linux, including the full safety matrix.
 
 ### Added (implementation)
 - **`Model/ECUMap.swift`:** 16 × 12 fuel and ignition tables with a bilinear, edge-clamped lookup that never traps. It also holds the boost target, rev and launch limits, fuel strategy, nitrous throttle window, dry-kit enrichment and nitrous timing retard.
