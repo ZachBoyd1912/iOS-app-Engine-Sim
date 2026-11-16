@@ -1,4 +1,31 @@
 # Changelog
+## 16/11/2026 @ 14:49:20 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 4: fuel delivery and the sensors that feed it, so injector size, pump size, fuel type, the MAF limit and the wideband all change how the engine runs.
+
+### Added
+- **`FuelSensorTests.swift`**, run red first:
+  - Airflow rises with rpm and boost and falls with heat and a closed throttle.
+  - Small injectors run out of duty and lean out at the top.
+  - A MAF past its maximum clips and leans the engine on MAF strategy, but not on speed-density.
+  - A wideband's correction works only when it is fitted.
+  - A small pump starves a big engine.
+  - E85 needs about 1.5 times the fuel mass of pump 98.
+  - No input gives a non-number (Review Focus 1).
+- **`Physics/Fuel.swift`, `Physics/Sensors.swift`.**
+- **`airflowGps`** in `Physics/Breathing.swift`. Why: the plan has Tasks 4 and 5 consume airflow "from Task 3", but no task defined it.
+- **`FuelResult.deliveredFuelGps`**, because combustion and the E85 check need the fuel mass.
+
+### Verification
+- RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Fuel.swift`, `Physics/Sensors.swift` (new), `Physics/Breathing.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/FuelSensorTests.swift` (new), `CHANGELOG.md`
+
 ## 16/11/2026 @ 14:46:06 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -19,7 +46,7 @@ Stage 1 plan, Task 3: how the engine breathes. Volumetric efficiency from the he
 
 ### Verification
 - RED: run 43889226392 on the stubs failed the breathing and boost assertions. The NA-no-boost and finite-input guards passed on the zero stub, as they should.
-- GREEN: pending the run on the implementation commit.
+- GREEN: run 43889526201 passed all 29 tests on Linux.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Breathing.swift`, `Physics/Induction.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/InductionTests.swift` (new), `CHANGELOG.md`

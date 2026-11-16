@@ -14,6 +14,11 @@ func smoothstep(_ edge0: Double, _ edge1: Double, _ x: Double) -> Double {
     return t * t * (3 - 2 * t)
 }
 
+/// Real air mass the engine takes in, g/s. RED stub.
+public func airflowGps(_ b: EngineBuild, rpm: Double, throttle: Double, boostPsi: Double, chargeTempC: Double) -> Double {
+    0
+}
+
 /// Volumetric efficiency at wide-open throttle: how well the cylinders fill, 0.35...1.15.
 ///
 /// Rises from a low-rpm value to one peak, then falls to about 84% of the peak at redline.
