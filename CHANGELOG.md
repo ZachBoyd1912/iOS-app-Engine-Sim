@@ -1,4 +1,33 @@
 # Changelog
+## 16/11/2026 @ 15:26:27 IST — "claude-opus-5-5"
+
+**Project completion: 15.22%**
+Basis: 7 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 14 (save file with backup and a version-migration path) closes when this task is green.
+
+### Goal
+Stage 1 plan, Task 9: our five original car bodies, engine-bay fitment, and the save file. The save keeps a backup, recovers from a corrupt file and never overwrites a save from a newer version of the game.
+
+### Added
+- **`CarSaveTests.swift`**, run red first:
+  - A W16 doesn't fit the hatch; a V8 fits the muscle car; every starter engine fits some car.
+  - A blocked fit reports the worst dimension and the millimetres over (Review Focus 4).
+  - The cars are sane.
+  - Save and load round-trip.
+  - A corrupt save falls back to the backup; corrupt save and backup reset to defaults with that status; an empty file counts as corrupt.
+  - A newer-version save is left untouched and moved aside to `save.newer.json` before the first write (Review Focus 2).
+  - Loaded builds are sanitised.
+  - The default save opens on an assembled engine that fits its car.
+- **`Car/Cars.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift`.**
+
+### Changed
+- **`.gitignore`:** ignores Sideloadly's log, which it writes into the folder it was started from.
+
+### Verification
+- RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Car/Cars.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/CarSaveTests.swift` (new), `.gitignore`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:21:43 IST — "claude-opus-5-5"
 
 **Project completion: 15.22%**
