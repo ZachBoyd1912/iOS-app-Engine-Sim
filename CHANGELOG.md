@@ -36,6 +36,10 @@ Stage 1 plan, Task 11: preview every screen with sample data, for Zach to approv
   - The `.xcresult` is always uploaded.
   - The Simulator `.app` is kept as an artifact, for a live-streaming service if Zach picks one.
 - **Runs 43901298051 and 43902770109:** GitHub never assigned a Mac ("not acquired by Runner" and "capacity constraints" on macOS arm64), twice for 15 minutes; no minutes were charged. A dispatch input now picks the runner (`macos-26`, `macos-15` or `macos-15-intel`) so a capacity shortage doesn't block the work.
+- **Intel run 43908934695:** the 3D engine and all seven screens compiled first time (Xcode 16.4).
+  - Six preview screens rendered.
+  - The engine screens crashed inside RealityKit's own start-up (`re::Engine::init`, a divide-by-zero), read from the crash report in the test results. Intel runners have no GPU; on Apple silicon RealityKit rendered in Task 0.
+  - The accessibility audit flagged contrast and Dynamic Type issues. The audit now names each element, so they can be fixed without a Mac.
 
 ### Files Touched
 - `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `.github/workflows/native.yml`, `CHANGELOG.md`

@@ -53,7 +53,11 @@ final class ScreenshotUITests: XCTestCase {
                     var issues: [String] = []
                     do {
                         try app.performAccessibilityAudit { issue in
-                            let element = issue.element?.identifier ?? issue.element?.label ?? "-"
+                            // Name the element so the fix can be found without a Mac.
+                            var element = "-"
+                            if let found = issue.element {
+                                element = "\(found.elementType.rawValue) id='\(found.identifier)' label='\(found.label.prefix(60))' frame=\(found.frame.integral)"
+                            }
                             issues.append("\(issue.compactDescription) [\(element)]")
                             return true
                         }
