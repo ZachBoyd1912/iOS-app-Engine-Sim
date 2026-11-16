@@ -17,6 +17,8 @@ public func fitment(_ e: EngineBuild, in body: CarBody) -> Fitment {
         ("width", engine.width - bay.width),
         ("height", engine.height - bay.height),
     ]
+    // A build with non-numbers (never sanitised) cannot be measured, so it never fits.
+    guard overs.allSatisfy({ $0.1.isFinite }) else { return .blocked(dimension: "size", overMm: 0) }
     guard let worst = overs.max(by: { $0.1 < $1.1 }), worst.1 > 0 else { return .fits }
     return .blocked(dimension: worst.0, overMm: Int(worst.1.rounded(.up)))
 }

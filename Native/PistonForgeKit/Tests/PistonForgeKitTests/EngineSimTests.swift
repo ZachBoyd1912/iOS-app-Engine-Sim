@@ -107,6 +107,23 @@ func limiterCaps(layout: EngineLayout) {
         if failure == nil { failure = state.failure }
     }
     #expect(failure == nil || warned, "failed with \(String(describing: failure)) and no warning")
+    // The change is a real one: the engine breathes more than 5% differently at 6000 rpm.
+    let before = airflowGps(starter, rpm: 6000, throttle: 1, boostPsi: 0, chargeTempC: 25)
+    let after = airflowGps(changed, rpm: 6000, throttle: 1, boostPsi: 0, chargeTempC: 25)
+    #expect(abs(after / before - 1) > 0.05, "cams moved airflow by \(after / before - 1)")
+}
+
+@Test func partChangeOnALimitedFuelSystemWarns() {
+    var starter = EngineBuild.starter(.i4)
+    // Injectors just big enough for the stock engine.
+    starter.parts.injectorCcMin = (fuelSystemNeeds(starter, boostPsi: 0).injectorCcMin / 5).rounded(.up) * 5
+    let sim = EngineSim(build: starter)
+    #expect(!sim.warnings.contains(.fuelSystemTooSmall))
+    var hotter = starter
+    hotter.parts.cams += 2
+    hotter.parts.head += 2
+    sim.setBuild(hotter)
+    #expect(sim.warnings.contains(.fuelSystemTooSmall), "more air, same injectors: \(sim.warnings)")
 }
 
 @Test func riskierPartsOnAnOldTuneWarn() {

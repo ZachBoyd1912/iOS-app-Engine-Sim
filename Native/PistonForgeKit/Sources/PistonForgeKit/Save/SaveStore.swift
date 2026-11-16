@@ -79,13 +79,12 @@ public enum LoadStatus: String, Sendable {
 /// - A corrupt or empty save falls back to the backup, then to a fresh save. A corrupt file is
 ///   moved to `save.corrupt.json` on the next write rather than silently deleted.
 /// - A save from a newer version of the game is never overwritten: it loads as fresh defaults,
-///   and the first write moves it to `save.newer.json`.
+///   and the first write moves it to `save.newer.json` (or a numbered name if that exists).
+/// - Every write encodes first, so a failed encode changes no file.
 public final class SaveStore {
     public let directory: URL
     private var mainURL: URL { directory.appendingPathComponent("save.json") }
     private var backupURL: URL { directory.appendingPathComponent("save.bak.json") }
-    private var newerURL: URL { directory.appendingPathComponent("save.newer.json") }
-    private var corruptURL: URL { directory.appendingPathComponent("save.corrupt.json") }
 
     private enum Contents {
         case missing, corrupt, newer, valid(SaveFile)
@@ -113,28 +112,36 @@ public final class SaveStore {
     public func save(_ file: SaveFile) throws {
         let manager = FileManager.default
         try manager.createDirectory(at: directory, withIntermediateDirectories: true)
+        var current = file
+        current.version = SaveFile.currentVersion
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        // Encode before touching any file, so a failure leaves everything where it was.
+        let data = try encoder.encode(current)
         switch read(mainURL) {
         case .newer:
-            try replace(newerURL, with: mainURL)
+            try moveAside(mainURL, stem: "save.newer")
         case .corrupt:
-            try replace(corruptURL, with: mainURL)
+            try moveAside(mainURL, stem: "save.corrupt")
         case .valid:
             try Data(contentsOf: mainURL).write(to: backupURL, options: .atomic)
         case .missing:
             break
         }
-        var current = file
-        current.version = SaveFile.currentVersion
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        try encoder.encode(current).write(to: mainURL, options: .atomic)
+        try data.write(to: mainURL, options: .atomic)
     }
 
-    /// Moves `source` to `destination`, replacing whatever was there.
-    private func replace(_ destination: URL, with source: URL) throws {
+    /// Moves `source` to `<stem>.json`, or `<stem>.1.json`, `<stem>.2.json`... if that is taken.
+    /// Never overwrites an earlier file.
+    private func moveAside(_ source: URL, stem: String) throws {
         let manager = FileManager.default
-        if manager.fileExists(atPath: destination.path) { try manager.removeItem(at: destination) }
-        try manager.moveItem(at: source, to: destination)
+        var target = directory.appendingPathComponent("\(stem).json")
+        var number = 1
+        while manager.fileExists(atPath: target.path) {
+            target = directory.appendingPathComponent("\(stem).\(number).json")
+            number += 1
+        }
+        try manager.moveItem(at: source, to: target)
     }
 
     private struct VersionPeek: Decodable {

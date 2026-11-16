@@ -93,11 +93,13 @@ public final class EngineVoice {
             )
         }
         schedules = table
+        // Each buffer is allocated on its own here, so the audio thread never triggers a
+        // copy-on-write when it first writes to one.
         excite = Array(repeating: 0, count: Self.maxBanks)
-        body1 = excite
-        body2 = excite
-        rasp1 = excite
-        rasp2 = excite
+        body1 = Array(repeating: 0, count: Self.maxBanks)
+        body2 = Array(repeating: 0, count: Self.maxBanks)
+        rasp1 = Array(repeating: 0, count: Self.maxBanks)
+        rasp2 = Array(repeating: 0, count: Self.maxBanks)
     }
 
     /// Times (seconds from crank angle 0) at which `bank`'s cylinders fire at a steady `rpm`.
@@ -202,6 +204,7 @@ public final class EngineVoice {
             if !sample.isFinite {
                 reset()
                 sample = 0
+                nonFiniteSamples += 1
             }
             buffer[index] = Float(sample)
         }

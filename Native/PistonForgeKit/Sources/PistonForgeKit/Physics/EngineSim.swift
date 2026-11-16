@@ -159,7 +159,6 @@ public final class EngineSim {
             let omega = rpm * 2 * Double.pi / 60
             let drag = omega > 1 ? parasiticLossHp(build, rpm: rpm, boost: boost) * 745.7 / omega : 0
             torque = -(friction + drag + pumpingNm(throttle: isRunning ? opening : 0))
-            if cutting { live.append(.overRev) }
         }
 
         let acceleration = (torque - resistance) / inertiaKgM2
@@ -267,6 +266,22 @@ public final class EngineSim {
         return next
     }
 
+    /// True when a supercharger's boost leaves less than 8° of knock-limited timing anywhere in
+    /// the rev range, or comes within 2 psi of the head gasket's limit: no tune can make that safe.
+    static func superchargerTooStrong(_ b: EngineBuild) -> Bool {
+        let gasket = PartChoices.gasketBoostLimitPsi[min(max(b.parts.gasket, 0), PartChoices.gasketBoostLimitPsi.count - 1)]
+        for fraction in [0.3, 0.6, 1.0] {
+            let rpm = b.mechanicalRedline * fraction
+            let boost = steadyBoostPsi(b, rpm: rpm, throttle: 1, target: 0)
+            if boost > gasket - 2 { return true }
+            let heat = chargeTempC(b, boostPsi: boost)
+            let air = airflowGps(b, rpm: rpm, throttle: 1, boostPsi: boost, chargeTempC: heat)
+            let load = loadKpa(b, rpm: rpm, airflowGps: air)
+            if knockLimitDegrees(b, rpm: rpm, loadKpa: load, iatC: heat, nitrousHpPerCylinder: 0) < 8 { return true }
+        }
+        return false
+    }
+
     /// Warnings about the build that hold before it runs.
     static func checkBuild(_ b: EngineBuild) -> [Warning] {
         var found: [Warning] = []
@@ -298,9 +313,14 @@ public final class EngineSim {
             found.append(.fuelSystemTooSmall)
         }
         if ecu.strategy == .maf {
-            let air = airflowGps(b, rpm: b.mechanicalRedline, throttle: 1, boostPsi: boost, chargeTempC: chargeTempC(b, boostPsi: boost))
-            if air > (b.sensors.maf?.maxGps ?? 0) { found.append(.mafClipping) }
+            if let maf = b.sensors.maf {
+                let air = airflowGps(b, rpm: b.mechanicalRedline, throttle: 1, boostPsi: boost, chargeTempC: chargeTempC(b, boostPsi: boost))
+                if air > maf.maxGps { found.append(.mafClipping) }
+            } else {
+                found.append(.mafMissing)
+            }
         }
+        if case .supercharger = b.induction, superchargerTooStrong(b) { found.append(.boostTooHighForFuel) }
         return found
     }
 }

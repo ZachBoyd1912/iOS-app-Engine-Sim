@@ -32,7 +32,7 @@ public enum Warning: String, Codable, CaseIterable, Sendable {
     case knocking, runningLean, overBoost, overRev, hotExhaust, oilPressureLow
     /// The tune reads a MAF sensor that is not fitted.
     case mafMissing
-    /// A supercharger makes more boost than the fuel and compression can take, whatever the tune.
+    /// A supercharger makes more boost than the fuel, compression or gasket can take, whatever the tune.
     case boostTooHighForFuel
 
     public var message: String {
@@ -47,7 +47,7 @@ public enum Warning: String, Codable, CaseIterable, Sendable {
         case .hotExhaust: "Exhaust too hot"
         case .oilPressureLow: "Oil pressure low"
         case .mafMissing: "Tune reads a MAF sensor that is not fitted"
-        case .boostTooHighForFuel: "Too much blower boost for this fuel: fit a bigger pulley or better fuel"
+        case .boostTooHighForFuel: "Blower boost too high for this engine: fit a bigger pulley, better fuel or a stronger gasket"
         }
     }
 }

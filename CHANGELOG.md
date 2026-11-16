@@ -23,10 +23,34 @@ Act on the subagent review of Tasks 3-9. It made 13 findings: 1 marked critical,
 - **`docs/roadmap.md`:** item 14 ticked. Task 9 GREEN recorded.
 
 ### Verification
-- RED: pending.
+- RED: run 43898492775 crashed on the non-number fitment check: "Double value cannot be converted to Int". That confirms the trap, and a crash counts as red.
+- GREEN: pending.
+
+### Fixed
+- **Fitment** returns "blocked" for an unmeasurable build instead of trapping.
+- **Save store:**
+  - Encodes before touching any file, so a failed write changes nothing.
+  - Moves newer and corrupt saves aside under numbered names, and never overwrites an earlier side file.
+- **Engine sound:**
+  - Each synthesis buffer is allocated on its own, so the audio thread never triggers a copy-on-write allocation.
+  - Counts any sample it has to silence.
+- **Build warnings:**
+  - A MAF tune without a MAF now says so, instead of saying "MAF maxed out".
+  - A supercharger that leaves under 8° of knock-limited timing, or comes within 2 psi of the gasket's limit, warns that the blower boost is too high.
+- **Rev limiter:** hitting it no longer shows "Over-revving"; the limiter state is reported separately.
+- **Tests:**
+  - The part-change test checks that the cam change really moves airflow by more than 5%.
+  - A new test checks that a just-big-enough fuel system warns when the cams and head are raised.
+
+### Not changed (my rulings)
+- **Nitrous window decoding:** the reviewer's crash claim is tested here rather than assumed.
+- **Hand-off to the audio thread:** a lock-free parameter handoff and an \`@unchecked Sendable\` contract on \`EngineVoice\` are needed. They belong to Task 12 (\`AudioOutput\`) and are noted there.
+- **Minor findings left as they are:**
+  - EGT damage counts as lean damage.
+  - The flat-plane/cross-plane test reads the firing schedule rather than the rendered sound.
 
 ### Files Touched
-- `Native/PistonForgeKit/Tests/PistonForgeKitTests/ReviewFixTests.swift` (new), `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Damage.swift`, `Sound/EngineVoice.swift`, `docs/roadmap.md`, `CHANGELOG.md`
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/ReviewFixTests.swift` (new), `EngineSimTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Damage.swift`, `Physics/EngineSim.swift`, `Sound/EngineVoice.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift`, `docs/roadmap.md`, `CHANGELOG.md`
 
 ## 16/11/2026 @ 15:26:27 IST — "claude-opus-5-5"
 
