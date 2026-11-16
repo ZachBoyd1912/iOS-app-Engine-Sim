@@ -13,7 +13,10 @@ struct GoldenFile: Decodable {
             let stroke: Double
         }
         struct Input: Decodable { let engine: Engine }
-        struct Spec: Decodable { let displacementCc: Double }
+        struct Spec: Decodable {
+            let displacementCc: Double
+            let cylinders: Int
+        }
         let name: String
         let input: Input
         let spec: Spec
@@ -49,6 +52,7 @@ struct GoldenFile: Decodable {
     for item in try GoldenFile.load().cases {
         guard let layout = GoldenFile.layout(forOldId: item.input.engine.layout) else { continue }
         let engine = item.input.engine
+        #expect(layout.spec.cylinders == item.spec.cylinders, "\(item.name): layout mapping")
         let swift = Double.pi / 4 * engine.bore * engine.bore * engine.stroke * Double(layout.spec.cylinders) / 1000
         // The TS spec rounds to whole cc.
         #expect(abs(swift.rounded() - item.spec.displacementCc) <= 1, "\(item.name): \(swift) vs \(item.spec.displacementCc)")

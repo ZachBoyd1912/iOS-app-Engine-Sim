@@ -70,6 +70,33 @@ func evenFireIntervals(layout: EngineLayout) {
     #expect(banks(flat) == [0, 1, 0, 1, 0, 1, 0, 1])
 }
 
+@Test func allOrdersPinned() {
+    #expect(EngineLayout.i3.spec.firingOrder == [1, 2, 3])
+    #expect(EngineLayout.v6_60.spec.firingOrder == [1, 2, 3, 4, 5, 6])
+    #expect(EngineLayout.v6_90.spec.firingOrder == [1, 6, 5, 4, 3, 2])
+    #expect(EngineLayout.v10.spec.firingOrder == [1, 6, 5, 10, 2, 7, 3, 8, 4, 9])
+    #expect(EngineLayout.v10.spec.bankOf == [0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
+    #expect(EngineLayout.v12.spec.firingOrder == [1, 7, 5, 11, 3, 9, 6, 12, 2, 8, 4, 10])
+    #expect(EngineLayout.v12.spec.bankOf == [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
+    #expect(EngineLayout.w16.spec.firingOrder == [1, 9, 5, 13, 3, 11, 7, 15, 4, 12, 8, 16, 2, 10, 6, 14])
+    #expect(EngineLayout.w16.spec.bankOf == [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3])
+}
+
+@Test(arguments: EngineLayout.allCases)
+func crankPhaseIsFiringAngleModulo360(layout: EngineLayout) {
+    let spec = layout.spec
+    for (index, cylinder) in spec.firingOrder.enumerated() {
+        let expected = spec.firingAngles[index].truncatingRemainder(dividingBy: 360)
+        #expect(abs(spec.crankPins[cylinder - 1] - expected) < 0.001, "\(layout) cylinder \(cylinder)")
+    }
+    // An I4's cylinders 1 and 4 share a crank phase, as do 2 and 3.
+    if layout == .i4 {
+        #expect(spec.crankPins[0] == spec.crankPins[3])
+        #expect(spec.crankPins[1] == spec.crankPins[2])
+        #expect(spec.crankPins[0] != spec.crankPins[1])
+    }
+}
+
 @Test func w16Generic() {
     let name = EngineLayout.w16.spec.name
     #expect(!name.isEmpty)

@@ -44,6 +44,12 @@ func starterForEveryLayoutIsSane(layout: EngineLayout) {
         #expect(value.isFinite)
     }
     #expect(clean.displacementCc.isFinite && clean.displacementCc > 0)
+    let stock = EngineBuild.starter(.v8Cross)
+    #expect(clean.bore == stock.bore)
+    #expect(clean.stroke == stock.stroke)
+    #expect(clean.compression == stock.compression)
+    #expect(clean.nitrous?.shotHp == 100)
+    #expect(clean.nitrous?.armRpm == 3000)
 }
 
 @Test func sanitizeClampsNitrousAndPulley() {
@@ -65,6 +71,9 @@ func starterForEveryLayoutIsSane(layout: EngineLayout) {
     let data = try JSONEncoder().encode(build)
     let back = try JSONDecoder().decode(EngineBuild.self, from: data)
     #expect(back == build)
+    build.induction = .supercharger(.centrifugal, pulley: 1.2)
+    let blown = try JSONDecoder().decode(EngineBuild.self, from: JSONEncoder().encode(build))
+    #expect(blown == build)
 }
 
 @Test func displacementMatchesFormula() {
@@ -90,9 +99,9 @@ func starterForEveryLayoutIsSane(layout: EngineLayout) {
 
 @Test func pistonSpeedFollowsStroke() {
     let build = EngineBuild.starter(.i4)
-    let expected = 2 * build.stroke / 1000 * build.mechanicalRedline / 60
-    #expect(build.mechanicalRedline > 0)
-    #expect(abs(build.meanPistonSpeedAtRedline - expected) < 0.001)
+    // 86 mm stroke on stock internals: 20 m/s allows 6976 rpm, rounded down to 6950.
+    #expect(build.mechanicalRedline == 6950)
+    #expect(abs(build.meanPistonSpeedAtRedline - 2 * 0.086 * 6950 / 60) < 0.001)
     var longer = build
     longer.stroke = build.stroke + 10
     #expect(longer.mechanicalRedline < build.mechanicalRedline)

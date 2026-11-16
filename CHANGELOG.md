@@ -1,4 +1,30 @@
 # Changelog
+## 16/11/2026 @ 14:52:04 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged.
+
+### Goal
+Act on the subagent review of Tasks 1 and 2 (layouts and the engine build). It found no critical problems, but four tests would have passed on wrong code.
+
+### Changed
+- **`LayoutTests.swift`:**
+  - Every layout's firing order is now pinned, along with the V10, V12 and W16 bank assignment. Before, a swapped V12 order would have passed.
+  - The crank phase of every cylinder is checked against its firing angle. Task 10 builds the 3D crank from it.
+- **`EngineBuildTests.swift`:**
+  - Non-numbers must fall back to the exact stock values, not just to any finite number.
+  - The I4 redline is pinned at 6950 rpm.
+  - A supercharged build also round-trips through save and load.
+- **`GoldenFixtureTests.swift`:** also checks the cylinder count of each mapped layout.
+- **`Layouts.swift`:** a comment wrongly said the odd-fire V6 uses common crank pins; it uses offset pins.
+- **Task 4 entry:** GREEN result recorded.
+
+### Verification
+- These tests pin behaviour that already exists, so they are expected to pass at once; the CI result is recorded in the next entry.
+
+### Files Touched
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift`, `EngineBuildTests.swift`, `GoldenFixtureTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 14:49:20 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -22,7 +48,7 @@ Stage 1 plan, Task 4: fuel delivery and the sensors that feed it, so injector si
 
 ### Verification
 - RED: run 43889803624 on the stubs failed the airflow, MAF, injector, wideband, pump and E85 assertions.
-- GREEN: pending the run on the implementation commit.
+- GREEN: run 43890036544 passed all 36 tests on Linux.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Fuel.swift`, `Physics/Sensors.swift` (new), `Physics/Breathing.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/FuelSensorTests.swift` (new), `CHANGELOG.md`

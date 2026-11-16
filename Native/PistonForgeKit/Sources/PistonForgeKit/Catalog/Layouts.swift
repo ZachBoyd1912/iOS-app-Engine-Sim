@@ -36,7 +36,7 @@ extension EngineLayout {
             // Odd cylinders left, even right; even fire every 120 degrees.
             LayoutSpec.make(name: "V6 60°", bankAngle: 60, order: [1, 2, 3, 4, 5, 6], gaps: [120], bank: { ($0 - 1) % 2 })
         case .v6_90:
-            // Odd-fire 90-degree V6 on a common-pin crank: intervals alternate 90 and 150.
+            // Odd-fire 90-degree V6 on offset (split) pins: intervals alternate 90 and 150.
             LayoutSpec.make(name: "V6 90° odd-fire", bankAngle: 90, order: [1, 6, 5, 4, 3, 2], gaps: [90, 150], bank: { ($0 - 1) % 2 })
         case .v8Cross:
             // Odd cylinders left, even right. Bank sequence L,R,R,L,R,L,L,R gives the burble.
