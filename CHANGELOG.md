@@ -1,4 +1,35 @@
 # Changelog
+## 16/11/2026 @ 15:53:00 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 8 (screens to the ZB UX standard, previews approved) stays open until Zach approves the previews.
+
+### Goal
+Stage 1 plan, Task 11: preview every screen with sample data, for Zach to approve before the game is wired up. This is the ZB UX standard adapted to native iOS, as Zach approved:
+- Native SwiftUI controls instead of the web parts libraries.
+- Dark only.
+- Simulator screenshots on iPhone (portrait and landscape) and iPad, each checked by Xcode's accessibility audit.
+
+### Added
+- **Screens, in `Native/App/Screens/`, all on sample data:**
+  - **Engine:** 3D engine, live rpm, power, AFR and boost, Start (the one accent), rev slider, warnings banner.
+  - **Parts:** grouped by system; every choice says what it changes in plain words.
+  - **Tune:** auto-tune, limits, boost, strategy, nitrous, and the fuel and ignition tables with their numbers.
+  - **Dyno:** power and torque charts with the last pull dashed behind, AFR, boost, knock and EGT traces, crank and wheel figures, and a failure explained in words.
+  - **Car:** each body shows whether the engine fits, as an icon, a word and the millimetres over; gearing; tyres.
+  - **Settings:** includes a reset that can be undone.
+  - **Garage:** swipe to duplicate or delete.
+- **Shared components** (`Components.swift`): status as icon + word + colour, readouts in tabular digits, primary and secondary buttons at least 44 pt, cards, the PREVIEW tag.
+- **Theme tokens:** surfaces, vivid status marks and inks, a 4-point spacing scale, radii, hit target.
+- **`Preview/SampleData.swift`:** real model output (a dyno pull of a twin-turbo V8), not invented numbers. **`Preview/PreviewRoot.swift`:** opens one screen with `-screen <name> -preview`.
+- **`ScreenshotUITests.testEveryScreen`:** every screen, portrait plus landscape on iPhone, with `performAccessibilityAudit`.
+
+### Verification
+- Pending the Mac run, which is dispatched after the 3D-engine run finishes so the two don't cancel each other.
+
+### Files Touched
+- `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:44:56 IST — "claude-opus-5-5"
 
 **Project completion: 17.39%**

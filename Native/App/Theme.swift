@@ -17,6 +17,44 @@ enum Theme {
     static let textPrimary = Color(white: 0.95)
     static let textSecondary = Color(white: 0.7)
 
+    /// Layered surfaces on the dark-grey base.
+    static let surface = Color(white: 0.18)
+    static let surfaceRaised = Color(white: 0.22)
+    static let separator = Color(white: 0.32)
+    /// Text and icons on the accent fill.
+    static let onAccent = Color(white: 0.08)
+
+    /// Status marks (icons, dots, chart lines) and inks (words): vivid in the dark theme.
+    static let goodMark = Color(red: 0.13, green: 0.77, blue: 0.37)
+    static let goodInk = Color(red: 0.29, green: 0.87, blue: 0.50)
+    static let warnMark = Color(red: 0.98, green: 0.75, blue: 0.14)
+    static let warnInk = Color(red: 0.98, green: 0.75, blue: 0.14)
+    static let badMark = Color(red: 1.0, green: 0.42, blue: 0.38)
+    static let badInk = Color(red: 1.0, green: 0.42, blue: 0.38)
+    /// Chart series.
+    static let power = accent
+    static let torque = Color(red: 0.36, green: 0.66, blue: 1.0)
+    static let lastPull = Color(white: 0.6)
+
+    /// 4-point spacing scale.
+    enum Space {
+        static let xs: CGFloat = 4
+        static let s: CGFloat = 8
+        static let m: CGFloat = 12
+        static let l: CGFloat = 16
+        static let xl: CGFloat = 24
+        static let xxl: CGFloat = 40
+    }
+
+    enum Radius {
+        static let s: CGFloat = 8
+        static let m: CGFloat = 12
+        static let l: CGFloat = 16
+    }
+
+    /// Smallest touch target, points.
+    static let hitTarget: CGFloat = 44
+
     static var background: some View {
         ZStack {
             base

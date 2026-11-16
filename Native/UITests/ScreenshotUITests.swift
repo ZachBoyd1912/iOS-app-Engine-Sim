@@ -28,4 +28,36 @@ final class ScreenshotUITests: XCTestCase {
             app.terminate()
         }
     }
+
+    /// Every screen with sample data and its PREVIEW tag: portrait, plus landscape on iPhone,
+    /// each checked by Xcode's accessibility audit.
+    func testEveryScreen() throws {
+        let screens = ["engine", "parts", "tune", "dyno", "car", "settings", "garage"]
+        var orientations: [UIDeviceOrientation] = [.portrait]
+        if UIDevice.current.userInterfaceIdiom == .phone { orientations.append(.landscapeLeft) }
+        for screen in screens {
+            for orientation in orientations {
+                XCUIDevice.shared.orientation = orientation
+                let app = XCUIApplication()
+                app.launchArguments = ["-screen", screen, "-preview"]
+                app.launch()
+                XCTAssertTrue(app.descendants(matching: .any)["screen.\(screen)"].waitForExistence(timeout: 30), "\(screen) did not open")
+                Thread.sleep(forTimeInterval: screen == "engine" ? 3 : 1)
+                let name = orientation == .portrait ? "portrait" : "landscape"
+                let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                shot.name = "\(screen)-\(device)-\(name)"
+                shot.lifetime = .keepAlways
+                add(shot)
+                if orientation == .portrait {
+                    do {
+                        try app.performAccessibilityAudit()
+                    } catch {
+                        XCTFail("\(screen) accessibility audit: \(error)")
+                    }
+                }
+                app.terminate()
+            }
+        }
+        XCUIDevice.shared.orientation = .portrait
+    }
 }

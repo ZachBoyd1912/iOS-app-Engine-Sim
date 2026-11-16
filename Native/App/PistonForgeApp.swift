@@ -4,16 +4,25 @@ import SwiftUI
 @main
 struct PistonForgeApp: App {
     @State private var driver: EngineDriver
+    private let route: LaunchRoute
 
     init() {
         Engine3D.register()
-        _driver = State(initialValue: EngineDriver(build: LaunchRoute.parse().build()))
+        let route = LaunchRoute.parse()
+        self.route = route
+        _driver = State(initialValue: EngineDriver(build: route.build()))
     }
 
     var body: some Scene {
         WindowGroup {
-            EngineHomeView(driver: driver)
-                .preferredColorScheme(.dark)
+            Group {
+                if route.preview {
+                    PreviewRoot(screen: route.screen)
+                } else {
+                    EngineHomeView(driver: driver)
+                }
+            }
+            .preferredColorScheme(.dark)
         }
     }
 }
