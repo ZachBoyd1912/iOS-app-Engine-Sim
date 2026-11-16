@@ -29,7 +29,8 @@ Stage 1 plan, Task 8: the engine sound. It is generated in real time from the fi
   - At 15 psi, turbo whine is about 400× stronger in the 2-8 kHz band.
   - A V8 at full throttle peaks below 0.7.
   - Heavy load is 4× louder than light load.
-- GREEN: pending.
+- GREEN: run 43895798734 passed all 74 tests.
+- The 13 WAV files were downloaded and their loudness checked second by second: idle RMS 0.02-0.05, the pull 0.14-0.28, peaks 0.38-0.62, no clipping. A follow-up changes the listening run from a free rev, which hit the limiter in under a second, to a steady three-second pull.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Sound/EngineVoice.swift`, `Sound/WavWriter.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineVoiceTests.swift` (new), `docs/roadmap.md`, `CHANGELOG.md`

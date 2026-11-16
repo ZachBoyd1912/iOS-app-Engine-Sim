@@ -133,7 +133,7 @@ func outputBoundedAndFinite(layout: EngineLayout) {
 }
 
 /// Writes listening samples when `PF_WAV_DIR` is set (the Linux CI job sets it and uploads the
-/// folder as the `engine-sounds` artifact): idle, a full-throttle run to the limiter and a lift,
+/// folder as the `engine-sounds` artifact): idle, a full-throttle pull to the limiter and a lift,
 /// six seconds per layout, plus a turbo, a Roots blower and a nitrous V8.
 @Test func writesListeningSamples() throws {
     let directory = ProcessInfo.processInfo.environment["PF_WAV_DIR"]
@@ -160,9 +160,15 @@ func outputBoundedAndFinite(layout: EngineLayout) {
         let block = Int(rate / 100)
         var samples = [Float](repeating: 0, count: block * 600)
         samples.withUnsafeMutableBufferPointer { buffer in
+            // One second of idle, then a full-throttle pull held to about 2000 rpm/s by a brake
+            // (so it climbs over three seconds instead of hitting the limiter at once), then a lift.
+            let alpha = 2000 * 2 * Double.pi / 60
+            var last = sim.state
             for tick in 0..<600 {
-                let throttle: Double = tick < 100 ? 0 : (tick < 350 ? 1 : 0)
-                let state = sim.step(dt: 0.01, throttle: throttle, load: 0)
+                let pulling = tick >= 100 && tick < 420
+                let load = pulling ? max(0, last.torqueNm - sim.inertiaKgM2 * alpha) : 0
+                let state = sim.step(dt: 0.01, throttle: pulling ? 1 : 0, load: load)
+                last = state
                 voice.render(VoiceParams(state: state, build: build), frames: block, into: buffer.baseAddress! + tick * block)
             }
         }
