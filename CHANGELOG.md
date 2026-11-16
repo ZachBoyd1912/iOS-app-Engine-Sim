@@ -1,4 +1,29 @@
 # Changelog
+## 16/11/2026 @ 15:01:31 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 5: the tune (ECU map), combustion, knock and nitrous. The engine now makes torque from its air, fuel and timing; knocks when timing, boost, heat or a lean mixture push it; and takes a nitrous shot that needs fuel and less timing.
+
+### Added
+- **`CombustionTests.swift`:**
+  - The auto-base map is safe (no knock, safe AFR, EGT under 950 °C) for every layout × NA, every turbo and every supercharger × every fuel, on a matched fuel system.
+  - The auto-base map caps turbo boost to the installed fuel system.
+  - Timing past or short of MBT loses torque, and late timing heats the exhaust.
+  - The knock sensor pulls timing; with no sensor, the engine detonates.
+  - A 100 hp wet shot adds 80-120 hp; a dry shot on an unchanged map detonates or runs lean; nitrous does nothing below its arming rpm or outside its throttle window.
+  - Map lookup is bilinear and clamped at the edges.
+  - A malformed map from a bad save never traps and is rebuilt.
+- **`PublicAPITests.swift`** uses only the public interface, as the app will. Why: a missing `public` passes on Linux but breaks the Mac build much later (advisor's catch).
+
+### Verification
+- RED: pending (expected to fail to compile, because the API doesn't exist yet).
+
+### Files Touched
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/CombustionTests.swift`, `PublicAPITests.swift` (new), `CHANGELOG.md`
+
 ## 16/11/2026 @ 14:52:04 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
