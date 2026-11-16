@@ -6,3 +6,6 @@
 2026-11-15T16:28:44+00:00 · PHASE_ENTERED · Compliance: privacy manifest, iPhone and iPad screenshots, Manus rights reading. Testing route is the sideloaded app only. Checklist 21 of 40
 2026-11-15T20:32:55+00:00 · PHASE_ENTERED · Back to Phase E (Planning & Design) on Zach's instruction: full funnel restart. Manus tooling deleted. Waiting for design approval; no build before it.
 2026-11-16T01:33:19+00:00 · PHASE_ENTERED · Phase E: Zach chose native Swift, iOS only, dark-grey theme; keep/rewrite and cut lists approved. Design gate still open.
+2026-11-16T02:13:35+00:00 · PHASE_ENTERED · Phase E: game concept set by Zach (engine tuning sim, dyno, proving ground + 1/4, 1/2, 1 mile strip, sim driving). Design doc next.
+2026-11-16T03:11:24+00:00 · GATE_PASSED_DESIGN · Design doc approved by Zach (screen previews still to approve per stage)
+2026-11-16T03:18:27+00:00 · PHASE_ENTERED · Correction to the previous line: the design DOCUMENT is approved; gate E itself stays WAITING_FOR_DESIGN_APPROVAL until each stage's screen previews are approved.

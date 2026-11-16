@@ -11,15 +11,15 @@ TypeScript sim stays only as the reference model and fixture source until the po
 
 ## A. The game (Swift)
 
-- [ ] 1. Core loop playable natively: build engine, fit body, map ECU, dyno pull, drag run, career jobs
-- [ ] 2. Simulation ported to PistonForgeKit and matching the golden fixtures (`swift test`)
+- [ ] 1. Core loop playable natively: build engine, tune, dyno pull, fit to a car, drive (no career: Zach 16/11/2026)
+- [ ] 2. Engine simulation in PistonForgeKit, tested on Linux (`swift test`); old-game fixtures used as plausibility ranges only
 - [ ] 3. UI tests drive the real loop in the Simulator, with screenshots at phone and iPad sizes
 - [ ] 4. Theme tokens: dark grey (never black) with game-colour hues, approved by Zach
-- [ ] 5. TypeScript game and Capacitor shell deleted once 2 passes
+- [ ] 5. TypeScript game and Capacitor shell deleted once stage 1 ships
 - [ ] 6. README describes the native project
 - [ ] 7. First-run coach for one build, one pull, one run
 - [ ] 8. Screens to the ZB UX standard (44 pt targets, Dynamic Type), previews approved by Zach
-- [ ] 9. Career economy balance pass (cash, reputation, job payouts) with real play sessions
+- [ ] 9. Tuning balance pass: every layout and part makes a visible, believable difference on the dyno, in the sound and on the strip
 - [ ] 10. Audio pass: engine note, mix levels, checked on phone speakers
 
 ## B. The iPhone
@@ -64,11 +64,11 @@ TypeScript sim stays only as the reference model and fixture source until the po
 - [ ] 39. Analytics decision for v1 (ZB standard kit or none)
 - [ ] 40. Launch post or reel
 
-## F. Phase E restart (added 15/11/2026, see `docs/plan/phase-e-plan.md`)
+## F. Phase E restart (added 15/11/2026; reworded 16/11/2026 for the approved native design `docs/superpowers/specs/2026-11-16-piston-forge-native-design.md`)
 
-- [ ] 41. Career can be finished: every job deliverable, every car affordable, every tier reachable (tested)
-- [ ] 42. Fitting a part never seizes the engine on the next pull without warning (tested)
-- [ ] 43. Handling speed uses the right units, or the handling lap is cut (Zach's call)
-- [ ] 44. First tap starts exactly one audio engine (tested)
-- [ ] 45. Per-part keep/rewrite list approved by Zach
-- [ ] 46. Design approved by Zach in writing (funnel gate E)
+- [ ] 41. Every layout x induction x nitrous combination stays finite and fails with a stated cause (tested)
+- [ ] 42. Changing a part never silently seizes the engine: map re-based or warning shown (tested)
+- [ ] 43. Drag strip (1/4, 1/2, 1 mile, full markers, timeslip) and proving ground built (stages 2 and 3)
+- [ ] 44. Engine sound generated per layout, plays on silent, stops in background (tested where CI can)
+- [x] 45. Direction approved by Zach (keep/rewrite list 16/11/2026, then superseded by the native rebuild and the approved design doc)
+- [ ] 46. Design approved by Zach in writing (funnel gate E): design doc approved 16/11/2026; stage 1 screen previews still to approve

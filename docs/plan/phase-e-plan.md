@@ -1,4 +1,4 @@
-# Piston Forge: Phase E plan (Planning & Design)
+# Piston Forge: Phase E plan (Planning & Design) — SUPERSEDED 16/11/2026 by docs/superpowers/specs/2026-11-16-piston-forge-native-design.md
 
 Written 15/11/2026. Funnel state: Phase E, gate WAITING_FOR_DESIGN_APPROVAL. No build work
 happens until Zach approves this plan and the screen previews in writing.

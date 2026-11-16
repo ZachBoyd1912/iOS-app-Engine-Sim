@@ -1,4 +1,44 @@
 # Changelog
+## 16/11/2026 @ 03:18:49 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`. Item 45 is newly ticked: Zach set the direction and approved the design document. Items 1, 2, 5, 9 and 41-46 were reworded for the approved native design. Item 46 stays open: the design document is approved, but the stage 1 screen previews are not yet. Still open: all native building, testing, device checks and the store.
+
+### Goal
+Plan the native Swift rebuild properly before any game code: agree what the game is with Zach, research the hard technical questions, write a design he approves, and turn it into a step-by-step build plan checked by the advisor.
+
+### Added
+- **`docs/superpowers/specs/2026-11-16-piston-forge-native-design.md`, approved by Zach ("design approved").** Why: Zach asked to start over through planning, preview, approval and build. Zach set each part of it across the conversation:
+  - **The game:** an engine tuning simulator that opens on an assembled engine. The first install has every layout (I3 to W16), turbo and three supercharger types, nitrous, a real sensor set, the dyno and generated sound.
+  - **Driving:** a drag strip with ¼, ½ and 1 mile markers and a proving ground, both driven with proper simulation.
+  - **Other decisions:** no career; sound plays on silent; dark-grey theme.
+
+  The builder's own calls are marked in the document so Zach can correct them. A reviewer agent read the document as a builder would; its gaps were settled or put to Zach.
+- **`docs/research/2026-11-16-{realitykit,audio,uitest,engines}.md`:** four read-only research reports from Haiku agents, with sources. Why: decisions on 3D performance, sound, testing without a Mac and engine firing data had to rest on checked facts. Findings that changed the design:
+  - The Simulator has no motion data or haptics, so tilt steering and haptics sit behind stand-ins with an on-screen fallback.
+  - The W16's real firing order could not be verified, so the game's W16 is generic and claims no manufacturer.
+  - Mac runner minutes cost about ten times Linux.
+- **`docs/superpowers/plans/2026-11-16-piston-forge-stage-1.md`:** a 15-task plan for stage 1, revised after an advisor review. The advisor's fixes:
+  - A commit-and-push loop, because CI is the only compiler.
+  - The Mac job compiles once and tests both simulators from that build.
+  - The cross-plane V8 test pins the full bank pattern; the old version would have passed on a wrong engine.
+  - The fixture test maps old layout names.
+  - The fuelling strategy arrives in the task that needs it.
+  - The 3D engine is built before the screen previews, so Zach approves previews that show the real engine. A frame-rate `.ipa` follows the 3D task.
+  - Engine-sound WAV files come out of the cheap Linux job, so Zach can listen early.
+
+### Changed
+- **`docs/roadmap.md`:** career and economy items replaced with sandbox equivalents (no career, Zach 16/11/2026); fixtures are now plausibility ranges, not exact targets.
+- **`.zb/state.json` and `.zb/events.log`:** Zach's decisions recorded as his. The events log is corrected: the design document is approved, but gate E waits on the screen previews.
+- **`docs/plan/phase-e-plan.md`** marked superseded.
+
+### Verification
+- No code changed in this commit; the documents were read back after editing. The stage 1 plan has not yet been executed.
+
+### Files Touched
+- `docs/superpowers/specs/2026-11-16-piston-forge-native-design.md`, `docs/superpowers/plans/2026-11-16-piston-forge-stage-1.md`, `docs/research/2026-11-16-*.md` (new)
+- `docs/roadmap.md`, `docs/plan/phase-e-plan.md`, `.zb/state.json`, `.zb/events.log`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 01:58:01 IST — "claude-opus-5-5"
 
 **Project completion: 10.87%**

@@ -82,6 +82,41 @@
       "date": "2026-11-16T01:33:19+00:00",
       "decision": "Reading of the Swift decision against the approved keep list: the TypeScript code is not kept; the simulation MODEL (formulas, constants, behaviour) is ported to Swift and checked against golden fixtures exported from the TS sim. Career and interface are redesigned as planned. 3D in RealityKit (SceneKit is deprecated for new apps since WWDC 2025). TS/Capacitor code stays until the Swift sim passes the fixtures. Gate E still not passed: design approval is separate.",
       "who": "agent"
+    },
+    {
+      "date": "2026-11-16T02:13:35+00:00",
+      "decision": "Start over: the Swift version is a fresh design, not a port. Plan with planning skills, subagents and the advisor; build with the Swift skills; test; deliver an .ipa.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T02:13:35+00:00",
+      "decision": "Game concept: an engine tuning simulator. App opens on a fully assembled engine with all connections hooked up. Layouts I3, I4, V6, V8, V10, V12, W16; 60 and 90 degree V angles; flat-plane and cross-plane cranks; NA, turbo, supercharger; big injectors, nitrous; sensors (MAF, injector and others). Dyno to test, modify and upgrade. Then put the engine in a car and drive it.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T02:13:35+00:00",
+      "decision": "Driving v1: a flat open proving ground (grid-map style, our own design) with a straight, corners, skidpads and a chase camera, plus a drag strip with quarter, half and full mile variants, markers at each and distance markers the whole way up. This reverses the earlier cut of the handling lap.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T02:13:35+00:00",
+      "decision": "Car feel: proper simulation (tyre grip and slip, weight transfer, wheelspin, clutch and gears), not arcade.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T02:19:44+00:00",
+      "decision": "No career, money or unlocks in v1: a pure tuning sandbox, everything open. Build order: (1) engine view + parts + dyno + engine sound, (2) drag strip, (3) proving ground. Each stage ends with an .ipa on his phone.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T03:10:07+00:00",
+      "decision": "Stage 1 ships everything at once: all layouts incl. W16, all induction types, nitrous, full sensor set. Engine sound plays with the ringer switch on silent.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T03:11:24+00:00",
+      "decision": "\"design approved\": approved docs/superpowers/specs/2026-11-16-piston-forge-native-design.md. Simulation and physics code may start; each stage's screen code waits for its previews to be approved.",
+      "who": "zach"
     }
   ],
   "legacy_pricing": false,
