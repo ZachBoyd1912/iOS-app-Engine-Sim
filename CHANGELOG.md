@@ -1,4 +1,33 @@
 # Changelog
+## 16/11/2026 @ 15:21:43 IST — "claude-opus-5-5"
+
+**Project completion: 15.22%**
+Basis: 7 of 46 items ticked in `docs/roadmap.md`. Item 2 (engine simulation in PistonForgeKit, tested on Linux) is newly ticked: Tasks 1-7 are green, 65 tests including the dyno. Still open: sound, cars and saving, the 3D engine, the screens, device checks and the store.
+
+### Goal
+Stage 1 plan, Task 8: the engine sound. It is generated in real time from the firing order: one pulse per cylinder firing into its own bank's exhaust, shaped by rpm, load and exhaust, plus turbo whine, supercharger whine and the nitrous hiss. Listening files come out of the Linux CI job so Zach can hear every layout long before the app exists.
+
+### Added
+- **`EngineVoiceTests.swift`**, run red first:
+  - Output stays finite and within ±1 for every layout swept to redline at full boost with nitrous.
+  - An I4 at 3000 rpm pulses at 100 Hz.
+  - A flat-plane V8's bank fires evenly and a cross-plane bank unevenly.
+  - Silence when stopped, and the sound fades after stopping.
+  - Turbo whine shows in the 2-8 kHz band; load makes it louder.
+  - Voice parameters come from the engine state.
+  - Listening WAVs are written when `PF_WAV_DIR` is set: idle, a full-throttle run to the limiter and a lift, six seconds per layout, plus a twin-turbo, a Roots-blown and a nitrous V8.
+- **`Sound/EngineVoice.swift`**, and **`Sound/WavWriter.swift`** (16-bit mono WAV).
+
+### Changed
+- **`docs/roadmap.md`:** item 2 ticked.
+
+### Verification
+- Task 7 GREEN: run 43895061504 passed all 65 tests in 12 s.
+- Task 8 RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Sound/EngineVoice.swift`, `Sound/WavWriter.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineVoiceTests.swift` (new), `docs/roadmap.md`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:15:47 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -22,7 +51,7 @@ Stage 1 plan, Task 7: the dyno, a live inertia-style sweep at about 400 rpm per 
 
 ### Verification
 - Run 43894457582 did not compile. Swift Testing's `#expect` macro rejects a rethrowing call written inside it, so the checks are now computed before the `#expect`. RED: run 43894749845 on the stubs failed on the assertions (330 issues), as expected.
-- GREEN: pending.
+- GREEN: run 43895061504 passed all 65 tests in 12 s.
 
 ### Added (implementation)
 - **`DynoRun`:** holds the engine at 2000 rpm at full throttle for half a second, then lets it climb at 400 rpm/s and samples every 100 rpm. It ends at the limiter, on a failure or stall, or after 60 s.
