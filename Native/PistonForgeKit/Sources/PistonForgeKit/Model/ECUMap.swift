@@ -120,6 +120,29 @@ extension ECUMap {
         return 0.86 - 0.08 * min(1, (loadKpa - 100) / 100)
     }
 
+    /// The knock limit less what very hot intake air adds to knock, degrees: the most timing a
+    /// tune can use without the knock index reaching about 0.4.
+    static func usableTiming(_ b: EngineBuild, rpm: Double, loadKpa: Double, iatC: Double) -> Double {
+        let limit = knockLimitDegrees(b, rpm: rpm, loadKpa: loadKpa, iatC: iatC, nitrousHpPerCylinder: 0)
+        return limit - 7 * max(0, iatC - 80) * 0.01
+    }
+
+    /// The boost (psi) that gives `loadKpa` at wide-open throttle, allowing for the denser
+    /// charge being heated by compression (load = 101.3 x pressure ratio x 298 / charge K).
+    static func boostForLoad(_ b: EngineBuild, loadKpa: Double) -> Double {
+        func load(_ psi: Double) -> Double {
+            101.3 * (14.7 + psi) / 14.7 * 298 / (273 + chargeTempC(b, boostPsi: psi))
+        }
+        guard loadKpa > load(0) else { return 0 }
+        var low = 0.0
+        var high = 60.0
+        for _ in 0..<40 {
+            let middle = (low + high) / 2
+            if load(middle) < loadKpa { low = middle } else { high = middle }
+        }
+        return (low + high) / 2
+    }
+
     /// Most turbo boost (0.5 psi steps) that keeps at least 8° of knock-limited timing at low,
     /// middle and top rpm, and stays 2 psi under the head gasket's limit.
     static func knockLimitedBoost(for b: EngineBuild) -> Double {
@@ -133,7 +156,7 @@ extension ECUMap {
                 let heat = chargeTempC(b, boostPsi: psi)
                 let air = airflowGps(b, rpm: rpm, throttle: 1, boostPsi: psi, chargeTempC: heat)
                 let load = loadKpa(b, rpm: rpm, airflowGps: air)
-                return knockLimitDegrees(b, rpm: rpm, loadKpa: load, iatC: heat, nitrousHpPerCylinder: 0) >= 8
+                return usableTiming(b, rpm: rpm, loadKpa: load, iatC: heat) >= 8
             }
             if !safe { break }
             best = psi
@@ -180,10 +203,10 @@ extension ECUMap {
         let ignition: [[Double]] = loadAxis.map { (load: Double) -> [Double] in
             rpmAxis.map { (rpm: Double) -> Double in
                 // The boost that produces this load, and the charge heat that comes with it.
-                let psi: Double = max(0, (load / 101.3 - 1) * 14.7)
+                let psi: Double = boostForLoad(b, loadKpa: load)
                 let heat: Double = chargeTempC(b, boostPsi: psi)
-                let limit: Double = knockLimitDegrees(b, rpm: rpm, loadKpa: load, iatC: heat, nitrousHpPerCylinder: 0)
-                let best: Double = min(mbtDegrees(b, rpm: rpm, loadKpa: load), limit - 2)
+                let usable: Double = usableTiming(b, rpm: rpm, loadKpa: load, iatC: heat)
+                let best: Double = min(mbtDegrees(b, rpm: rpm, loadKpa: load), usable - 2)
                 return min(max(best, 0), 45)
             }
         }

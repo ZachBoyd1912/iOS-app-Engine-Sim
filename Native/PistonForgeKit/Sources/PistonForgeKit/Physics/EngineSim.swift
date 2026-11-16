@@ -277,7 +277,7 @@ public final class EngineSim {
             let heat = chargeTempC(b, boostPsi: boost)
             let air = airflowGps(b, rpm: rpm, throttle: 1, boostPsi: boost, chargeTempC: heat)
             let load = loadKpa(b, rpm: rpm, airflowGps: air)
-            if knockLimitDegrees(b, rpm: rpm, loadKpa: load, iatC: heat, nitrousHpPerCylinder: 0) < 8 { return true }
+            if ECUMap.usableTiming(b, rpm: rpm, loadKpa: load, iatC: heat) < 8 { return true }
         }
         return false
     }

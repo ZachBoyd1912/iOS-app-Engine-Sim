@@ -24,6 +24,10 @@ Act on the subagent review of Tasks 3-9. It made 13 findings: 1 marked critical,
 
 ### Verification
 - RED: run 43898492775 crashed on the non-number fitment check: "Double value cannot be converted to Int". That confirms the trap, and a crash counts as red.
+- Run 43898772518: 95 of 96 tests passed. The new sweep found four I3 and I4 builds with no knock sensor (two turbo, two Roots-blown) that knocked on the auto-base tune with no warning. A follow-up commit fixes the cause:
+  - The tune guessed each cell's charge temperature as if boost were proportional to load, ignoring how a hot charge holds less air.
+  - It also ignored the knock that very hot intake air adds.
+  - The knock sensor had been hiding both. The tune now solves for the boost behind each load and leaves room for heat knock. The turbo boost cap and the blower warning share that same "usable timing".
 - GREEN: pending.
 
 ### Fixed
@@ -44,7 +48,7 @@ Act on the subagent review of Tasks 3-9. It made 13 findings: 1 marked critical,
 
 ### Not changed (my rulings)
 - **Nitrous window decoding:** the reviewer's crash claim is tested here rather than assumed.
-- **Hand-off to the audio thread:** a lock-free parameter handoff and an \`@unchecked Sendable\` contract on \`EngineVoice\` are needed. They belong to Task 12 (\`AudioOutput\`) and are noted there.
+- **Hand-off to the audio thread:** a lock-free parameter handoff and an `@unchecked Sendable` contract on `EngineVoice` are needed. They belong to Task 12 (`AudioOutput`) and are noted there.
 - **Minor findings left as they are:**
   - EGT damage counts as lean damage.
   - The flat-plane/cross-plane test reads the firing schedule rather than the rendered sound.
