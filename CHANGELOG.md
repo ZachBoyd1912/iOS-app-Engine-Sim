@@ -18,7 +18,8 @@ Stage 1 plan, Task 3: how the engine breathes. Volumetric efficiency from the he
 - **`Physics/Breathing.swift`, `Physics/Induction.swift`.**
 
 ### Verification
-- RED: pending the CI run on the stub commit.
+- RED: run 43889226392 on the stubs failed the breathing and boost assertions. The NA-no-boost and finite-input guards passed on the zero stub, as they should.
+- GREEN: pending the run on the implementation commit.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Breathing.swift`, `Physics/Induction.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/InductionTests.swift` (new), `CHANGELOG.md`
