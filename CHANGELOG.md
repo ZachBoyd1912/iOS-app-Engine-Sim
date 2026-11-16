@@ -1,4 +1,31 @@
 # Changelog
+## 16/11/2026 @ 15:15:47 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 2 (engine simulation in PistonForgeKit) closes once the dyno is green.
+
+### Goal
+Stage 1 plan, Task 7: the dyno, a live inertia-style sweep at about 400 rpm per second from 2000 rpm to the limiter. It records torque, crank and wheel power, AFR, boost, knock and EGT, and stops with the cause if the engine breaks.
+
+### Added
+- **`DynoTests.swift`**, run red first. It replaces `GoldenFixtureTests.swift` and keeps its two tests.
+  - Every layout × NA, every turbo and every supercharger (fastest pulley) × with and without a 300 hp dry shot × smallest and largest injectors, with the boost target at its maximum, gives only finite numbers. Each run either completes or reports a failure (Review Focus 1).
+  - The old game's street, turbo and big-block presets land within ±45% of its dyno peaks.
+  - Wheel power is 15% under crank power.
+  - Samples rise in rpm from about 2000 to the limiter.
+  - A live run stepped at 60 fps matches a batch run within 2%.
+  - The sweep runs at about 400 rpm/s.
+- **`Dyno/Dyno.swift`.**
+
+### Removed
+- **`GoldenFixtureTests.swift`**, folded into `DynoTests.swift` (its deletion landed in the previous commit).
+
+### Verification
+- RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Dyno/Dyno.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/DynoTests.swift` (new), `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:10:30 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -24,7 +51,7 @@ Stage 1 plan, Task 6: the running engine. Crank speed from torque and inertia at
 ### Verification
 - RED: run 43893546445 on the stubs failed the idle, limiter, failure, warning and crank assertions (23 issues).
 - Run 43893830298: 58 of 59 passed. The one failure was in the test itself: Swift Testing's `#expect` mis-read a negated optional-chain expression, although the explanation text was there. A fix-up rewrites it as a plain variable.
-- GREEN: pending.
+- GREEN: run 43894162563 passed all 57 tests. The count fell by 2 because the fixture tests move to the dyno test file in the next commit.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/EngineSim.swift`, `Physics/Damage.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineSimTests.swift` (new), `Catalog/Layouts.swift` (layout table built once, because the 480 Hz loop reads it constantly), `CHANGELOG.md`
