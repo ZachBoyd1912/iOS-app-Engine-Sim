@@ -1,23 +1,23 @@
 name: Native iOS (Swift)
 
 # The native Swift app. Two jobs:
-#  - sim-tests (Linux, cheap): `swift test` on PistonForgeKit, the pure-Swift simulation,
-#    checked against golden fixtures exported from the TypeScript sim.
-#  - app (macOS, billed at a higher rate on private repos): generate the Xcode project,
-#    build for the Simulator, launch it and screenshot it (the only way to see the UI without
-#    a Mac), then build an unsigned .ipa for sideloading with a free Apple ID.
-# macOS runs only when Native/** or this file changes, or on demand.
+#  - sim-tests (Linux, cheap): `swift test` on PistonForgeKit, the pure-Swift simulation.
+#    Runs on every push to any branch that touches Native/ or this file.
+#  - app (macOS, about ten times the Linux price per minute): generate the Xcode project,
+#    compile once, run the UI tests on an iPhone and an iPad simulator from that one build,
+#    export their screenshots (the only way to see the screens without a Mac), then build an
+#    unsigned .ipa for sideloading. Runs only on demand or on main, and as one job, because
+#    macOS minutes are rounded up per job.
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
     paths:
       - 'Native/**'
       - '.github/workflows/native.yml'
 
 concurrency:
-  group: native-${{ github.ref }}
+  group: native-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -27,17 +27,27 @@ jobs:
   sim-tests:
     runs-on: ubuntu-latest
     container: swift:6.1
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: swift test
         working-directory: Native/PistonForgeKit
+        env:
+          PF_WAV_DIR: ${{ github.workspace }}/engine-sounds
         run: swift test
+      - name: Upload engine sounds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-sounds
+          path: engine-sounds/
+          if-no-files-found: ignore
 
   app:
     needs: sim-tests
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: macos-26
-    timeout-minutes: 40
+    timeout-minutes: 50
     defaults:
       run:
         working-directory: Native
@@ -52,30 +62,43 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build for iOS Simulator
-        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build
+      - name: Compile app and UI tests once
+        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim build-for-testing
 
-      - name: Launch in the Simulator and screenshot
+      - name: UI tests on iPhone and iPad
         run: |
-          set -x
+          set -o pipefail
           xcrun simctl list devices available
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r,l in d.items() if 'iOS' in r for x in l if x['name'].startswith('iPhone')))")
-          xcrun simctl boot "$DEVICE"
-          xcrun simctl bootstatus "$DEVICE" -b
-          xcrun simctl install "$DEVICE" build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
-          xcrun simctl launch "$DEVICE" ie.zbautomations.pistonforge
-          sleep 12
-          mkdir -p shots
-          xcrun simctl io "$DEVICE" screenshot shots/iphone-portrait.png
-          ls -l shots
+          status=0
+          for kind in iphone ipad; do
+            udid=$(xcrun simctl list devices available -j | python3 ci/pick_sim.py "$kind")
+            xcrun simctl boot "$udid" || true
+            xcrun simctl bootstatus "$udid" -b
+            xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -derivedDataPath build/sim \
+              -destination "id=$udid" -resultBundlePath "build/$kind.xcresult" test-without-building || status=1
+            mkdir -p "shots/$kind"
+            xcrun xcresulttool export attachments --path "build/$kind.xcresult" --output-path "shots/$kind" || status=1
+            python3 ci/name_attachments.py "shots/$kind"
+            xcrun simctl shutdown "$udid" || true
+          done
+          ls -lR shots
+          exit $status
 
-      - name: Upload Simulator screenshot
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: native-simulator-screenshot
+          name: native-screenshots
           path: Native/shots/
           if-no-files-found: warn
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-xcresult
+          path: Native/build/*.xcresult
+          if-no-files-found: ignore
 
       - name: Build for iPhone (unsigned)
         run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build

@@ -117,6 +117,21 @@
       "date": "2026-11-16T03:11:24+00:00",
       "decision": "\"design approved\": approved docs/superpowers/specs/2026-11-16-piston-forge-native-design.md. Simulation and physics code may start; each stage's screen code waits for its previews to be approved.",
       "who": "zach"
+    },
+    {
+      "date": "2026-11-16T14:28:30+00:00",
+      "decision": "Stage 1 plan accepted. Execution: the main session writes the Swift and pushes to CI; Haiku subagents review each task; advisor at key points.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T14:28:30+00:00",
+      "decision": "Changelog rule change approved: compile-fix commits on the same plan task share (amend) that task's changelog entry.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T14:28:30+00:00",
+      "decision": "Add an inline six (I6) to the stage 1 layouts.",
+      "who": "zach"
     }
   ],
   "legacy_pricing": false,

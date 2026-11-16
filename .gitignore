@@ -20,3 +20,5 @@ Native/*.xcodeproj/
 Native/build/
 Native/shots/
 Native/PistonForgeKit/.build/
+
+.superpowers/

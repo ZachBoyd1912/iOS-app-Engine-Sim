@@ -1,4 +1,36 @@
 # Changelog
+## 16/11/2026 @ 14:30:56 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged. This commit sets up the test pipeline; item 3 (UI tests drive the real loop) and item 22 (native CI green) stay open until the game exists and its runs are green. Still open: all native game code, previews, device checks and the store.
+
+### Goal
+Stage 1 plan, Task 0: split the native CI so cheap Linux tests run on every push to the work branch, while the expensive Mac job compiles once and runs UI tests on both an iPhone and an iPad simulator, only when asked or on `main`.
+
+### Added
+- **`Native/UITests/SmokeUITests.swift`:** launches the app, waits up to 20 s for text containing "Piston Forge" and saves a screenshot named `smoke-iphone` or `smoke-ipad`. Why: with no Mac, UI test screenshots are the only way to see the screens. This is the first one, and it proves the pipeline before real screens exist.
+- **`Native/ci/pick_sim.py`:** picks the newest iPhone 17-class and iPad Pro 13-inch simulator, falling back to any iPhone or iPad so a runner image change doesn't break the job.
+- **`Native/ci/name_attachments.py`:** renames exported screenshots to the names the tests gave them. It works loosely, because the export format on Xcode 26 is unverified (see `docs/research/2026-11-16-uitest.md`).
+- **Decisions from Zach, 16/11/2026, recorded in the spec, plan and `.zb/state.json`:**
+  - The main session writes the Swift; Haiku subagents review each task.
+  - Fix-up commits for a plan task share that task's changelog entry.
+  - An inline six (I6) joins the stage 1 layouts.
+
+### Changed
+- **`.github/workflows/native.yml`:**
+  - `sim-tests` now runs on every branch push touching `Native/` and uploads any engine sound files the tests write (from Task 8).
+  - The `app` job runs only on demand or on `main`, as one job, because Mac minutes cost about ten times Linux and are rounded up per job.
+  - It runs `build-for-testing` once, so a compile error fails in minutes, then `test-without-building` on each simulator, exports screenshots with `xcresulttool`, and keeps the `.xcresult` on failure for diagnosis.
+- **`Native/project.yml`:** adds the `PistonForgeUITests` target to the PistonForge scheme.
+- **`.gitignore`:** ignores `.superpowers/`, the plan-execution ledger.
+
+### Verification
+- Pushed to `native-stage-1`; the result of the Mac run is recorded in the next entry. Neither job has been run on this commit yet.
+
+### Files Touched
+- `.github/workflows/native.yml`, `Native/project.yml`, `Native/UITests/SmokeUITests.swift` (new), `Native/ci/pick_sim.py` (new), `Native/ci/name_attachments.py` (new)
+- `docs/superpowers/specs/2026-11-16-piston-forge-native-design.md`, `docs/superpowers/plans/2026-11-16-piston-forge-stage-1.md`, `.zb/state.json`, `.gitignore`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 03:18:49 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**

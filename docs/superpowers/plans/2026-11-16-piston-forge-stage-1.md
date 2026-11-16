@@ -25,7 +25,7 @@
   - Previews are Simulator screenshots at iPhone 6.3", iPad 13" and landscape phone.
   - `performAccessibilityAudit` passes on every screen.
 - Stage 1 has every layout at once:
-  - I3, I4, V6 60° (even fire), V6 90° (odd fire, 90/150), V8 cross-plane, V8 flat-plane, V10 72°, V12 60°, W16 (generic, even 45°, our own firing order, no manufacturer claim).
+  - I3, I4, I6 (added by Zach 16/11/2026), V6 60° (even fire), V6 90° (odd fire, 90/150), V8 cross-plane, V8 flat-plane, V10 72°, V12 60°, W16 (generic, even 45°, our own firing order, no manufacturer claim).
   - Induction: NA, turbo, and Roots, twin-screw and centrifugal superchargers.
   - Nitrous: dry and wet kits, 50–300 hp shots.
   - Sensors: MAF, MAP, IAT, wideband O2, knock, EGT, oil pressure and temperature.
@@ -42,8 +42,8 @@
 - Work branch `native-stage-1`; merged to `main` in Task 14.
 - **Task loop (no local compiler):** write the tests and the code for a task together, then make
   one commit + push per task and read the CI result. Compile-fix follow-up commits on the same
-  task are expected; they share that task's changelog entry (amend the entry, not a new one)
-  **pending Zach's OK on this rule change**. A task is done only when its CI run is green.
+  task are expected; they share that task's changelog entry (amend the entry, not a new one),
+  approved by Zach 16/11/2026. A task is done only when its CI run is green.
 
 ## Review Focus
 
@@ -85,12 +85,12 @@
 
 **Files:**
 - Create: `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift`
-- Replace: `Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift` (its `EngineLayout` moves here). The fixture test stops decoding `EngineConfig`; it decodes `layout` as a `String` and maps old ids in the test file (`i3→.i3, i4→.i4, v6→.v6_60, v8→.v8Cross, v12→.v12`), skipping cases with no match (`i6`, `v10` old geometry, `flat4`, rotaries)
+- Replace: `Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift` (its `EngineLayout` moves here). The fixture test stops decoding `EngineConfig`; it decodes `layout` as a `String` and maps old ids in the test file (`i3→.i3, i4→.i4, i6→.i6, v6→.v6_60, v8→.v8Cross, v12→.v12`), skipping cases with no match (`v10` old geometry, `flat4`, rotaries)
 - Test: `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift`
 
 **Interfaces:**
 - Produces:
-  - `enum EngineLayout: String, Codable, CaseIterable, Sendable { case i3, i4, v6_60, v6_90, v8Cross, v8Flat, v10, v12, w16 }`
+  - `enum EngineLayout: String, Codable, CaseIterable, Sendable { case i3, i4, i6, v6_60, v6_90, v8Cross, v8Flat, v10, v12, w16 }`
   - `struct LayoutSpec: Sendable { let name: String; let cylinders: Int; let banks: Int; let bankAngle: Double; let firingOrder: [Int]; let firingAngles: [Double]; let bankOf: [Int]; let crankPins: [Double] }`
     - `firingAngles` are crank degrees in 0..<720, one per firing event in order.
     - `bankOf[cyl-1]` is 0-based.
@@ -98,11 +98,11 @@
 
 - [ ] **Step 1: Write the tests** (one `@Test` each):
   - `allLayoutsFireEveryCylinderOnce`: for every layout, `Set(firingOrder) == Set(1...cylinders)` and `firingAngles.count == cylinders`.
-  - `evenFireIntervals`: for i3, i4, v6_60, v8Cross, v8Flat, v10, v12 and w16, consecutive gaps (wrapping at 720) all equal `720 / cylinders` within 0.001.
+  - `evenFireIntervals`: for i3, i4, i6, v6_60, v8Cross, v8Flat, v10, v12 and w16, consecutive gaps (wrapping at 720) all equal `720 / cylinders` within 0.001.
   - `v6_90IsOddFire`: the gaps alternate 90 and 150.
   - `flatPlaneAlternatesBanks`: for v8Flat, the `bankOf` of consecutive firings always differs.
   - `crossPlaneBankPattern`: v8Cross uses odd cylinders left (bank 0) and even right (bank 1); the bank sequence of `[1,8,4,3,6,5,7,2]` is exactly L,R,R,L,R,L,L,R.
-  - `knownOrders`: i4 `[1,3,4,2]`; v8Cross `[1,8,4,3,6,5,7,2]`; v8Flat `[1,8,2,7,4,5,3,6]` (with banks 1-4 left and 5-8 right, so it alternates L,R,L,R...).
+  - `knownOrders`: i4 `[1,3,4,2]`; i6 `[1,5,3,6,2,4]`; v8Cross `[1,8,4,3,6,5,7,2]`; v8Flat `[1,8,2,7,4,5,3,6]` (with banks 1-4 left and 5-8 right, so it alternates L,R,L,R...).
   - `w16Generic`: `name` contains no manufacturer word ("Bugatti", "VW", "Volkswagen").
 - [ ] **Step 2: Implement `Layouts.swift`.** Use the orders from the test, and from `docs/research/2026-11-16-engines.md` for the rest:
   - V10: R1-L5-R5-L2-R2-L3-R3-L4-R4-L1, 72° intervals.

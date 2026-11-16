@@ -22,6 +22,9 @@ targets:
       - path: App
     dependencies:
       - package: PistonForgeKit
+    scheme:
+      testTargets:
+        - PistonForgeUITests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ie.zbautomations.pistonforge
@@ -36,3 +39,16 @@ targets:
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.racing-games
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  PistonForgeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: PistonForge
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ie.zbautomations.pistonforge.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        TEST_TARGET_NAME: PistonForge
