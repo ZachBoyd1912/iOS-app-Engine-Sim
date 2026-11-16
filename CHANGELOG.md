@@ -21,10 +21,16 @@ Stage 1 plan, Task 7: the dyno, a live inertia-style sweep at about 400 rpm per 
 - **`GoldenFixtureTests.swift`**, folded into `DynoTests.swift` (its deletion landed in the previous commit).
 
 ### Verification
-- Run 43894457582 did not compile. Swift Testing's `#expect` macro rejects a rethrowing call written inside it, so the checks are now computed before the `#expect`. RED re-run pending.
+- Run 43894457582 did not compile. Swift Testing's `#expect` macro rejects a rethrowing call written inside it, so the checks are now computed before the `#expect`. RED: run 43894749845 on the stubs failed on the assertions (330 issues), as expected.
+- GREEN: pending.
+
+### Added (implementation)
+- **`DynoRun`:** holds the engine at 2000 rpm at full throttle for half a second, then lets it climb at 400 rpm/s and samples every 100 rpm. It ends at the limiter, on a failure or stall, or after 60 s.
+  - The holding brake scales with the engine's inertia, so it stays stable at any frame rate.
+  - `EngineSim.inertiaKgM2` is now public for the dyno.
 
 ### Files Touched
-- `Native/PistonForgeKit/Sources/PistonForgeKit/Dyno/Dyno.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/DynoTests.swift` (new), `CHANGELOG.md`
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Dyno/Dyno.swift` (new), `Physics/EngineSim.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/DynoTests.swift` (new), `CHANGELOG.md`
 
 ## 16/11/2026 @ 15:10:30 IST — "claude-opus-5-5"
 

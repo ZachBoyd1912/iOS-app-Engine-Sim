@@ -115,7 +115,8 @@ public final class EngineSim {
 
     // MARK: - Integration
 
-    private var inertia: Double {
+    /// Rotating inertia of the crank, flywheel and reciprocating parts, kg·m².
+    public var inertiaKgM2: Double {
         0.08 + 0.012 * Double(build.layout.spec.cylinders) + 0.000_03 * build.displacementCc
     }
 
@@ -129,7 +130,7 @@ public final class EngineSim {
         var opening = isRunning ? pedal : 0
         if isRunning {
             // Idle air control: a PI loop holding the idle target, scaled to the engine's size.
-            let scale = 2000 / build.displacementCc * inertia / 0.188
+            let scale = 2000 / build.displacementCc * inertiaKgM2 / 0.188
             let error = idleTargetRpm - rpm
             let idleOpening = bounded(0.08 + 0.0013 * scale * error + idleIntegral, 0...0.3)
             if pedal < idleOpening {
@@ -161,7 +162,7 @@ public final class EngineSim {
             if cutting { live.append(.overRev) }
         }
 
-        let acceleration = (torque - resistance) / inertia
+        let acceleration = (torque - resistance) / inertiaKgM2
         rpm = max(0, rpm + acceleration * h * 60 / (2 * Double.pi))
         if !isRunning && rpm < 30 { rpm = 0 }
         crank = (crank + rpm / 60 * 360 * h).truncatingRemainder(dividingBy: 720)
