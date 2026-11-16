@@ -1,4 +1,39 @@
 # Changelog
+## 16/11/2026 @ 15:44:56 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 15 (3D scenes in RealityKit) stays open until the screenshots are checked and Zach has judged the frame rate on his iPhone 13.
+
+### Goal
+Stage 1 plan, Task 10: the engine in 3D, built entirely in code from its layout and parts. The opening screen shows it idling, with the crank, pistons and rods driven by the simulation. This build then goes to Zach's iPhone 13 for a frame-rate check before more is built on it.
+
+### Added
+- **`Native/App/Engine3D/HoseMesh.swift`:** a mesh builder that merges boxes, cylinders and hoses into one mesh per part group and finish (few draws). Hoses and pipes are swept along Catmull-Rom curves with twist-free frames.
+- **`Native/App/Engine3D/EngineModelBuilder.swift`:**
+  - Block and banks at the layout's bank angle, cut away so the pistons show. A W16 is drawn as four banks.
+  - Heads and valve covers; intake plenum and runners; exhaust headers into collectors.
+  - Turbo, twin turbo and intercooler with charge piping; Roots and twin-screw blowers on top, or a centrifugal one at the side, with belts.
+  - Fuel rails and injectors, the fitted sensors, the wiring loom and the nitrous kit.
+  - A crankshaft whose throws point each cylinder to top dead centre at its firing phase.
+  - Each part group can be tapped.
+- **`Native/App/Engine3D/EngineAnimationSystem.swift`:** one RealityKit `System` that turns the crank and places every piston and rod from the crank angle, using slider-crank geometry.
+- **`Native/App/Engine3D/EngineViewport.swift`:** one-finger orbit (pitch held to 5-80°), pinch zoom, tap to select a part, and a VoiceOver label and hint.
+- **`Native/App/Preview/LaunchRoute.swift`:** `-screen`, `-layout` and `-induction` launch arguments for UI tests and screenshots.
+- **`Native/App/Theme.swift`:** every colour as a token, including the engine finishes.
+- **`Native/UITests/ScreenshotUITests.swift`:** a screenshot of every layout in 3D: twin turbo on the cross-plane V8 and the W16, a Roots blower on the flat-plane V8.
+
+### Changed
+- **`Native/App/PistonForgeApp.swift`:** opens on the cross-plane V8 idling in 3D, with its name and live rpm.
+
+### Removed
+- **`Native/App/LoopTestView.swift`**, the build-loop test screen.
+
+### Verification
+- Pending the Mac run (dispatched after the Linux fix-up run goes green).
+
+### Files Touched
+- `Native/App/Engine3D/*.swift`, `Native/App/Preview/LaunchRoute.swift`, `Native/App/Theme.swift`, `Native/UITests/ScreenshotUITests.swift` (new), `Native/App/PistonForgeApp.swift`, `Native/App/LoopTestView.swift` (deleted), `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:38:11 IST — "claude-opus-5-5"
 
 **Project completion: 17.39%**
