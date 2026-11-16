@@ -77,6 +77,8 @@ public final class EngineVoice {
     private var noiseState: UInt32 = 22_222
     private var roar = 0.0
     private var hissLow = 0.0
+    /// Samples the non-number guard had to silence (should stay 0; tests check it).
+    private(set) var nonFiniteSamples = 0
 
     public init(sampleRate: Double) {
         self.sampleRate = sampleRate > 0 && sampleRate.isFinite ? sampleRate : 44_100

@@ -27,7 +27,7 @@ TypeScript sim stays only as the reference model and fixture source until the po
 - [ ] 11. Native Xcode project generated from `Native/project.yml` (XcodeGen), builds in CI
 - [ ] 12. Haptics on game events (Core Haptics), felt on a device
 - [ ] 13. Background and resume: save on backgrounding, sound stops and comes back
-- [ ] 14. Save file with backup and a version-migration path (tested)
+- [x] 14. Save file with backup and a version-migration path (tested)
 - [ ] 15. 3D scenes in RealityKit: engine, workshop, dyno, strip
 - [ ] 16. Rotation and safe areas correct on iPhone and iPad
 - [ ] 17. Accessibility: VoiceOver labels, Dynamic Type, Reduce Motion

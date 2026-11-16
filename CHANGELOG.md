@@ -1,4 +1,33 @@
 # Changelog
+## 16/11/2026 @ 15:38:11 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`. Item 14 (save file with backup and a version-migration path, tested) is newly ticked: Task 9 went green on run 43896721518 with 86 tests. Still open: the 3D engine, the screens, wiring the game, device checks and the store.
+
+### Goal
+Act on the subagent review of Tasks 3-9. It made 13 findings: 1 marked critical, 7 important, 5 minor. Each fix gets a test that fails first.
+
+### Added
+- **`ReviewFixTests.swift`**, run red first:
+  - A reversed nitrous window in a save is treated as corrupt, not a crash. The reviewer called this a crash; I believe Swift's decoder throws instead, and this test settles it.
+  - A failed write never loses a newer-version save, and an existing `save.newer.json` is never overwritten.
+  - A tune that reads a MAF that isn't fitted warns.
+  - Hitting the rev limiter isn't reported as over-revving.
+  - Fitment of a non-number build doesn't trap.
+  - A supercharger making more boost than the fuel can take warns.
+  - Every layout × induction (both pulley ends) × three sensor sets × two fuels is either safe on the auto-base tune or already warns why not.
+  - The sound's non-number guard is never hit.
+- **Warnings** `mafMissing` and `boostTooHighForFuel`, and a non-number counter in `EngineVoice`, so the tests compile.
+
+### Changed
+- **`docs/roadmap.md`:** item 14 ticked. Task 9 GREEN recorded.
+
+### Verification
+- RED: pending.
+
+### Files Touched
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/ReviewFixTests.swift` (new), `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Damage.swift`, `Sound/EngineVoice.swift`, `docs/roadmap.md`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:26:27 IST — "claude-opus-5-5"
 
 **Project completion: 15.22%**
@@ -24,7 +53,7 @@ Stage 1 plan, Task 9: our five original car bodies, engine-bay fitment, and the 
 
 ### Verification
 - RED: run 43896358156 on the stubs failed the car, fitment and save assertions (52 issues).
-- GREEN: pending.
+- GREEN: run 43896721518 passed all 86 tests.
 
 ### Added (implementation)
 - **Five bodies:**
