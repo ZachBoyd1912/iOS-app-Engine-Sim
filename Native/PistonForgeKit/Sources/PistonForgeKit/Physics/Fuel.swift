@@ -22,7 +22,50 @@ public struct FuelResult: Equatable, Sendable {
     public let deliveredFuelGps: Double
 }
 
-/// Fuel the ECU delivers for `airflowGps` of real air. RED stub.
+/// Fuel the ECU delivers for `airflowGps` of real air.
+///
+/// The ECU fuels for the air it *measures*: the MAF reading (clipped past its maximum) or a
+/// speed-density estimate, which guesses 8% low without a MAP sensor because it cannot see
+/// manifold pressure. A wideband applies `closedLoopTrim` (limited to ±25%); without one the
+/// trim is ignored. Injectors deliver what is asked up to 85% duty, then flatten out toward
+/// 92%; the pump caps the rest. The actual AFR is the real air over the fuel delivered.
 public func deliverFuel(_ b: EngineBuild, strategy: FuelStrategy, airflowGps: Double, rpm: Double, targetAfr: Double, closedLoopTrim: Double) -> FuelResult {
-    FuelResult(commandedAfr: 0, actualAfr: 0, injectorDuty: 0, pumpLimited: false, mafClipped: false, deliveredFuelGps: 0)
+    let spec = b.fuel.spec
+    let air = bounded(airflowGps, 0...5000)
+    let target = bounded(targetAfr, 5...25, or: spec.stoichAfr * 0.85)
+
+    var measured = air * (b.sensors.map ? 1 : 0.92)
+    var clipped = false
+    if strategy == .maf, b.sensors.maf != nil {
+        let reading = mafReading(b, airflowGps: air)
+        measured = reading.gps
+        clipped = reading.clipped
+    }
+
+    let trim = b.sensors.wideband ? bounded(closedLoopTrim, -0.25...0.25) : 0
+    let wanted = measured / target * (1 + trim)
+
+    let injectorCapacity = b.parts.injectorCcMin * Double(b.layout.spec.cylinders) * spec.density / 60
+    let duty = injectorCapacity > 0 ? wanted / injectorCapacity : 1
+    var delivered = duty <= 0.85
+        ? wanted
+        : injectorCapacity * (0.85 + 0.07 * (1 - exp(-(duty - 0.85) / 0.07)))
+
+    let pumpCapacity = b.parts.pumpLph * spec.density / 3.6
+    let pumpLimited = delivered > pumpCapacity
+    delivered = min(delivered, pumpCapacity)
+
+    let actual: Double = if delivered > 1e-6 {
+        min(air / delivered, 30)
+    } else {
+        air > 0 ? 30 : target
+    }
+    return FuelResult(
+        commandedAfr: target,
+        actualAfr: actual,
+        injectorDuty: bounded(duty, 0...1, or: 1),
+        pumpLimited: pumpLimited,
+        mafClipped: clipped,
+        deliveredFuelGps: delivered
+    )
 }

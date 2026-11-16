@@ -14,9 +14,16 @@ func smoothstep(_ edge0: Double, _ edge1: Double, _ x: Double) -> Double {
     return t * t * (3 - 2 * t)
 }
 
-/// Real air mass the engine takes in, g/s. RED stub.
+/// Real air mass the engine takes in, g/s: displacement x intake strokes per second x air
+/// density (raised by boost, lowered by charge heat) x volumetric efficiency x throttle.
+/// A closed throttle still passes a 6% idle trickle.
 public func airflowGps(_ b: EngineBuild, rpm: Double, throttle: Double, boostPsi: Double, chargeTempC: Double) -> Double {
-    0
+    let speed = bounded(rpm, 0...30_000)
+    let litres = b.displacementCc / 1000
+    let pressureRatio = (14.7 + bounded(boostPsi, 0...60)) / 14.7
+    let density = 1.184 * pressureRatio * 298 / (273 + bounded(chargeTempC, -40...300, or: 25))
+    let opening = 0.06 + 0.94 * bounded(throttle, 0...1)
+    return litres * speed / 120 * density * volumetricEfficiency(b, rpm: speed) * opening
 }
 
 /// Volumetric efficiency at wide-open throttle: how well the cylinders fill, 0.35...1.15.

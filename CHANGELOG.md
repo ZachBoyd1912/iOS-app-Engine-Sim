@@ -21,7 +21,8 @@ Stage 1 plan, Task 4: fuel delivery and the sensors that feed it, so injector si
 - **`FuelResult.deliveredFuelGps`**, because combustion and the E85 check need the fuel mass.
 
 ### Verification
-- RED: pending the CI run on the stub commit.
+- RED: run 43889803624 on the stubs failed the airflow, MAF, injector, wideband, pump and E85 assertions.
+- GREEN: pending the run on the implementation commit.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Fuel.swift`, `Physics/Sensors.swift` (new), `Physics/Breathing.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/FuelSensorTests.swift` (new), `CHANGELOG.md`
