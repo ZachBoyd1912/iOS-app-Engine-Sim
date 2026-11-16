@@ -49,10 +49,19 @@ final class ScreenshotUITests: XCTestCase {
                 shot.lifetime = .keepAlways
                 add(shot)
                 if orientation == .portrait {
+                    // Collect every issue so one run shows them all.
+                    var issues: [String] = []
                     do {
-                        try app.performAccessibilityAudit()
+                        try app.performAccessibilityAudit { issue in
+                            let element = issue.element?.identifier ?? issue.element?.label ?? "-"
+                            issues.append("\(issue.compactDescription) [\(element)]")
+                            return true
+                        }
                     } catch {
-                        XCTFail("\(screen) accessibility audit: \(error)")
+                        issues.append("audit error: \(error)")
+                    }
+                    if !issues.isEmpty {
+                        XCTFail("\(screen) accessibility (\(issues.count)): " + issues.joined(separator: " | "))
                     }
                 }
                 app.terminate()

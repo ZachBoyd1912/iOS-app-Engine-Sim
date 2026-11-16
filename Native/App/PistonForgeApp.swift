@@ -92,6 +92,7 @@ struct EngineHomeView: View {
             .padding(.top, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.engine")
         .task { await driver.run() }
     }

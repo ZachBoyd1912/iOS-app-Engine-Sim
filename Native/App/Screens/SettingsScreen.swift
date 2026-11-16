@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Units, controls, sound, haptics, quality, and a reset that can be undone.
 struct SettingsScreen: View {
-    @Binding var settings: Settings
+    @Binding var settings: PistonForgeKit.Settings
     var preview = false
     var onReset: () -> Void = {}
 
@@ -14,20 +14,20 @@ struct SettingsScreen: View {
             }
             Section("Units") {
                 Picker("Units", selection: $settings.units) {
-                    Text("Metric (km/h, Nm)").tag(Settings.Units.metric)
-                    Text("Imperial (mph, lb-ft)").tag(Settings.Units.imperial)
+                    Text("Metric (km/h, Nm)").tag(PistonForgeKit.Settings.Units.metric)
+                    Text("Imperial (mph, lb-ft)").tag(PistonForgeKit.Settings.Units.imperial)
                 }
                 .pickerStyle(.menu)
             }
             Section {
                 Picker("Steering", selection: $settings.steering) {
-                    Text("Tilt the phone").tag(Settings.Steering.tilt)
-                    Text("On-screen buttons").tag(Settings.Steering.touch)
+                    Text("Tilt the phone").tag(PistonForgeKit.Settings.Steering.tilt)
+                    Text("On-screen buttons").tag(PistonForgeKit.Settings.Steering.touch)
                 }
                 .pickerStyle(.menu)
                 Picker("Gears", selection: $settings.gears) {
-                    Text("Automatic").tag(Settings.Gears.automatic)
-                    Text("Paddles").tag(Settings.Gears.paddles)
+                    Text("Automatic").tag(PistonForgeKit.Settings.Gears.automatic)
+                    Text("Paddles").tag(PistonForgeKit.Settings.Gears.paddles)
                 }
                 .pickerStyle(.menu)
             } header: { Text("Driving") } footer: {
@@ -37,9 +37,9 @@ struct SettingsScreen: View {
                 Toggle("Engine sound", isOn: $settings.sound)
                 Toggle("Haptics", isOn: $settings.haptics)
                 Picker("3D quality", selection: $settings.quality) {
-                    Text("Low (cooler, longer battery)").tag(Settings.Quality.low)
-                    Text("Medium").tag(Settings.Quality.medium)
-                    Text("High").tag(Settings.Quality.high)
+                    Text("Low (cooler, longer battery)").tag(PistonForgeKit.Settings.Quality.low)
+                    Text("Medium").tag(PistonForgeKit.Settings.Quality.medium)
+                    Text("High").tag(PistonForgeKit.Settings.Quality.high)
                 }
                 .pickerStyle(.menu)
             } header: { Text("Sound and feel") } footer: {
@@ -58,6 +58,7 @@ struct SettingsScreen: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Settings")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.settings")
     }
 }

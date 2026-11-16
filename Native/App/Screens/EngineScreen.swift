@@ -28,6 +28,7 @@ struct EngineScreen: View {
             .padding(.horizontal, Theme.Space.l)
             .padding(.vertical, Theme.Space.s)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.engine")
     }
 

@@ -69,6 +69,7 @@ struct TuneScreen: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Tune")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.tune")
     }
 

@@ -52,6 +52,7 @@ struct GarageSheet: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Garage")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.garage")
     }
 }

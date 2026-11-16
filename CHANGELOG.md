@@ -25,10 +25,19 @@ Stage 1 plan, Task 11: preview every screen with sample data, for Zach to approv
 - **`ScreenshotUITests.testEveryScreen`:** every screen, portrait plus landscape on iPhone, with `performAccessibilityAudit`.
 
 ### Verification
-- Pending the Mac run, which is dispatched after the 3D-engine run finishes so the two don't cancel each other.
+- Pending one Mac run that covers both this task and Task 10.
+- Before that run, the advisor caught three problems, now fixed:
+  - **No phone build when a test failed:** the CI skipped the phone build whenever a UI test failed. It now always builds the `.ipa` and fails the job only at the end.
+  - **Name clash:** `Settings` is a SwiftUI type name too, so the screen now names `PistonForgeKit.Settings`.
+  - **Screen identifiers:** each screen's identifier now sits on a containing element, so it doesn't hide its children's identifiers.
+- **Other CI changes:**
+  - Dispatch inputs to run one UI test on one device during fix-up rounds, which saves Mac minutes.
+  - The audit lists every issue in one pass.
+  - The `.xcresult` is always uploaded.
+  - The Simulator `.app` is kept as an artifact, for a live-streaming service if Zach picks one.
 
 ### Files Touched
-- `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`
+- `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `.github/workflows/native.yml`, `CHANGELOG.md`
 
 ## 16/11/2026 @ 15:44:56 IST — "claude-opus-5-5"
 

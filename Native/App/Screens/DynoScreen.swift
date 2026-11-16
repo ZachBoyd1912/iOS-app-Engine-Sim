@@ -52,6 +52,7 @@ struct DynoScreen: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Dyno")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.dyno")
     }
 

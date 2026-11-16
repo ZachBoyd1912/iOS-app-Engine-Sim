@@ -11,6 +11,17 @@ name: Native iOS (Swift)
 
 on:
   workflow_dispatch:
+    inputs:
+      only_testing:
+        description: 'Run only this UI test (e.g. PistonForgeUITests/ScreenshotUITests/testEveryScreen); empty runs all'
+        required: false
+        default: ''
+      devices:
+        description: 'Simulators to test on'
+        required: false
+        default: 'both'
+        type: choice
+        options: [both, iphone, ipad]
   push:
     paths:
       - 'Native/**'
@@ -67,23 +78,33 @@ jobs:
         run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim build-for-testing
 
       - name: UI tests on iPhone and iPad
+        id: uitests
+        env:
+          ONLY_TESTING: ${{ github.event.inputs.only_testing }}
+          DEVICES: ${{ github.event.inputs.devices || 'both' }}
         run: |
           set -o pipefail
           xcrun simctl list devices available
           status=0
-          for kind in iphone ipad; do
+          kinds="iphone ipad"
+          [ "$DEVICES" = "iphone" ] && kinds="iphone"
+          [ "$DEVICES" = "ipad" ] && kinds="ipad"
+          only=""
+          [ -n "$ONLY_TESTING" ] && only="-only-testing:$ONLY_TESTING"
+          for kind in $kinds; do
             udid=$(xcrun simctl list devices available -j | python3 ci/pick_sim.py "$kind")
             xcrun simctl boot "$udid" || true
             xcrun simctl bootstatus "$udid" -b
             xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -derivedDataPath build/sim \
-              -destination "id=$udid" -resultBundlePath "build/$kind.xcresult" test-without-building || status=1
+              -destination "id=$udid" -resultBundlePath "build/$kind.xcresult" $only test-without-building || status=1
             mkdir -p "shots/$kind"
             xcrun xcresulttool export attachments --path "build/$kind.xcresult" --output-path "shots/$kind" || status=1
             python3 ci/name_attachments.py "shots/$kind"
             xcrun simctl shutdown "$udid" || true
           done
           ls -lR shots
-          exit $status
+          # The phone build below still runs when a test fails; the last step fails the job.
+          echo "status=$status" >> "$GITHUB_OUTPUT"
 
       - name: Upload screenshots
         if: always()
@@ -93,8 +114,8 @@ jobs:
           path: Native/shots/
           if-no-files-found: warn
 
-      - name: Upload test results on failure
-        if: failure()
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-xcresult
@@ -118,3 +139,16 @@ jobs:
           name: PistonForge-native-unsigned-ipa
           path: Native/build/ipa/PistonForge-native-unsigned.ipa
           if-no-files-found: error
+
+      - name: Upload Simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: PistonForge-simulator-app
+          path: Native/build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
+          if-no-files-found: warn
+
+      - name: Fail if any UI test failed
+        if: steps.uitests.outputs.status != '0'
+        run: |
+          echo "UI tests failed: see the native-xcresult artifact and the screenshots."
+          exit 1

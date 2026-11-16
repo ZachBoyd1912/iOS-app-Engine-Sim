@@ -98,6 +98,7 @@ struct PartsScreen: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Parts")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.parts")
     }
 

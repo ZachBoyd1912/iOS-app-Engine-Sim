@@ -79,6 +79,7 @@ struct CarScreen: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Car")
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.car")
     }
 
