@@ -1,4 +1,28 @@
 # Changelog
+## 16/11/2026 @ 14:46:06 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 3: how the engine breathes. Volumetric efficiency from the head, cams, intake and exhaust, and boost from each induction type: turbo spool with lag and a wastegate, and three supercharger shapes with their drive loss.
+
+### Added
+- **`InductionTests.swift`**, run red first:
+  - VE stays in 0.35-1.15 with one peak below redline, for every layout at every cam and head level.
+  - Bigger cams move the peak up and lose low-rpm fill.
+  - Turbos lag, and a large turbo spools later than a small one; the wastegate holds the target.
+  - A Roots blower is flat, a centrifugal one rises with rpm, and a smaller pulley makes more boost.
+  - Superchargers cost crank power; NA engines make no boost.
+  - NaN or infinite inputs never produce a non-number (Review Focus 1).
+- **`Physics/Breathing.swift`, `Physics/Induction.swift`.**
+
+### Verification
+- RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Breathing.swift`, `Physics/Induction.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/InductionTests.swift` (new), `CHANGELOG.md`
+
 ## 16/11/2026 @ 14:39:38 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -15,7 +39,7 @@ Stage 1 plan, Task 2: the parts catalogue and the engine build, the one record e
 
 ### Verification
 - RED: run 43888069232 on the stubs failed on the assertions (starter sizes, sanitising, envelope), as expected.
-- GREEN: pending the run on the implementation commit.
+- GREEN: run 43888893361 passed all 18 tests on Linux.
 
 ### Changed
 - **`.github/workflows/native.yml`:** only the Mac job cancels an older run on the same branch. Why: a quick second push was cancelling the Linux result of the first, so a commit could go untested.
