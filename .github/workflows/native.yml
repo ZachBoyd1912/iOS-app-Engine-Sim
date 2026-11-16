@@ -22,6 +22,12 @@ on:
         default: 'both'
         type: choice
         options: [both, iphone, ipad]
+      runner:
+        description: 'macOS runner (GitHub sometimes has no arm64 capacity; Intel is the fallback)'
+        required: false
+        default: 'macos-26'
+        type: choice
+        options: [macos-26, macos-15, macos-15-intel]
   push:
     paths:
       - 'Native/**'
@@ -53,8 +59,8 @@ jobs:
   app:
     needs: sim-tests
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    runs-on: macos-26
-    timeout-minutes: 50
+    runs-on: ${{ github.event.inputs.runner || 'macos-26' }}
+    timeout-minutes: 60
     # Only the Mac job cancels an older run on the same branch; Linux runs are cheap and each
     # commit's result is kept.
     concurrency:
@@ -70,6 +76,7 @@ jobs:
         run: |
           brew install xcodegen
           xcodebuild -version
+          uname -m
 
       - name: Generate Xcode project
         run: xcodegen generate

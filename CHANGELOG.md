@@ -35,6 +35,7 @@ Stage 1 plan, Task 11: preview every screen with sample data, for Zach to approv
   - The audit lists every issue in one pass.
   - The `.xcresult` is always uploaded.
   - The Simulator `.app` is kept as an artifact, for a live-streaming service if Zach picks one.
+- **Runs 43901298051 and 43902770109:** GitHub never assigned a Mac ("not acquired by Runner" and "capacity constraints" on macOS arm64), twice for 15 minutes; no minutes were charged. A dispatch input now picks the runner (`macos-26`, `macos-15` or `macos-15-intel`) so a capacity shortage doesn't block the work.
 
 ### Files Touched
 - `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `.github/workflows/native.yml`, `CHANGELOG.md`
