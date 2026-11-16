@@ -44,19 +44,121 @@ public struct EngineBuild: Codable, Equatable, Identifiable, Sendable {
         self.ecu = ecu
     }
 
-    // RED stubs below: replaced by the implementation in the next commit.
+    /// A sensible stock, naturally aspirated build for each layout: the engine the app opens on.
     public static func starter(_ layout: EngineLayout) -> EngineBuild {
-        EngineBuild(
-            name: "", layout: layout, bore: 0, stroke: 0, compression: 0, rodRatio: 0, induction: .natural,
-            fuel: .pump95, parts: PartChoices(injectorCcMin: 0, pumpLph: 0),
-            sensors: SensorSet(maf: nil, map: false, iat: false, wideband: false, knock: false, egt: false, oil: false),
-            nitrous: nil, ecu: ECUMap()
+        let (bore, stroke, compression): (Double, Double, Double) = switch layout {
+        case .i3: (75, 84, 10.5)
+        case .i4: (86, 86, 10)
+        case .i6: (86, 86, 10)
+        case .v6_60: (89, 80, 10)
+        case .v6_90: (96, 86, 9.5)
+        case .v8Cross: (101.6, 92, 10)
+        case .v8Flat: (94, 72, 11)
+        case .v10: (92, 75, 11)
+        case .v12: (89, 80, 10.5)
+        case .w16: (86, 86, 9)
+        }
+        let cylinders = Double(layout.spec.cylinders)
+        let perCylinderCc = Double.pi / 4 * bore * bore * stroke / 1000
+        // Injectors sized with headroom for the stock engine; the pump feeds them with margin.
+        let injector = (perCylinderCc * 0.65 / 10).rounded() * 10
+        let pump = (max(190, injector * cylinders * 60 / 1000 * 1.5) / 5).rounded() * 5
+        var build = EngineBuild(
+            name: "",
+            layout: layout,
+            bore: bore,
+            stroke: stroke,
+            compression: compression,
+            rodRatio: 1.65,
+            induction: .natural,
+            fuel: .pump95,
+            parts: PartChoices(injectorCcMin: injector, pumpLph: pump),
+            sensors: SensorSet(maf: nil, map: true, iat: true, wideband: false, knock: true, egt: false, oil: true),
+            nitrous: nil,
+            ecu: ECUMap()
         )
+        // Smallest MAF that reads the stock engine's peak airflow with 15% to spare.
+        let peakAirGps = build.displacementCc / 1000 * build.mechanicalRedline / 120 * 1.2
+        build.sensors.maf = MafSize.allCases.first { $0.maxGps >= peakAirGps * 1.15 } ?? .xl
+        build.name = "\(layout.spec.name) \(String(format: "%.1f", build.displacementCc / 1000))"
+        return build
     }
 
-    public func sanitized() -> EngineBuild { self }
-    public var displacementCc: Double { 0 }
-    public var meanPistonSpeedAtRedline: Double { 0 }
-    public var mechanicalRedline: Double { 0 }
-    public var envelopeMm: (length: Double, width: Double, height: Double) { (0, 0, 0) }
+    /// The same build with every number inside its safe range. Non-numbers (NaN, infinity),
+    /// from a corrupt save or a bad slider, fall back to the stock value for the layout.
+    public func sanitized() -> EngineBuild {
+        let stock = EngineBuild.starter(layout)
+        var clean = self
+        clean.bore = Self.clamp(bore, Self.boreRange, fallback: stock.bore)
+        clean.stroke = Self.clamp(stroke, Self.strokeRange, fallback: stock.stroke)
+        clean.compression = Self.clamp(compression, Self.compressionRange, fallback: stock.compression)
+        clean.rodRatio = Self.clamp(rodRatio, Self.rodRatioRange, fallback: stock.rodRatio)
+        if case .supercharger(let kind, let pulley) = induction {
+            clean.induction = .supercharger(kind, pulley: Self.clamp(pulley, SuperchargerKind.pulleyRange, fallback: 1))
+        }
+        let levels = 0...PartChoices.maxLevel
+        let paths: [WritableKeyPath<PartChoices, Int>] = [\.head, \.cams, \.intake, \.exhaust, \.internals, \.valves, \.gasket, \.intercooler]
+        for path in paths {
+            clean.parts[keyPath: path] = min(max(parts[keyPath: path], levels.lowerBound), levels.upperBound)
+        }
+        clean.parts.injectorCcMin = Self.clamp(parts.injectorCcMin, PartChoices.injectorRange, fallback: stock.parts.injectorCcMin)
+        clean.parts.pumpLph = Self.clamp(parts.pumpLph, PartChoices.pumpRange, fallback: stock.parts.pumpLph)
+        if var kit = nitrous {
+            kit.shotHp = Self.clamp(kit.shotHp, NitrousKit.shotRange, fallback: 100)
+            kit.armRpm = Self.clamp(kit.armRpm, NitrousKit.armRpmRange, fallback: 3000)
+            clean.nitrous = kit
+        }
+        return clean
+    }
+
+    static func clamp(_ value: Double, _ range: ClosedRange<Double>, fallback: Double) -> Double {
+        guard value.isFinite else { return fallback }
+        return min(max(value, range.lowerBound), range.upperBound)
+    }
+
+    /// Swept volume in cc: pi/4 x bore^2 x stroke x cylinders (mm to cc).
+    public var displacementCc: Double {
+        Double.pi / 4 * bore * bore * stroke * Double(layout.spec.cylinders) / 1000
+    }
+
+    /// Mean piston speed at the mechanical redline, m/s.
+    public var meanPistonSpeedAtRedline: Double {
+        2 * stroke / 1000 * mechanicalRedline / 60
+    }
+
+    /// Safe mean piston speed: 20 m/s on stock internals, 1.5 m/s more per upgrade level.
+    var safePistonSpeed: Double { 20 + 1.5 * Double(parts.internals) }
+
+    /// Highest safe rpm, set by piston speed and rounded down to 50 rpm, within 5000-10000.
+    public var mechanicalRedline: Double {
+        let raw = safePistonSpeed * 60 / (2 * max(stroke, 1) / 1000)
+        return min(max((raw / 50).rounded(.down) * 50, 5000), 10000)
+    }
+
+    /// Outside size of the engine with its induction, in mm, for fitting it in a car's bay.
+    public var envelopeMm: (length: Double, width: Double, height: Double) {
+        let spec = layout.spec
+        let pitch = bore + 12
+        let perBank = Double(spec.cylinders / max(spec.banks, 1))
+        let length = perBank * pitch + (spec.banks > 1 ? pitch / 2 : 0) + 260
+        // Crank centre to the top of the head along one bank.
+        let deck = stroke * rodRatio + stroke / 2 + bore * 0.6 + 120
+        var width: Double
+        var height: Double
+        if spec.banks == 1 {
+            width = 420 + stroke * 1.2
+            height = deck + stroke + 180
+        } else {
+            let half = spec.bankAngle / 2 * Double.pi / 180
+            width = 2 * deck * sin(half) + 380 + (spec.banks > 2 ? 220 : 0)
+            height = deck * cos(half) + stroke + 220
+        }
+        switch induction {
+        case .natural: break
+        case .turbo(let size): width += size == .twin ? 260 : 180
+        case .supercharger(.centrifugal, _): width += 160
+        case .supercharger: height += 200
+        }
+        return (length, width, height)
+    }
 }

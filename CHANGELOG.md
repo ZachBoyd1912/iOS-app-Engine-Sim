@@ -14,10 +14,14 @@ Stage 1 plan, Task 2: the parts catalogue and the engine build, the one record e
 - **`EngineBuildTests.swift`**, run red first. Beyond the plan, two tests pin the first Review Focus item: `sanitized()` replaces NaN and infinity with safe values, and clamps nitrous shot, arming rpm and supercharger pulley. Why: a corrupt save or a slider bug must never feed non-numbers into the model.
 
 ### Verification
-- RED: pending the CI run on the stub commit.
+- RED: run 43888069232 on the stubs failed on the assertions (starter sizes, sanitising, envelope), as expected.
+- GREEN: pending the run on the implementation commit.
+
+### Changed
+- **`.github/workflows/native.yml`:** only the Mac job cancels an older run on the same branch. Why: a quick second push was cancelling the Linux result of the first, so a commit could go untested.
 
 ### Files Touched
-- `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Parts.swift`, `Model/EngineBuild.swift`, `Model/ECUMap.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineBuildTests.swift` (new), `CHANGELOG.md`
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Parts.swift`, `Model/EngineBuild.swift`, `Model/ECUMap.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineBuildTests.swift` (new), `.github/workflows/native.yml`, `CHANGELOG.md`
 
 ## 16/11/2026 @ 14:32:12 IST — "claude-opus-5-5"
 

@@ -16,10 +16,6 @@ on:
       - 'Native/**'
       - '.github/workflows/native.yml'
 
-concurrency:
-  group: native-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
@@ -48,6 +44,11 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: macos-26
     timeout-minutes: 50
+    # Only the Mac job cancels an older run on the same branch; Linux runs are cheap and each
+    # commit's result is kept.
+    concurrency:
+      group: native-app-${{ github.ref }}
+      cancel-in-progress: true
     defaults:
       run:
         working-directory: Native
