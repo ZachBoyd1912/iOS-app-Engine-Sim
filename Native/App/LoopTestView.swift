@@ -7,7 +7,8 @@ import UIKit
 /// app launches, RealityKit renders a non-AR scene, the PistonForgeKit package links, and the
 /// approved theme direction (dark grey, never black, with colour hues) shows on a real phone.
 struct LoopTestView: View {
-    private let starter = EngineConfig(layout: .i4, name: "Salvage 1.6", bore: 78, stroke: 82, compression: 9.5)
+    /// 78 mm bore, 82 mm stroke, cylinder count from the Swift layout table.
+    private let displacement = Double.pi / 4 * 78 * 78 * 82 * Double(EngineLayout.i4.spec.cylinders) / 1000
 
     var body: some View {
         ZStack {
@@ -32,7 +33,7 @@ struct LoopTestView: View {
                     .foregroundStyle(Theme.accent)
                 Text("Piston Forge")
                     .font(.largeTitle.weight(.bold))
-                Text("\(starter.name): \(Int(EngineModel.displacementCc(starter).rounded())) cc, computed in Swift")
+                Text("I4 78x82: \(Int(displacement.rounded())) cc, computed in Swift")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()

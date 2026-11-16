@@ -1,4 +1,29 @@
 # Changelog
+## 16/11/2026 @ 14:32:12 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 2 (engine simulation in PistonForgeKit) stays open until the whole model is in. Still open: all native game code, previews, device checks and the store.
+
+### Goal
+Stage 1 plan, Task 1: the table of engine layouts the whole game reads (cylinder count, banks, bank angle, firing order, firing angles and crank pins), for I3, I4, I6, V6 60° and 90°, V8 cross-plane and flat-plane, V10, V12 and W16.
+
+### Added
+- **`Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift`**, written first and run red against an empty stub: every layout fires each cylinder once; even intervals for all even-fire layouts; the 90° V6 alternates 90/150; the flat-plane V8 alternates banks; the cross-plane V8 has the exact L,R,R,L,R,L,L,R pattern; known firing orders; the W16 makes no manufacturer claim; bank angles.
+- **`Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift`:** `EngineLayout` and `LayoutSpec`.
+
+### Changed
+- **`GoldenFixtureTests.swift`:** maps the old game's layout ids to the new ones and skips the rotary, which the new game drops. Why: the fixtures stay a plausibility check without forcing the old layout list back in.
+- **`Native/App/LoopTestView.swift`:** reads the cylinder count from the new table (the old `EngineConfig` is gone).
+
+### Removed
+- **`Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift`**, the temporary loop-test model, replaced by the layout table.
+
+### Verification
+- RED: pushed with an empty stub; the CI result is recorded when this entry is amended with the implementation.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/GoldenFixtureTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift` (deleted), `Native/App/LoopTestView.swift`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 14:30:56 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
