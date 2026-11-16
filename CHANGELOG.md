@@ -23,6 +23,7 @@ Stage 1 plan, Task 6: the running engine. Crank speed from torque and inertia at
 
 ### Verification
 - RED: run 43893546445 on the stubs failed the idle, limiter, failure, warning and crank assertions (23 issues).
+- Run 43893830298: 58 of 59 passed. The one failure was in the test itself: Swift Testing's `#expect` mis-read a negated optional-chain expression, although the explanation text was there. A fix-up rewrites it as a plain variable.
 - GREEN: pending.
 
 ### Files Touched

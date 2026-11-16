@@ -65,7 +65,8 @@ func limiterCaps(layout: EngineLayout) {
         if failure == nil { failure = state.failure }
     }
     #expect(failure == .leanMelt)
-    #expect(!(failure?.explanation ?? "").isEmpty)
+    let explanation = failure?.explanation ?? ""
+    #expect(explanation.count > 20)
     #expect(!sim.isRunning, "a failed engine stops")
     sim.start()
     #expect(!sim.isRunning, "and will not restart until repaired")
