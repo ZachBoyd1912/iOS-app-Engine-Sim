@@ -86,7 +86,8 @@ struct GoldenFile: Decodable {
 }
 
 @Test func fixturesLoad() throws {
-    #expect(try GoldenFile.load().cases.count >= 18)
+    let golden = try GoldenFile.load()
+    #expect(golden.cases.count >= 18)
 }
 
 @Test func displacementMatchesTypeScript() throws {
@@ -135,9 +136,11 @@ func everyCombinationStaysFinite(layout: EngineLayout) {
                 #expect(!result.samples.isEmpty || result.failure != nil, "\(tag): no samples and no failure")
                 for sample in result.samples {
                     let values = [sample.rpm, sample.torqueNm, sample.powerHp, sample.wheelHp, sample.afr, sample.boostPsi, sample.knockIndex, sample.egtC]
-                    #expect(values.allSatisfy(\.isFinite), "\(tag) at \(sample.rpm)")
+                    let finite = values.allSatisfy { $0.isFinite }
+                    #expect(finite, "\(tag) at \(sample.rpm)")
                 }
-                #expect([result.peakHp, result.peakHpRpm, result.peakTorqueNm, result.peakTorqueRpm].allSatisfy(\.isFinite), "\(tag)")
+                let peaksFinite = [result.peakHp, result.peakHpRpm, result.peakTorqueNm, result.peakTorqueRpm].allSatisfy { $0.isFinite }
+                #expect(peaksFinite, "\(tag)")
             }
         }
     }
@@ -155,7 +158,8 @@ func everyCombinationStaysFinite(layout: EngineLayout) {
 @Test func samplesAscendInRpm() {
     let result = runDynoToEnd(EngineBuild.starter(.i6))
     #expect(result.samples.count >= 20)
-    #expect(zip(result.samples, result.samples.dropFirst()).allSatisfy { $0.rpm < $1.rpm })
+    let ascending = zip(result.samples, result.samples.dropFirst()).allSatisfy { $0.rpm < $1.rpm }
+    #expect(ascending)
     let first = result.samples.first?.rpm ?? 0
     let last = result.samples.last?.rpm ?? 0
     #expect(first >= 1900 && first <= 2300, "starts near 2000: \(first)")

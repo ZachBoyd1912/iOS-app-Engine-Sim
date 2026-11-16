@@ -21,7 +21,7 @@ Stage 1 plan, Task 7: the dyno, a live inertia-style sweep at about 400 rpm per 
 - **`GoldenFixtureTests.swift`**, folded into `DynoTests.swift` (its deletion landed in the previous commit).
 
 ### Verification
-- RED: pending the CI run on the stub commit.
+- Run 43894457582 did not compile. Swift Testing's `#expect` macro rejects a rethrowing call written inside it, so the checks are now computed before the `#expect`. RED re-run pending.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Dyno/Dyno.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/DynoTests.swift` (new), `CHANGELOG.md`
