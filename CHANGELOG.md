@@ -23,7 +23,13 @@ Stage 1 plan, Task 8: the engine sound. It is generated in real time from the fi
 
 ### Verification
 - Task 7 GREEN: run 43895061504 passed all 65 tests in 12 s.
-- Task 8 RED: pending the CI run on the stub commit.
+- Task 8 RED: run 43895503974 on the stubs failed the sound assertions (18 issues).
+- Before porting, a Python prototype of the synthesis (scratchpad) checked the main tests:
+  - An I4 at 3000 rpm pulses at 100.0 Hz.
+  - At 15 psi, turbo whine is about 400× stronger in the 2-8 kHz band.
+  - A V8 at full throttle peaks below 0.7.
+  - Heavy load is 4× louder than light load.
+- GREEN: pending.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Sound/EngineVoice.swift`, `Sound/WavWriter.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineVoiceTests.swift` (new), `docs/roadmap.md`, `CHANGELOG.md`
