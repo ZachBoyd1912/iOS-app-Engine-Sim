@@ -22,10 +22,11 @@ Stage 1 plan, Task 6: the running engine. Crank speed from torque and inertia at
 - **`Physics/EngineSim.swift`:** `EngineState` and `EngineSim`.
 
 ### Verification
-- RED: pending the CI run on the stub commit.
+- RED: run 43893546445 on the stubs failed the idle, limiter, failure, warning and crank assertions (23 issues).
+- GREEN: pending.
 
 ### Files Touched
-- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/EngineSim.swift`, `Physics/Damage.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineSimTests.swift` (new), `CHANGELOG.md`
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/EngineSim.swift`, `Physics/Damage.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineSimTests.swift` (new), `Catalog/Layouts.swift` (layout table built once, because the 480 Hz loop reads it constantly), `CHANGELOG.md`
 
 ## 16/11/2026 @ 15:01:31 IST — "claude-opus-5-5"
 

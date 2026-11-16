@@ -24,7 +24,12 @@ public struct LayoutSpec: Sendable {
 }
 
 extension EngineLayout {
-    public var spec: LayoutSpec {
+    /// Built once; the simulation reads it hundreds of times a second.
+    private static let table: [EngineLayout: LayoutSpec] = Dictionary(uniqueKeysWithValues: allCases.map { ($0, $0.makeSpec()) })
+
+    public var spec: LayoutSpec { Self.table[self] ?? makeSpec() }
+
+    private func makeSpec() -> LayoutSpec {
         switch self {
         case .i3:
             LayoutSpec.make(name: "Inline 3", bankAngle: 0, order: [1, 2, 3], gaps: [240], bank: { _ in 0 })
