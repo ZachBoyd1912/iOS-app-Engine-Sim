@@ -19,7 +19,8 @@ Stage 1 plan, Task 1: the table of engine layouts the whole game reads (cylinder
 - **`Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift`**, the temporary loop-test model, replaced by the layout table.
 
 ### Verification
-- RED: pushed with an empty stub; the CI result is recorded when this entry is amended with the implementation.
+- RED: run 43886763674 on the empty stub failed on the layout assertions (no compile error), as expected.
+- GREEN: pending the run on the implementation commit.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/GoldenFixtureTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift` (deleted), `Native/App/LoopTestView.swift`, `CHANGELOG.md`
