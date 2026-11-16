@@ -24,9 +24,19 @@ public struct CarSpec: Sendable {
 public enum CarBody: String, Codable, CaseIterable, Sendable {
     case hatch, coupe, muscle, pickup, super_
 
-    /// RED stub.
     public var spec: CarSpec {
-        CarSpec(name: "", drivetrain: .rwd, massKg: 0, bayMm: (0, 0, 0), wheelbaseM: 0, cgHeightM: 0, frontWeight: 0, cdA: 0)
+        switch self {
+        case .hatch:
+            CarSpec(name: "Pocket Hatch", drivetrain: .fwd, massKg: 1050, bayMm: (720, 760, 700), wheelbaseM: 2.5, cgHeightM: 0.52, frontWeight: 0.62, cdA: 0.68)
+        case .coupe:
+            CarSpec(name: "Grand Coupe", drivetrain: .rwd, massKg: 1350, bayMm: (950, 950, 700), wheelbaseM: 2.7, cgHeightM: 0.48, frontWeight: 0.52, cdA: 0.62)
+        case .muscle:
+            CarSpec(name: "Muscle", drivetrain: .rwd, massKg: 1550, bayMm: (900, 1050, 820), wheelbaseM: 2.85, cgHeightM: 0.53, frontWeight: 0.56, cdA: 0.78)
+        case .pickup:
+            CarSpec(name: "Pickup", drivetrain: .rwd, massKg: 1850, bayMm: (1000, 1100, 900), wheelbaseM: 3.3, cgHeightM: 0.7, frontWeight: 0.55, cdA: 1.1)
+        case .super_:
+            CarSpec(name: "Mid-engine Super", drivetrain: .awd, massKg: 1400, bayMm: (1000, 1400, 720), wheelbaseM: 2.7, cgHeightM: 0.42, frontWeight: 0.42, cdA: 0.58)
+        }
     }
 }
 

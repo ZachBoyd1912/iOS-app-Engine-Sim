@@ -23,7 +23,20 @@ Stage 1 plan, Task 9: our five original car bodies, engine-bay fitment, and the 
 - **`.gitignore`:** ignores Sideloadly's log, which it writes into the folder it was started from.
 
 ### Verification
-- RED: pending the CI run on the stub commit.
+- RED: run 43896358156 on the stubs failed the car, fitment and save assertions (52 issues).
+- GREEN: pending.
+
+### Added (implementation)
+- **Five bodies:**
+  - Pocket Hatch: front-wheel drive, 1050 kg.
+  - Grand Coupe: rear-wheel drive, 1350 kg.
+  - Muscle: rear-wheel drive, 1550 kg.
+  - Pickup: rear-wheel drive, 1850 kg.
+  - Mid-engine Super: all-wheel drive, 1400 kg.
+
+  Engine bays are sized so the small engines fit the hatch, the sixes, V10 and V12 fit the coupe, the V8s fit the muscle car, and only the Super takes the W16.
+- **Save store:** atomic writes with a backup. A corrupt file is moved to `save.corrupt.json` rather than deleted. A newer-version save is moved to `save.newer.json`. There is a place for version migrations. Loaded saves are sanitised.
+- **First launch:** one stock engine of every layout, opening on the cross-plane V8 in the Muscle car.
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Car/Cars.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/CarSaveTests.swift` (new), `.gitignore`, `CHANGELOG.md`
