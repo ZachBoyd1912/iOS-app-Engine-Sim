@@ -1,4 +1,24 @@
 # Changelog
+## 16/11/2026 @ 14:39:38 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 2: the parts catalogue and the engine build, the one record every screen, the dyno, the sound and the save file read.
+
+### Added
+- **`Catalog/Parts.swift`:** turbo sizes, supercharger types with a pulley ratio, four fuels with stoichiometry, safe AFR range, density and octane, dry and wet nitrous kits (50-300 hp), MAF sizes with a maximum airflow, the sensor set, and part levels 0-3 (Stock, Street, Sport, Race) with injector and pump sizes.
+- **`Model/EngineBuild.swift`:** the build record with a stock starter per layout, `sanitized()` and the derived geometry (displacement, mean piston speed, mechanical redline, engine envelope for car fitment).
+- **`Model/ECUMap.swift`:** placeholder, filled in by Task 5.
+- **`EngineBuildTests.swift`**, run red first. Beyond the plan, two tests pin the first Review Focus item: `sanitized()` replaces NaN and infinity with safe values, and clamps nitrous shot, arming rpm and supercharger pulley. Why: a corrupt save or a slider bug must never feed non-numbers into the model.
+
+### Verification
+- RED: pending the CI run on the stub commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Parts.swift`, `Model/EngineBuild.swift`, `Model/ECUMap.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineBuildTests.swift` (new), `CHANGELOG.md`
+
 ## 16/11/2026 @ 14:32:12 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**
@@ -20,7 +40,7 @@ Stage 1 plan, Task 1: the table of engine layouts the whole game reads (cylinder
 
 ### Verification
 - RED: run 43886763674 on the empty stub failed on the layout assertions (no compile error), as expected.
-- GREEN: pending the run on the implementation commit.
+- GREEN: run 43887402282 passed all 10 tests on Linux (Swift 6.1).
 
 ### Files Touched
 - `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/GoldenFixtureTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift` (deleted), `Native/App/LoopTestView.swift`, `CHANGELOG.md`
