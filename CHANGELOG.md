@@ -1,4 +1,32 @@
 # Changelog
+## 17/11/2026 @ 16:44:44 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 8 (screens to the ZB UX standard, previews approved) stays open: Zach rejected the previews.
+
+### Goal
+Record Zach's rejection of the stage 1 previews and the research he asked for: three reference games, licensable 3D engine models and real gearbox behaviour.
+
+### Added
+- **`docs/research/2026-11-17-reference-games.md`:** findings from five research subagents.
+  - Covers RevLab, Engine Simulator (Muhammad Saad Ata) and Tuning Simulator (Scott Busby): listings, features, layouts, strengths and complaints.
+  - Covers 3D model sources, licences, polygon budget and the heat-glow approach.
+  - Gives gearbox figures for 5- and 6-speed manuals, a sequential, a 7-speed dual-clutch and an 8-speed automatic.
+  - Why: Zach wants a game as deep as these, with real 3D models and real gearboxes. Store screenshots are kept privately in `builds/research/` (not committed) as reference only; our look stays our own.
+
+### Changed
+- **`.zb/state.json`:** Zach's decisions.
+  - The previews are not approved, because landscape must use the width.
+  - The game should be as deep as the reference games.
+  - Every engine is fully modelled, with moving valves and heat glow, using internet models where licensable. This reverses the "built in code only" call.
+  - Gearboxes: 5MT, 6MT, sequential, 7-speed dual-clutch and 8-speed automatic.
+
+### Verification
+- Research only; no code changed. The listings and screenshots were read directly. Unverified claims are marked in the document.
+
+### Files Touched
+- `docs/research/2026-11-17-reference-games.md` (new), `.zb/state.json`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 15:53:00 IST — "claude-opus-5-5"
 
 **Project completion: 17.39%**

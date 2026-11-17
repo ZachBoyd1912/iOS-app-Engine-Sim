@@ -132,6 +132,26 @@
       "date": "2026-11-16T14:28:30+00:00",
       "decision": "Add an inline six (I6) to the stage 1 layouts.",
       "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Stage 1 previews NOT approved. iPhone landscape layouts 'absolutely terrible': landscape must use the width to show more detail and data.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Research three reference games (Rev Lab Engine Simulator by Guy Coller/Vibilize OU; Engine Simulator by Mohammed Said ATA; Tuning Simulator by Scott Busby) for depth and presentation. Game must be full and in-depth, not rudimentary.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Every engine fully 3D-modelled with moving pistons, valves/rockers and exhaust heat glow under load; use existing internet models where licensable (reverses the 'built in code only' call).",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Gearboxes: 5- and 6-speed manuals plus several automatics: sequential, 7-speed dual-clutch, 8-speed torque-converter automatic.",
+      "who": "zach"
     }
   ],
   "legacy_pricing": false,
