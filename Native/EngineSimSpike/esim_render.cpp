@@ -119,8 +119,9 @@ int main(int argc, char **argv) {
         }
     }
     const std::string script = argv[1], outPath = argv[2], label = argv[3];
-    const std::vector<Segment> segments = parseSegments(argv[4]);
-    if (segments.empty()) {
+    const bool freeMode = std::string(argv[4]) == "free";
+    const std::vector<Segment> segments = freeMode ? std::vector<Segment>{} : parseSegments(argv[4]);
+    if (!freeMode && segments.empty()) {
         std::fprintf(stderr, "no segments parsed from '%s'\n", argv[4]);
         return 1;
     }
@@ -187,6 +188,48 @@ int main(int argc, char **argv) {
     const double loadSeconds = wallSeconds() - t0;
 
     engine->getIgnitionModule()->m_enabled = true;
+
+    if (freeMode) {
+        // Free-run check: crank it, then full throttle. An engine whose firing order, cams and bank
+        // offsets are consistent revs up on its own; a mis-timed one stalls or never gets going.
+        const double frameDt = 1.0 / 60.0;
+        std::vector<int16_t> pcm;
+        std::vector<int16_t> chunk(735);
+        double maxRpm = 0, rpmAt3 = 0;
+        sim->m_dyno.m_enabled = false;
+        sim->m_dyno.m_hold = false;
+        for (int f = 0; f < 60 * 10; ++f) {
+            const double t = f / 60.0;
+            const double rpm = engine->getRpm();
+            sim->m_starterMotor.m_enabled = t < 3.0 && rpm < 700;
+            engine->setSpeedControl(t < 3.0 ? 0.35 : 1.0);
+            sim->startFrame(frameDt);
+            while (sim->simulateStep()) {
+            }
+            sim->endFrame();
+            int got = 0;
+            const double waitStart = wallSeconds();
+            while (got < 735 && wallSeconds() - waitStart < 0.05) {
+                std::vector<int16_t> part(735 - got);
+                const int n = sim->readAudioOutput(735 - got, part.data());
+                for (int i = 0; i < n; ++i) chunk[got + i] = part[i];
+                got += n;
+                if (got < 735) std::this_thread::sleep_for(std::chrono::microseconds(200));
+            }
+            for (int i = got; i < 735; ++i) chunk[i] = 0;
+            pcm.insert(pcm.end(), chunk.begin(), chunk.end());
+            maxRpm = std::max(maxRpm, engine->getRpm());
+            if (f == 60 * 3) rpmAt3 = engine->getRpm();
+        }
+        const double finalRpm = engine->getRpm();
+        const bool pass = maxRpm > 1500;
+        std::printf("FREERUN %s: cylinders %d, rpm at 3 s %.0f, max %.0f, final %.0f -> %s\n", label.c_str(),
+                    engine->getCylinderCount(), rpmAt3, maxRpm, finalRpm, pass ? "PASS" : "FAIL");
+        writeWav(outPath, pcm);
+        std::fflush(stdout);
+        std::_Exit(pass ? 0 : 5);
+    }
+
     sim->m_dyno.m_enabled = true;
     sim->m_dyno.m_hold = true;
 

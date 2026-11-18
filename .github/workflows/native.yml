@@ -47,13 +47,71 @@ jobs:
         working-directory: Native/PistonForgeKit
         env:
           PF_WAV_DIR: ${{ github.workspace }}/engine-sounds
+          PF_SCRIPT_DIR: ${{ github.workspace }}/engine-scripts
         run: swift test
+      - name: Upload engine-sim scripts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-scripts
+          path: engine-scripts/
+          if-no-files-found: ignore
+
       - name: Upload engine sounds
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: engine-sounds
           path: engine-sounds/
+          if-no-files-found: ignore
+
+  # Loads every generated engine in engine-sim and checks it revs freely (so its firing order, cams
+  # and bank offsets are consistent). Also keeps the audio for listening.
+  sound-check:
+    needs: sim-tests
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ES_PIN: 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-scripts
+          path: scripts
+      - name: Tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake ninja-build bison flex
+      - name: Fetch and patch engine-sim
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+          sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+      - name: Build
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/build" -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/build" --target esim_render > "$RUNNER_TEMP/build.log" 2>&1 || { grep -E "error:|FAILED|undefined" "$RUNNER_TEMP/build.log" | head -40; exit 1; }
+      - name: Free-run every engine
+        working-directory: ${{ runner.temp }}/es/assets
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          : > "$GITHUB_WORKSPACE/out/summary.txt"
+          for sign in pos neg; do
+            for dir in "$GITHUB_WORKSPACE"/scripts/$sign/*/; do
+              layout=$(basename "$dir")
+              "$RUNNER_TEMP/build/esim_render" "$dir/engine_sport.mr" "$GITHUB_WORKSPACE/out/$sign-$layout.wav" "$sign-$layout" free 2>&1 \
+                | grep -E "FREERUN|ENGINE|COMPILE|cannot|script" | tee -a "$GITHUB_WORKSPACE/out/summary.txt" || echo "$sign-$layout: NO OUTPUT (crash or compile error)" | tee -a "$GITHUB_WORKSPACE/out/summary.txt"
+            done
+          done
+          cat "$GITHUB_WORKSPACE/out/summary.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-sim-render-check
+          path: out/
           if-no-files-found: ignore
 
   app:

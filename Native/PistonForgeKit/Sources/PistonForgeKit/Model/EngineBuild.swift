@@ -47,6 +47,12 @@ public struct EngineBuild: Codable, Equatable, Identifiable, Sendable {
     /// Stock bore, stroke (mm) and compression for each layout.
     static func stockGeometry(_ layout: EngineLayout) -> (bore: Double, stroke: Double, compression: Double) {
         switch layout {
+        case .i2: (90, 90, 10)
+        case .i5: (82, 90, 10)
+        case .i8: (86, 86, 10)
+        case .v2: (100, 95, 9.5)
+        case .flat4: (92, 75, 10)
+        case .flat6: (97, 76.4, 10)
         case .i3: (75, 84, 10.5)
         case .i4: (86, 86, 10)
         case .i6: (86, 86, 10)

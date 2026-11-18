@@ -2,7 +2,7 @@ import Foundation
 
 /// Every engine layout in the game. Raw values are the save format.
 public enum EngineLayout: String, Codable, CaseIterable, Sendable {
-    case i3, i4, i6, v6_60, v6_90, v8Cross, v8Flat, v10, v12, w16
+    case i2, i3, i4, i5, i6, i8, v2, v6_60, v6_90, v8Cross, v8Flat, v10, v12, w16, flat4, flat6
 }
 
 /// Static description of a layout: how many cylinders, how they sit, and when they fire.
@@ -31,6 +31,22 @@ extension EngineLayout {
 
     private func makeSpec() -> LayoutSpec {
         switch self {
+        case .i2:
+            // Parallel twin with a 360-degree crank: fires evenly every 360 degrees.
+            LayoutSpec.make(name: "Inline 2", bankAngle: 0, order: [1, 2], gaps: [360], bank: { _ in 0 })
+        case .i5:
+            LayoutSpec.make(name: "Inline 5", bankAngle: 0, order: [1, 2, 4, 5, 3], gaps: [144], bank: { _ in 0 })
+        case .i8:
+            LayoutSpec.make(name: "Inline 8", bankAngle: 0, order: [1, 6, 2, 5, 8, 3, 7, 4], gaps: [90], bank: { _ in 0 })
+        case .v2:
+            // 90-degree V-twin on one pin: fires 270 then 450 degrees later.
+            LayoutSpec.make(name: "V-twin 90°", bankAngle: 90, order: [1, 2], gaps: [270, 450], bank: { $0 - 1 })
+        case .flat4:
+            // Horizontally opposed four, firing 1-3-2-4 every 180 degrees; 1 and 3 on one side.
+            LayoutSpec.make(name: "Flat 4", bankAngle: 180, order: [1, 3, 2, 4], gaps: [180], bank: { ($0 - 1) % 2 })
+        case .flat6:
+            // Horizontally opposed six, firing 1-6-2-4-3-5 every 120 degrees; odd cylinders one side.
+            LayoutSpec.make(name: "Flat 6", bankAngle: 180, order: [1, 6, 2, 4, 3, 5], gaps: [120], bank: { ($0 - 1) % 2 })
         case .i3:
             LayoutSpec.make(name: "Inline 3", bankAngle: 0, order: [1, 2, 3], gaps: [240], bank: { _ in 0 })
         case .i4:
