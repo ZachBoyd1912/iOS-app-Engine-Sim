@@ -24,6 +24,10 @@ set(PIR ${ES_SRC}/dependencies/submodules/piranha)
 # B3: MSVC keyword used in three headers.
 add_compile_definitions(__forceinline=inline)
 
+# New (clang is stricter than MSVC): scs's sparse_matrix.h uses Matrix's members inside a
+# template while Matrix is only forward-declared. Including matrix.h first everywhere fixes it.
+add_compile_options(-include ${SCS}/include/matrix.h)
+
 # ---- scs: the rigid-body solver (B4: it uses memcpy/memset without <cstring>) -------------
 file(GLOB SCS_SOURCES ${SCS}/src/*.cpp)
 add_library(scs STATIC ${SCS_SOURCES})
