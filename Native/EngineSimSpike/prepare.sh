@@ -100,6 +100,16 @@ sed -i.bak '/#include <malloc.h>/d' "$P/src/standard_allocator.cpp"
   flex --header-file="$GEN/scanner.auto.h" -o "$GEN/scanner.auto.cpp" flex-bison/scanner.l &&
   bison --defines="$GEN/parser.auto.h" -o "$GEN/parser.auto.cpp" flex-bison/specification.y)
 
+# The generated scanner must be compiled against the FlexLexer.h of the very flex that made it
+# (piranha bundles an older one, which Apple clang rejects). GEN comes first on the include path.
+FL=""
+for d in /opt/homebrew/opt/flex/include /usr/local/opt/flex/include "$(dirname "$(command -v flex)")/../include" /usr/include; do
+  if [ -f "$d/FlexLexer.h" ]; then FL="$d/FlexLexer.h"; break; fi
+done
+if [ -z "$FL" ]; then echo "no FlexLexer.h found"; exit 1; fi
+cp "$FL" "$GEN/FlexLexer.h"
+echo "using $FL"
+
 # Engine scripts for the test: one main file per engine so the app's loader can import them.
 cd "$ES/assets"
 for f in engines/atg-video-2/01_subaru_ej25_eh.mr engines/atg-video-2/08_ferrari_f136_v8.mr \
