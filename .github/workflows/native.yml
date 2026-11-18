@@ -148,8 +148,8 @@ jobs:
           ES_PIN: 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
           IPA_ONLY: ${{ github.event.inputs.ipa_only }}
         run: |
-          brew install cmake ninja bison flex
-          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          brew install cmake ninja bison
+          export PATH="$(brew --prefix bison)/bin:$PATH"  # flex: Apple's own 2.6.4 (brew's 2.6.9 breaks the old scanner)
           git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
           git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
           git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \

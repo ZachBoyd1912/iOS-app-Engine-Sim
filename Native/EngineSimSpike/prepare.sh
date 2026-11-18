@@ -103,7 +103,7 @@ sed -i.bak '/#include <malloc.h>/d' "$P/src/standard_allocator.cpp"
 # The generated scanner must be compiled against the FlexLexer.h of the very flex that made it
 # (piranha bundles an older one, which Apple clang rejects). GEN comes first on the include path.
 FL=""
-for d in /opt/homebrew/opt/flex/include /usr/local/opt/flex/include "$(dirname "$(command -v flex)")/../include" /usr/include; do
+for d in "$(xcrun --show-sdk-path 2>/dev/null)/usr/include" "$(dirname "$(command -v flex)")/../include" /usr/include; do
   if [ -f "$d/FlexLexer.h" ]; then FL="$d/FlexLexer.h"; break; fi
 done
 if [ -n "$FL" ]; then cp "$FL" "$GEN/FlexLexer.h"; echo "using $FL"; else echo "no system FlexLexer.h: using piranha bundled copy"; fi

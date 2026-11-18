@@ -16,9 +16,9 @@ Legend: **Verified** = proved by a CI run (Linux tests, engine-sim render) or on
 | Engine scripts generated from our catalogue | 55 | One generator for all 16 layouts. Free-run checks in CI show which layouts rev. Cam timing, valve lift and flow are one scaled template, not tuned per engine. Bank phase sign is a guess confirmed only by CI. |
 | Exhaust presets (7) | 35 | Our own synthetic impulse responses (6) plus engine-sim's recording as "Reference" (personal test only, no licence). Tone unverified by ear; no power effect yet (design: dyno stage). |
 | Rev limiter styles (3) | 45 | Spark-cut length by style; the model's limiter also cuts the spark. No fuel-cut sound, no bangs. |
-| Pops, crackles, overrun, anti-lag | 0 | Not started. |
-| Turbo whine, blow-off, wastegate, blower whine, nitrous hiss | 0 | Not started (engine-sim has none). |
-| Starter crank and shutdown | 0 | Model starts instantly; engine-sim is held at the model's rpm. |
+| Pops, crackles, overrun | 20 | Rush job: random spark cuts when you lift off at high rpm (off / mild / aggressive). Not real exhaust bangs (engine-sim cannot make them); no anti-lag. Unverified by ear. |
+| Turbo whistle, supercharger whine, blow-off valve | 25 | Rush job: our own simple synthesis over engine-sim (a rising whistle with boost, a whine that follows rpm, a noise burst on lift-off). Wastegate flutter, spool-down, nitrous hiss not started. Unverified by ear. |
+| Starter crank and shutdown | 25 | Start plays a 1.2 s crank at low rpm with the spark cut, then the engine catches. No separate starter-motor sound; shutdown is instant. |
 | Listening positions (bay, cabin) | 0 | Not started. |
 | Sound follows the tune (mixture, advance) | 15 | Only rpm, throttle and spark cut reach engine-sim. Mixture and advance need patches to the core. |
 
