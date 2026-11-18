@@ -174,6 +174,11 @@
       "who": "zach"
     },
     {
+      "date": "2026-11-18T17:16:00+00:00",
+      "decision": "Stage cut declined: build as much as possible tonight for a full build (sound, 16 layouts, tabs, dyno, gearboxes, drive). Every component documented with a percentage of completion (docs/implementation-status.md) so rushed parts can be redone properly later. C++ (engine-sim) inside the Swift app approved. Phone ran the engine sound test fine (no heat or stutter problems reported).",
+      "who": "zach"
+    },
+    {
       "date": "2026-11-18T16:30:00+00:00",
       "decision": "Spike result (agent): engine-sim's sound core builds and renders on Linux, macOS arm64, iOS Simulator and as iPhone arm64 libraries (after small clang patches; Boost was needed by piranha, research missed it). CI runners: 1.0-2.2x real time, ~1.3-1.9 cores, ~45 MB. Phone test app built; verdict pending Zach's listening and heat test.",
       "who": "agent"
