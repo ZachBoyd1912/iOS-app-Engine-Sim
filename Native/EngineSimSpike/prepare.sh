@@ -87,6 +87,10 @@ PY
 #  - unqualified fpclassify
 sed -i 's#\([^:_a-zA-Z]\)fpclassify(#\1std::fpclassify(#g' "$ES/src/synthesizer.cpp"
 
+#  - `extern constexpr` in headers (units.h, constants.h) is one shared definition to MSVC but a
+#    duplicate in every file to clang; `inline constexpr` means what the author intended
+find "$ES/src" "$ES/include" "$ES/scripting" ( -name "*.cpp" -o -name "*.h" ) \n  -exec sed -i "s#extern constexpr#inline constexpr#g" {} +
+
 # B5: generate the script parser once, on the host, with the same commands piranha's CMake uses.
 (cd "$P" &&
   flex --header-file="$GEN/scanner.auto.h" -o "$GEN/scanner.auto.cpp" flex-bison/scanner.l &&
