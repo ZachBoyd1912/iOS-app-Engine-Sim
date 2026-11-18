@@ -6,7 +6,14 @@ name: engine-sim spike (throwaway)
 #  3. and how much CPU it costs (real-time factor, cores used, memory).
 # Nothing here ships. Upstream is fetched at a pinned commit and patched by prepare.sh.
 
+# Dispatch only works for workflows on the default branch, so this branch triggers on push.
+# The Mac job (costs more) runs only when the commit message contains [mac].
 on:
+  push:
+    branches: [spike/engine-sim-ios]
+    paths:
+      - 'Native/EngineSimSpike/**'
+      - '.github/workflows/engine-sim-spike.yml'
   workflow_dispatch:
     inputs:
       mac:
@@ -69,7 +76,7 @@ jobs:
 
   mac:
     needs: linux
-    if: github.event.inputs.mac != 'false'
+    if: github.event.inputs.mac == 'true' || contains(github.event.head_commit.message, '[mac]')
     runs-on: ${{ github.event.inputs.runner || 'macos-15' }}
     timeout-minutes: 60
     steps:
