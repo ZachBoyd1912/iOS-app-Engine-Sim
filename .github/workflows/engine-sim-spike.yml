@@ -56,7 +56,7 @@ jobs:
           set -o pipefail
           cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/build" -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release \
             -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
-          cmake --build "$RUNNER_TEMP/build" -- -k 0 2>&1 | grep -E "error:|FAILED|undefined|multiple definition" | sort -u | head -80; test "${PIPESTATUS[0]}" = 0
+          cmake --build "$RUNNER_TEMP/build" -- -k 0 > "$RUNNER_TEMP/build.log" 2>&1 || { grep -E "error:|FAILED|undefined|multiple definition" "$RUNNER_TEMP/build.log" | sort -u | head -80; exit 1; }
       - name: Render engines
         working-directory: ${{ runner.temp }}/es/assets
         run: |
