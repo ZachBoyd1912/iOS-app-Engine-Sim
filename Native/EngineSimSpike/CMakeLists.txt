@@ -59,4 +59,6 @@ target_link_libraries(enginesim_core PUBLIC scs piranha)
 
 find_package(Threads REQUIRED)
 add_executable(esim_render esim_render.cpp)
+# iOS defaults to an app bundle; the simulator test needs a plain command-line binary.
+set_target_properties(esim_render PROPERTIES MACOSX_BUNDLE FALSE)
 target_link_libraries(esim_render PRIVATE enginesim_core Threads::Threads)
