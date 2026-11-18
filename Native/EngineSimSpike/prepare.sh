@@ -92,6 +92,9 @@ sed -i.bak 's#\([^:_a-zA-Z]\)fpclassify(#\1std::fpclassify(#g' "$ES/src/synthesi
 find "$ES/src" "$ES/include" "$ES/scripting" \( -name '*.cpp' -o -name '*.h' \) \
   -exec sed -i.bak 's#extern constexpr#inline constexpr#g' {} +
 
+#  - piranha includes the Windows/Linux-only <malloc.h> but uses nothing from it (macOS has none)
+sed -i.bak '/#include <malloc.h>/d' "$P/src/standard_allocator.cpp"
+
 # B5: generate the script parser once, on the host, with the same commands piranha's CMake uses.
 (cd "$P" &&
   flex --header-file="$GEN/scanner.auto.h" -o "$GEN/scanner.auto.cpp" flex-bison/scanner.l &&
