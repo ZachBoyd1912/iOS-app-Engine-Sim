@@ -95,18 +95,19 @@ find "$ES/src" "$ES/include" "$ES/scripting" \( -name '*.cpp' -o -name '*.h' \) 
 #  - piranha includes the Windows/Linux-only <malloc.h> but uses nothing from it (macOS has none)
 sed -i.bak '/#include <malloc.h>/d' "$P/src/standard_allocator.cpp"
 
-# B5: generate the script parser once, on the host, with the same commands piranha's CMake uses.
-(cd "$P" &&
-  flex --header-file="$GEN/scanner.auto.h" -o "$GEN/scanner.auto.cpp" flex-bison/scanner.l &&
-  bison --defines="$GEN/parser.auto.h" -o "$GEN/parser.auto.cpp" flex-bison/specification.y)
-
-# The generated scanner must be compiled against the FlexLexer.h of the very flex that made it
-# (piranha bundles an older one, which Apple clang rejects). GEN comes first on the include path.
-FL=""
-for d in "$(xcrun --show-sdk-path 2>/dev/null)/usr/include" "$(dirname "$(command -v flex)")/../include" /usr/include; do
-  if [ -f "$d/FlexLexer.h" ]; then FL="$d/FlexLexer.h"; break; fi
-done
-if [ -n "$FL" ]; then cp "$FL" "$GEN/FlexLexer.h"; echo "using $FL"; else echo "no system FlexLexer.h: using piranha bundled copy"; fi
+# B5: piranha's parser and scanner. They are generated once on Linux (flex and bison 2.6.4 / 3.8,
+# the pair piranha's bundled FlexLexer.h matches) and committed in generated/, so no Mac build
+# depends on whichever flex version Homebrew ships that week.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$HERE/generated/parser.auto.cpp" ]; then
+  cp "$HERE"/generated/*.auto.* "$GEN/"
+  echo "using the committed generated parser"
+else
+  (cd "$P" &&
+    flex --header-file="$GEN/scanner.auto.h" -o "$GEN/scanner.auto.cpp" flex-bison/scanner.l &&
+    bison --defines="$GEN/parser.auto.h" -o "$GEN/parser.auto.cpp" flex-bison/specification.y)
+  echo "generated the parser with the local flex and bison"
+fi
 
 # Engine scripts for the test: one main file per engine so the app's loader can import them.
 cd "$ES/assets"
