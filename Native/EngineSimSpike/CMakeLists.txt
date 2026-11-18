@@ -26,7 +26,7 @@ add_compile_definitions(__forceinline=inline)
 
 # New (clang is stricter than MSVC): scs's sparse_matrix.h uses Matrix's members inside a
 # template while Matrix is only forward-declared. Including matrix.h first everywhere fixes it.
-add_compile_options(-include ${CMAKE_CURRENT_SOURCE_DIR}/compat.h -include ${SCS}/include/matrix.h)
+add_compile_options("SHELL:-include ${CMAKE_CURRENT_SOURCE_DIR}/compat.h" "SHELL:-include ${SCS}/include/matrix.h")
 
 # ---- scs: the rigid-body solver (B4: it uses memcpy/memset without <cstring>) -------------
 file(GLOB SCS_SOURCES ${SCS}/src/*.cpp)
