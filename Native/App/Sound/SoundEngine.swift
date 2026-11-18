@@ -146,3 +146,39 @@ final class SoundEngine {
         }
     }
 }
+
+extension SoundEngine {
+    /// Our own layers over engine-sim: 0 none, 1 turbo whistle, 2 supercharger whine.
+    func setAux(kind: Int, boost01: Double, rpm: Double) {
+        guard isLoaded else { return }
+        esim_set_aux(Int32(kind), boost01, rpm)
+    }
+
+    /// The blow-off valve "pshh" after lifting off the throttle on boost.
+    func blowOff() {
+        guard isLoaded else { return }
+        esim_blow_off()
+    }
+}
+
+/// How much the exhaust crackles when you lift off: random spark cuts on the overrun.
+enum PopsLevel: String, CaseIterable, Identifiable {
+    case off, mild, aggressive
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .off: "Off"
+        case .mild: "Mild burble"
+        case .aggressive: "Aggressive crackle"
+        }
+    }
+
+    var cutProbability: Double {
+        switch self {
+        case .off: 0
+        case .mild: 0.30
+        case .aggressive: 0.55
+        }
+    }
+}

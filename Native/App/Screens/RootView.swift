@@ -241,6 +241,16 @@ struct SoundPanel: View {
                 .tint(Theme.accent)
                 .frame(minHeight: Theme.hitTarget)
             }
+            HStack {
+                Text("Pops on lift-off").font(.caption).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Picker("Pops on lift-off", selection: $game.pops) {
+                    ForEach(PopsLevel.allCases) { Text($0.displayName).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .tint(Theme.accent)
+                .frame(minHeight: Theme.hitTarget)
+            }
             HStack(spacing: Theme.Space.s) {
                 Image(systemName: game.sound.isLoaded ? "speaker.wave.2.fill" : "speaker.slash.fill")
                     .foregroundStyle(game.sound.isLoaded ? Theme.goodMark : Theme.warnMark)

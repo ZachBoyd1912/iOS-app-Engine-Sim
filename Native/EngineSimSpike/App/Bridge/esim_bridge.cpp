@@ -6,7 +6,9 @@
 #include "simulator.h"
 #include "units.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -36,6 +38,10 @@ std::atomic<int> g_hold{0};
 std::atomic<double> g_holdRpm{3000};
 std::atomic<bool> g_crank{false};
 std::atomic<bool> g_ignition{true};
+std::atomic<int> g_auxKind{0};
+std::atomic<float> g_auxBoost{0};
+std::atomic<float> g_auxRpm{0};
+std::atomic<bool> g_bov{false};
 std::atomic<float> g_volume{0.6f};
 std::atomic<long> g_underruns{0};
 std::atomic<long> g_frames{0};
@@ -255,14 +261,59 @@ void esim_crank(void) { g_crank.store(true); }
 void esim_set_ignition(int on) { g_ignition.store(on != 0); }
 void esim_set_volume(float volume) { g_volume.store(volume < 0 ? 0 : (volume > 1 ? 1 : volume)); }
 
+void esim_set_aux(int kind, double boost01, double rpm) {
+    g_auxKind.store(kind);
+    g_auxBoost.store(static_cast<float>(boost01 < 0 ? 0 : (boost01 > 1 ? 1 : boost01)));
+    g_auxRpm.store(static_cast<float>(rpm));
+}
+
+void esim_blow_off(void) { g_bov.store(true); }
+
 void esim_read(float *out, int frames) {
     static std::vector<int16_t> scratch;
     if (static_cast<int>(scratch.size()) < frames) scratch.resize(static_cast<size_t>(frames));
     int got = 0;
     if (g_running.load() && g.sim != nullptr) got = g.sim->readAudioOutput(frames, scratch.data());
     if (got < frames) g_underruns.fetch_add(1);
-    const float gain = g_volume.load() / 32768.0f;
-    for (int i = 0; i < frames; ++i) out[i] = i < got ? scratch[static_cast<size_t>(i)] * gain : 0.0f;
+    const float volume = g_volume.load();
+    const float gain = volume / 32768.0f;
+
+    // Our own layers on top of engine-sim's output (engine-sim has no forced induction):
+    // a turbo whistle that rises with boost, a supercharger whine that follows engine speed,
+    // and a blow-off "pshh" when the throttle is lifted on boost.
+    static float phase = 0, smoothBoost = 0, bov = 0, lp1 = 0, lp2 = 0, smoothRpm = 0;
+    static uint32_t noiseState = 12345;
+    const int kind = g_auxKind.load();
+    const float targetBoost = g_auxBoost.load();
+    const float targetRpm = g_auxRpm.load();
+    if (g_bov.exchange(false)) bov = 1.0f;
+    const float twoPi = 6.2831853f;
+
+    for (int i = 0; i < frames; ++i) {
+        float sample = i < got ? scratch[static_cast<size_t>(i)] * gain : 0.0f;
+        smoothBoost += (targetBoost - smoothBoost) * 0.0004f;
+        smoothRpm += (targetRpm - smoothRpm) * 0.0006f;
+        float tone = 0.0f;
+        if (kind == 1) {
+            const float freq = 900.0f + 3200.0f * smoothBoost;
+            phase += twoPi * freq / 44100.0f;
+            if (phase > twoPi) phase -= twoPi;
+            tone = (std::sin(phase) + 0.35f * std::sin(2.0f * phase)) * 0.045f * smoothBoost;
+        } else if (kind == 2) {
+            const float freq = 250.0f + smoothRpm * 0.13f;
+            phase += twoPi * freq / 44100.0f;
+            if (phase > twoPi) phase -= twoPi;
+            const float level = std::min(1.0f, smoothRpm / 4000.0f) * (0.35f + 0.65f * smoothBoost);
+            tone = (std::sin(phase) + 0.5f * std::sin(2.0f * phase) + 0.25f * std::sin(3.0f * phase)) * 0.035f * level;
+        }
+        noiseState = noiseState * 1664525u + 1013904223u;
+        const float noise = static_cast<float>(noiseState >> 8) / 8388608.0f - 1.0f;
+        lp1 += 0.30f * (noise - lp1);
+        lp2 += 0.03f * (lp1 - lp2);
+        const float shh = lp1 - lp2;
+        bov *= 0.99988f;
+        out[i] = sample + (tone + shh * 0.30f * bov) * volume;
+    }
 }
 
 void esim_stats_get(esim_stats *s) {

@@ -41,6 +41,11 @@ final class GameStore {
     private(set) var dragFinished = false
     private var pedal = 0.0
 
+    var pops: PopsLevel = .mild
+    private var crankTimer = 0.0
+    private var throttlePeak = 0.0
+    private var noiseSeed: UInt32 = 0x9E37_79B9
+
     private let store: SaveStore
     private var loopTask: Task<Void, Never>?
     private var soundTask: Task<Void, Never>?
@@ -101,18 +106,20 @@ final class GameStore {
     }
 
     func start() {
-        sim.start()
-        state = sim.state
+        guard !isRunning, crankTimer <= 0 else { return }
+        crankTimer = 1.2
     }
 
     func stop() {
+        crankTimer = 0
         sim.stop()
         state = sim.state
         sound.drive(rpm: 0, throttle: 0, ignition: false)
+        sound.setAux(kind: 0, boost01: 0, rpm: 0)
     }
 
     func toggleEngine() {
-        if isRunning { stop() } else { start() }
+        if isRunning || crankTimer > 0 { stop() } else { start() }
     }
 
     func repair() {
@@ -182,6 +189,32 @@ final class GameStore {
         }
     }
 
+    /// Random spark cuts on the overrun (throttle lifted at high rpm): the burble.
+    private func popCut(throttle: Double, rpm: Double) -> Bool {
+        guard pops != .off, throttle < 0.06, rpm > 2200 else { return false }
+        noiseSeed = noiseSeed &* 1_664_525 &+ 1_013_904_223
+        let unit = Double(noiseSeed >> 8) / 16_777_216.0
+        // The crackle fades as the revs fall.
+        let fade = min(1, (rpm - 2200) / 2500)
+        return unit < pops.cutProbability * fade
+    }
+
+    /// Turbo whistle, blower whine and the blow-off valve, from the model's boost.
+    private func updateAux(rpm: Double, throttle: Double, boostPsi: Double) {
+        let kind: Int
+        switch build.induction {
+        case .natural: kind = 0
+        case .turbo: kind = 1
+        case .supercharger: kind = 2
+        }
+        sound.setAux(kind: kind, boost01: min(max(boostPsi / 25, 0), 1), rpm: rpm)
+        throttlePeak = max(throttle, throttlePeak - 0.8 * (1.0 / 60))
+        if kind == 1, throttle < 0.2, throttlePeak > 0.65, boostPsi > 4 {
+            sound.blowOff()
+            throttlePeak = 0
+        }
+    }
+
     // MARK: The frame loop
 
     /// Runs about 60 times a second while the app is on screen.
@@ -199,6 +232,18 @@ final class GameStore {
     }
 
     private func frame(dt: Double) {
+        // Starter motor: a short crank with the spark off, then the spark and the engine catch.
+        if crankTimer > 0 {
+            crankTimer -= dt
+            let progress = max(0, 1 - crankTimer / 1.2)
+            sound.drive(rpm: 110 + 140 * progress, throttle: 0.15, ignition: progress > 0.6)
+            sound.setAux(kind: 0, boost01: 0, rpm: 0)
+            if crankTimer <= 0 {
+                sim.start()
+                state = sim.state
+            }
+            return
+        }
         if var run = dragRun, !dragFinished {
             // Pedal ramps so a tap is gentle and a hold is full throttle.
             let target = gasPedal ? 1.0 : 0.0
@@ -213,10 +258,13 @@ final class GameStore {
             dragRun = run
             driveState = snap.state
             displayCrank = (displayCrank + snap.state.rpm * 6 * dt).truncatingRemainder(dividingBy: 720)
-            sound.drive(rpm: snap.state.rpm, throttle: pedal, ignition: !snap.state.limiterActive)
+            let spark = !snap.state.limiterActive && !popCut(throttle: pedal, rpm: snap.state.rpm)
+            sound.drive(rpm: snap.state.rpm, throttle: pedal, ignition: spark)
+            updateAux(rpm: snap.state.rpm, throttle: pedal, boostPsi: driveBoost(rpm: snap.state.rpm, throttle: pedal))
             if snap.finished {
                 dragFinished = true
                 sound.drive(rpm: 0, throttle: 0, ignition: false)
+                sound.setAux(kind: 0, boost01: 0, rpm: 0)
             }
             return
         }
@@ -226,15 +274,24 @@ final class GameStore {
             let live = run.sim.state
             displayCrank = live.crankAngle
             sound.drive(rpm: live.rpm, throttle: 1, ignition: live.isRunning && !live.limiterActive)
+            updateAux(rpm: live.rpm, throttle: 1, boostPsi: live.boostPsi)
             if run.isFinished {
                 currentPull = run.result
                 sound.drive(rpm: 0, throttle: 0, ignition: false)
+                sound.setAux(kind: 0, boost01: 0, rpm: 0)
             }
             return
         }
         state = sim.step(dt: dt, throttle: throttle, load: 0)
         displayCrank = state.crankAngle
-        sound.drive(rpm: state.rpm, throttle: throttle, ignition: state.isRunning && !state.limiterActive)
+        let spark = state.isRunning && !state.limiterActive && !popCut(throttle: throttle, rpm: state.rpm)
+        sound.drive(rpm: state.rpm, throttle: throttle, ignition: spark)
+        updateAux(rpm: state.rpm, throttle: throttle, boostPsi: state.isRunning ? state.boostPsi : 0)
+    }
+
+    /// Boost while driving: the model's steady boost at this rpm and pedal.
+    private func driveBoost(rpm: Double, throttle: Double) -> Double {
+        steadyBoostPsi(build, rpm: rpm, throttle: throttle, target: build.ecu.boostTargetPsi)
     }
 
     // MARK: Saving
