@@ -67,14 +67,14 @@ PY
 # More MSVC-only habits found by compiling with clang (each is a tiny, behaviour-neutral edit):
 #  - Windows backslashes inside #include paths
 find "$ES/src" "$ES/include" "$ES/scripting" "$P/src" "$P/include" \( -name '*.cpp' -o -name '*.h' \) \
-  -exec sed -i '/^[[:space:]]*#[[:space:]]*include/ s#\\#/#g' {} +
+  -exec sed -i.bak '/^[[:space:]]*#[[:space:]]*include/ s#\\#/#g' {} +
 #  - the MSVC type name unsigned __int64
 find "$P" "$ES/src" "$ES/include" "$ES/scripting" \( -name '*.cpp' -o -name '*.h' \) \
-  -exec sed -i 's#unsigned __int64#unsigned long long#g; s#__int64#long long#g' {} +
+  -exec sed -i.bak 's#unsigned __int64#unsigned long long#g; s#__int64#long long#g' {} +
 #  - an upstream typo MSVC accepted: ring_buffer.h overwrite() says `start` for `m_start`
-sed -i 's#if (start + index < m_capacity)#if (m_start + index < m_capacity)#' "$ES/include/ring_buffer.h"
+sed -i.bak 's#if (start + index < m_capacity)#if (m_start + index < m_capacity)#' "$ES/include/ring_buffer.h"
 #  - a template parameter shadowed by a member template of the same name
-sed -i 's#template <typename Type>\n        void overrideType#&#' "$ES/scripting/include/object_reference_node.h"
+sed -i.bak 's#template <typename Type>\n        void overrideType#&#' "$ES/scripting/include/object_reference_node.h"
 python3 - "$ES/scripting/include/object_reference_node.h" <<'PY'
 import sys
 p = sys.argv[1]
@@ -85,12 +85,12 @@ assert a in s
 open(p, "w").write(s.replace(a, b))
 PY
 #  - unqualified fpclassify
-sed -i 's#\([^:_a-zA-Z]\)fpclassify(#\1std::fpclassify(#g' "$ES/src/synthesizer.cpp"
+sed -i.bak 's#\([^:_a-zA-Z]\)fpclassify(#\1std::fpclassify(#g' "$ES/src/synthesizer.cpp"
 
 #  - `extern constexpr` in headers (units.h, constants.h) is one shared definition to MSVC but a
 #    duplicate in every file to clang; `inline constexpr` means what the author intended
 find "$ES/src" "$ES/include" "$ES/scripting" \( -name '*.cpp' -o -name '*.h' \) \
-  -exec sed -i 's#extern constexpr#inline constexpr#g' {} +
+  -exec sed -i.bak 's#extern constexpr#inline constexpr#g' {} +
 
 # B5: generate the script parser once, on the host, with the same commands piranha's CMake uses.
 (cd "$P" &&
