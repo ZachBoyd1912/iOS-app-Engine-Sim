@@ -106,9 +106,7 @@ FL=""
 for d in /opt/homebrew/opt/flex/include /usr/local/opt/flex/include "$(dirname "$(command -v flex)")/../include" /usr/include; do
   if [ -f "$d/FlexLexer.h" ]; then FL="$d/FlexLexer.h"; break; fi
 done
-if [ -z "$FL" ]; then echo "no FlexLexer.h found"; exit 1; fi
-cp "$FL" "$GEN/FlexLexer.h"
-echo "using $FL"
+if [ -n "$FL" ]; then cp "$FL" "$GEN/FlexLexer.h"; echo "using $FL"; else echo "no system FlexLexer.h: using piranha bundled copy"; fi
 
 # Engine scripts for the test: one main file per engine so the app's loader can import them.
 cd "$ES/assets"
