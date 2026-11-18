@@ -511,11 +511,8 @@ public enum EngineSimScript {
         var files: [String: [UInt8]] = [:]
         files["engine.mr"] = Array(s.utf8)
         // The entry file: engine-sim runs the top-level statements of the file it is given.
-        files["main.mr"] = Array("import \"engine_sim.mr\"
-import \"engine.mr\"
-
-main()
-".utf8)
+        let entry = "import \"engine_sim.mr\"\nimport \"engine.mr\"\n\nmain()\n"
+        files["main.mr"] = Array(entry.utf8)
         if exhaust != .reference { files["ir_\(exhaust.rawValue).wav"] = ExhaustImpulse.wav(exhaust) }
         return EngineSimPackage(mainScript: "main.mr", files: files, engineScript: s)
     }
