@@ -146,3 +146,58 @@ jobs:
           name: engine-sim-mac
           path: out/
           if-no-files-found: ignore
+
+  phone:
+    needs: linux
+    if: github.event.inputs.mac == 'true' || contains(github.event.head_commit.message, '[phone]')
+    runs-on: ${{ github.event.inputs.runner || 'macos-15' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: brew install xcodegen cmake ninja bison flex
+      - name: Fetch pinned engine-sim
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+      - name: Prepare
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+      - name: Build the sound core for an iPhone
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/b-dev" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/b-dev" --target esim_bridge > "$RUNNER_TEMP/dev.log" 2>&1 || { grep -E "error:|FAILED" "$RUNNER_TEMP/dev.log" | head -40; exit 1; }
+      - name: Assemble the app
+        working-directory: Native/EngineSimSpike/App
+        run: |
+          mkdir -p libs Resources/engine
+          cp "$RUNNER_TEMP"/b-dev/*.a libs/
+          cp -R "$RUNNER_TEMP/es/assets" Resources/engine/assets
+          cp -R "$RUNNER_TEMP/es/es" Resources/engine/es
+          find Resources -name '*.bak' -delete
+          ls libs; du -sh Resources/engine
+          xcodegen generate
+      - name: Build the app (unsigned, for sideloading)
+        working-directory: Native/EngineSimSpike/App
+        run: |
+          xcodebuild -project EngineSoundTest.xcodeproj -scheme EngineSoundTest -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > "$RUNNER_TEMP/xcb.log" 2>&1 \
+            || { grep -E "error:|warning: Undefined|ld:" "$RUNNER_TEMP/xcb.log" | head -40; exit 1; }
+          tail -3 "$RUNNER_TEMP/xcb.log"
+      - name: Package unsigned .ipa
+        working-directory: Native/EngineSimSpike/App
+        run: |
+          rm -rf ipa && mkdir -p ipa/Payload
+          cp -R build/Build/Products/Release-iphoneos/EngineSoundTest.app ipa/Payload/
+          (cd ipa && zip -qry EngineSoundTest-unsigned.ipa Payload && ls -lh EngineSoundTest-unsigned.ipa)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EngineSoundTest-unsigned-ipa
+          path: Native/EngineSimSpike/App/ipa/EngineSoundTest-unsigned.ipa

@@ -1,0 +1,35 @@
+# Throwaway phone test app for the engine-sim spike. Generated in CI with XcodeGen; the libraries
+# (libs/) and engine files (Resources/engine/) are copied in by the workflow before generating.
+name: EngineSoundTest
+options:
+  bundleIdPrefix: ie.zbautomations
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+targets:
+  EngineSoundTest:
+    type: application
+    platform: iOS
+    sources:
+      - path: EngineSoundTestApp.swift
+      - path: Bridge/esim_bridge.h
+      - path: Resources/engine
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ie.zbautomations.enginesoundtest
+        PRODUCT_NAME: EngineSoundTest
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_OBJC_BRIDGING_HEADER: Bridge/Bridging-Header.h
+        HEADER_SEARCH_PATHS: "$(SRCROOT)/Bridge"
+        LIBRARY_SEARCH_PATHS: "$(SRCROOT)/libs"
+        OTHER_LDFLAGS: "-lesim_bridge -lenginesim_core -lscs -lpiranha -lc++"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Engine sound test
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
