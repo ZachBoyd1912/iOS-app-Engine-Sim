@@ -1,0 +1,25 @@
+name: generate piranha parser (one-off)
+on:
+  push:
+    branches: [piston-forge-v2]
+    paths: ['.github/workflows/gen-parser.yml']
+permissions:
+  contents: read
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq bison flex
+      - name: Fetch, patch, generate
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+          sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+          ls -l "$RUNNER_TEMP/gen"
+          mkdir -p out && cp "$RUNNER_TEMP"/gen/* out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piranha-generated
+          path: out/
