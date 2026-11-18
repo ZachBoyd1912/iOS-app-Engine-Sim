@@ -25,6 +25,8 @@ void esim_stop(void);
 // throttle 0...1. holdMode 1 = the dyno holds holdRpm (like the Linux/Mac tests); 0 = free-running.
 void esim_set(double throttle, int holdMode, double holdRpm);
 void esim_crank(void);                 // run the starter motor until the engine fires
+void esim_set_ignition(int on);        // 0 cuts the spark (stopped engine, rev-limiter cut)
+void esim_set_volume(float volume);    // 0...1 master gain
 void esim_read(float *out, int frames); // audio render callback; never blocks long
 void esim_stats_get(esim_stats *out);
 

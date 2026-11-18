@@ -74,13 +74,12 @@ func writesScriptsForEngineSimWhenAsked() throws {
     guard let directory = ProcessInfo.processInfo.environment["PF_SCRIPT_DIR"] else { return }
     for (name, sign) in [("pos", 1.0), ("neg", -1.0)] {
         for layout in EngineLayout.allCases {
-            let folder = URL(fileURLWithPath: directory).appendingPathComponent(name).appendingPathComponent(layout.rawValue)
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             for preset in [ExhaustPreset.sport, ExhaustPreset.straight, ExhaustPreset.muffled] {
+                let folder = URL(fileURLWithPath: directory).appendingPathComponent(name).appendingPathComponent(layout.rawValue)
+                    .appendingPathComponent(preset.rawValue)
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                 let package = EngineSimScript.package(for: EngineBuild.starter(layout), exhaust: preset, limiter: .normal, bankPhaseSign: sign)
-                let scriptName = "engine_\(preset.rawValue).mr"
-                try Data(package.engineScript.utf8).write(to: folder.appendingPathComponent(scriptName))
-                for (file, bytes) in package.files where file.hasSuffix(".wav") {
+                for (file, bytes) in package.files {
                     try Data(bytes).write(to: folder.appendingPathComponent(file))
                 }
             }

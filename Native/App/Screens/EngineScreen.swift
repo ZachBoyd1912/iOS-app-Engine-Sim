@@ -12,6 +12,8 @@ struct EngineScreen: View {
     var onSelectPart: (PartGroup) -> Void = { _ in }
     var onOpenGarage: () -> Void = {}
     var onOpenSettings: () -> Void = {}
+    /// Extra panel above the readouts (the exhaust and rev-limiter choices live here).
+    var accessory: () -> AnyView = { AnyView(EmptyView()) }
 
     var body: some View {
         ZStack {
@@ -23,6 +25,7 @@ struct EngineScreen: View {
                 if preview { PreviewTag(rules: "Rules: one accent (Start), status = icon + word, 44 pt targets, persistent banner for warnings") }
                 WarningBanner(warnings: warnings)
                 Spacer(minLength: 0)
+                accessory()
                 controls
             }
             .padding(.horizontal, Theme.Space.l)

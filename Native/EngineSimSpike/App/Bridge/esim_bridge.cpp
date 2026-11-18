@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <thread>
 #include <vector>
@@ -34,6 +35,8 @@ std::atomic<double> g_throttle{0.2};
 std::atomic<int> g_hold{0};
 std::atomic<double> g_holdRpm{3000};
 std::atomic<bool> g_crank{false};
+std::atomic<bool> g_ignition{true};
+std::atomic<float> g_volume{0.6f};
 std::atomic<long> g_underruns{0};
 std::atomic<long> g_frames{0};
 std::atomic<double> g_rpm{0};
@@ -98,6 +101,7 @@ void simLoop() {
             sim->m_dyno.m_enabled = false;
             sim->m_dyno.m_hold = false;
         }
+        engine->getIgnitionModule()->m_enabled = g_ignition.load();
         engine->setSpeedControl(g_throttle.load());
 
         if (g_crank.exchange(false)) {
@@ -206,7 +210,8 @@ int esim_start(const char *assetsDir, const char *mainScript, char *err, int err
             pcm.data(), static_cast<unsigned int>(pcm.size()), response->getVolume(), i);
     }
 
-    g.engine->getIgnitionModule()->m_enabled = true;
+    g_ignition.store(false);
+    g.engine->getIgnitionModule()->m_enabled = false;
     g_cylinders.store(g.engine->getCylinderCount());
     g_underruns.store(0);
     g_frames.store(0);
@@ -247,6 +252,8 @@ void esim_set(double throttle, int holdMode, double holdRpm) {
 }
 
 void esim_crank(void) { g_crank.store(true); }
+void esim_set_ignition(int on) { g_ignition.store(on != 0); }
+void esim_set_volume(float volume) { g_volume.store(volume < 0 ? 0 : (volume > 1 ? 1 : volume)); }
 
 void esim_read(float *out, int frames) {
     static std::vector<int16_t> scratch;
@@ -254,7 +261,7 @@ void esim_read(float *out, int frames) {
     int got = 0;
     if (g_running.load() && g.sim != nullptr) got = g.sim->readAudioOutput(frames, scratch.data());
     if (got < frames) g_underruns.fetch_add(1);
-    const float gain = 0.6f / 32768.0f;
+    const float gain = g_volume.load() / 32768.0f;
     for (int i = 0; i < frames; ++i) out[i] = i < got ? scratch[static_cast<size_t>(i)] * gain : 0.0f;
 }
 

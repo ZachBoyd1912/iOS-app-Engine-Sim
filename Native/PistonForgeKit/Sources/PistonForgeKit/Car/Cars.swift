@@ -40,8 +40,10 @@ public enum CarBody: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// Our gearbox types. Raw values are the case names, so saved cars keep decoding.
+/// Ratios and spec numbers live in Transmission.swift.
 public enum Gearbox: String, Codable, CaseIterable, Sendable {
-    case m5, m6, seq6, auto8
+    case m5, m6, seq6, dct7, auto4, auto8, auto10, cvt, ev1
 }
 
 public struct Tyre: Codable, Equatable, Sendable {

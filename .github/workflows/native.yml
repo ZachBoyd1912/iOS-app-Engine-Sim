@@ -102,7 +102,7 @@ jobs:
           for sign in pos neg; do
             for dir in "$GITHUB_WORKSPACE"/scripts/$sign/*/; do
               layout=$(basename "$dir")
-              "$RUNNER_TEMP/build/esim_render" "$dir/engine_sport.mr" "$GITHUB_WORKSPACE/out/$sign-$layout.wav" "$sign-$layout" free 2>&1 \
+              "$RUNNER_TEMP/build/esim_render" "$dir/sport/main.mr" "$GITHUB_WORKSPACE/out/$sign-$layout.wav" "$sign-$layout" free 2>&1 \
                 | grep -E "FREERUN|ENGINE|COMPILE|cannot|script" | tee -a "$GITHUB_WORKSPACE/out/summary.txt" || echo "$sign-$layout: NO OUTPUT (crash or compile error)" | tee -a "$GITHUB_WORKSPACE/out/summary.txt"
             done
           done

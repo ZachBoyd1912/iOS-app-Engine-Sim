@@ -49,7 +49,7 @@ public struct EngineBuild: Codable, Equatable, Identifiable, Sendable {
         switch layout {
         case .i2: (90, 90, 10)
         case .i5: (82, 90, 10)
-        case .i8: (86, 86, 10)
+        case .i8: (70, 77, 10)
         case .v2: (100, 95, 9.5)
         case .flat4: (92, 75, 10)
         case .flat6: (97, 76.4, 10)
