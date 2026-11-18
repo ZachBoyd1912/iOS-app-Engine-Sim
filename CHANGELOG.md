@@ -1,4 +1,20 @@
 # Changelog
+## 18/11/2026 @ 16:52:00 IST — "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged: this entry is research and a throwaway spike, so no roadmap item moves. Item 8 (screens to the ZB UX standard) stays open; the redesign is waiting on the design update.
+
+**Goal:** answer Zach's 17-18/11 direction: replace the engine sound with engine-sim, find the largest engine and gearbox lists, and prove engine-sim can run on an iPhone.
+
+**Added**
+- Research (7 agents): `docs/research/raw/` holds an 83-row engine catalogue, two gearbox and car data files, a free 3D-kit survey, an engine-sim iOS feasibility report, a portrait-cockpit study, and the spike results. Why: Zach wants far more engines (RevLab has 21), many gearboxes and a Tuning-Simulator-style cockpit in portrait; no design can be approved without the real data. Honest gaps (unsourced firing orders, ratios, drive-mode numbers, frontal areas) are tagged in each file.
+- Spike (branch `spike/engine-sim-ios`, not merged): `Native/EngineSimSpike/` builds engine-sim's sound core headless and a phone test app. Why: the feasibility report said "needs a spike". Cause of the many small patches: upstream is written for MSVC and the research missed that piranha needs Boost.
+- `.zb/state.json`: Zach's decisions (engine-sim for sound, write our own engines and exhaust sounds, career later, portrait-first, gearbox list approved).
+
+**Verified:** CI run 44346718049: Linux, macOS arm64 and iOS Simulator render audio; iPhone arm64 libraries and the test app build; V8/V10/V12 ran at 1.0-2.2x real time on shared runners. Not verified: sound quality, phone CPU, heat (needs Zach's phone test).
+
+**Files Touched:** `Native/EngineSimSpike/**`, `.github/workflows/engine-sim-spike.yml`, `docs/research/raw/*`, `.zb/state.json`, `CHANGELOG.md`.
+
 ## 17/11/2026 @ 16:44:44 IST — "claude-opus-5-5"
 
 **Project completion: 17.39%**
