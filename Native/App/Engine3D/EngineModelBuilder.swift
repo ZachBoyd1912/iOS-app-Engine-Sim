@@ -207,6 +207,7 @@ enum EngineModelBuilder {
         for (key, mesh) in parts.meshes where !mesh.isEmpty {
             let entity = ModelEntity(mesh: try mesh.meshResource(named: "\(key.group.rawValue).\(key.finish)"), materials: [key.finish.material])
             entity.name = "part.\(key.group.rawValue).\(key.finish)"
+            if key.finish == .exhaust { entity.components.set(HeatGlowComponent()) }
             makeTappable(entity)
             root.addChild(entity)
         }

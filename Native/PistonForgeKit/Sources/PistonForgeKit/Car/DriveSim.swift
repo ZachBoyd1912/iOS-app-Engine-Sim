@@ -109,6 +109,8 @@ public struct DriveSim: Sendable {
     private var clutchLocked: Bool
     private var launchClock: Double
     private var lastAccel: Double
+    /// Seconds since the last gear change; stops the box hunting up and down.
+    private var shiftAge: Double
     private var prevShiftUp: Bool
     private var prevShiftDown: Bool
 
@@ -193,6 +195,7 @@ public struct DriveSim: Sendable {
         self.clutchLocked = false
         self.launchClock = 0
         self.lastAccel = 0
+        self.shiftAge = 10
         self.prevShiftUp = false
         self.prevShiftDown = false
         self.state = DriveState(
@@ -208,6 +211,7 @@ public struct DriveSim: Sendable {
         let pedal = bounded(input.throttle, 0...1, or: 0)
         let brake = bounded(input.brake, 0...1, or: 0)
         let hold = input.launchControl || kind == .dualClutch
+        shiftAge += h
 
         let upEdge = input.manualShiftUp && !prevShiftUp
         let downEdge = input.manualShiftDown && !prevShiftDown
@@ -411,11 +415,11 @@ public struct DriveSim: Sendable {
         let down = mode.downshiftRpmFraction(throttle: pedal) * redlineRpm
         if gearIndex < gearCount && rpm >= up {
             startShift(to: gearIndex + 1)
-        } else if gearIndex > 1 && rpm < down {
+        } else if gearIndex > 1 && rpm < down && shiftAge > 0.6 {
             let here = ratios[gearIndex - 1]
             let below = ratios[gearIndex - 2]
             let rpmBelow = rpm * below / here
-            if rpmBelow < up {
+            if rpmBelow < up * 0.9 {
                 startShift(to: gearIndex - 1)
             }
         }
@@ -425,6 +429,7 @@ public struct DriveSim: Sendable {
     private mutating func startShift(to newGear: Int) {
         gearIndex = newGear
         shiftTimer = shiftTimeS * mode.shiftSpeedScale
+        shiftAge = 0
         clutchLocked = true
     }
 

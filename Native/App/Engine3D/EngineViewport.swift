@@ -39,7 +39,9 @@ struct EngineViewport: View {
             content.add(fill)
         } update: { content in
             if let root = content.entities.first(where: { $0.name == EngineModelBuilder.rootName }) {
-                root.components.set(EngineMotionComponent(crankAngle: state.crankAngle))
+                // Exhaust glow: from about 450 °C (dull) to 950 °C (bright), only while it is running.
+                let heat = state.isRunning ? Float(min(max((state.egtC - 450) / 500, 0), 1)) : 0
+                root.components.set(EngineMotionComponent(crankAngle: state.crankAngle, heat: heat))
             }
             if let camera = content.entities.first(where: { $0.name == "camera" }) {
                 let distance = focus.radius * 3.2 * zoom
