@@ -57,7 +57,7 @@ final class SoundEngine {
         let workDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("engine-sim-work", isDirectory: true)
         let assets = assetsPath
         let es = esPath
-        let result: (Int32, String) = await Task.detached(priority: .userInitiated) {
+        let result: (Int32, String) = await Task.detached(priority: .userInitiated) { () -> (Int32, String) in
             do {
                 try? FileManager.default.removeItem(at: workDirectory)
                 try FileManager.default.createDirectory(at: workDirectory, withIntermediateDirectories: true)

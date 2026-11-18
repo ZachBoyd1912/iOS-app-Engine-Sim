@@ -43,10 +43,9 @@ struct CarScreen: View {
             }
             Section {
                 Picker("Gearbox", selection: $car.gearbox) {
-                    Text("5-speed manual").tag(Gearbox.m5)
-                    Text("6-speed manual").tag(Gearbox.m6)
-                    Text("6-speed sequential").tag(Gearbox.seq6)
-                    Text("8-speed automatic").tag(Gearbox.auto8)
+                    ForEach(Gearbox.allCases, id: \.rawValue) { box in
+                        Text(box.displayName).tag(box)
+                    }
                 }
                 .pickerStyle(.menu)
                 Stepper(value: $car.finalDrive, in: 2...5.5, step: 0.05) {

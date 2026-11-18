@@ -22,6 +22,12 @@ on:
         default: 'both'
         type: choice
         options: [both, iphone, ipad]
+      ipa_only:
+        description: 'Skip the Simulator build and UI tests; only build the phone .ipa (faster)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
       runner:
         description: 'macOS runner (GitHub sometimes has no arm64 capacity; Intel is the fallback)'
         required: false
@@ -136,13 +142,47 @@ jobs:
           xcodebuild -version
           uname -m
 
+
+      - name: Build engine-sim for iPhone and Simulator
+        env:
+          ES_PIN: 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
+          IPA_ONLY: ${{ github.event.inputs.ipa_only }}
+        run: |
+          brew install cmake ninja bison flex
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+          sh EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+          sdks="iphoneos"
+          [ "$IPA_ONLY" != "true" ] && sdks="iphoneos iphonesimulator"
+          for sdk in $sdks; do
+            cmake -S EngineSimSpike -B "$RUNNER_TEMP/b-$sdk" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$sdk -DCMAKE_OSX_ARCHITECTURES=arm64 \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+              -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+            cmake --build "$RUNNER_TEMP/b-$sdk" --target esim_bridge > "$RUNNER_TEMP/$sdk.log" 2>&1 \
+              || { grep -E "error:|FAILED" "$RUNNER_TEMP/$sdk.log" | head -40; exit 1; }
+            mkdir -p "engine-libs/$sdk"
+            cp "$RUNNER_TEMP/b-$sdk"/*.a "engine-libs/$sdk/"
+          done
+          # The engine-sim script library and its sample exhaust recordings (the personal-test
+          # "reference" exhaust only); engine/assets is the working folder engine-sim starts in.
+          mkdir -p engine-resources/engine/assets
+          cp -R "$RUNNER_TEMP/es/es" engine-resources/engine/es
+          find engine-resources -name '*.bak' -delete
+          echo "working folder for engine-sim" > engine-resources/engine/assets/README.txt
+          ls -R engine-libs | head -20; du -sh engine-resources
       - name: Generate Xcode project
         run: xcodegen generate
 
       - name: Compile app and UI tests once
+        if: ${{ github.event.inputs.ipa_only != 'true' }}
         run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim build-for-testing
 
       - name: UI tests on iPhone and iPad
+        if: ${{ github.event.inputs.ipa_only != 'true' }}
         id: uitests
         env:
           ONLY_TESTING: ${{ github.event.inputs.only_testing }}
@@ -213,7 +253,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Fail if any UI test failed
-        if: steps.uitests.outputs.status != '0'
+        if: steps.uitests.outputs.status != '' && steps.uitests.outputs.status != '0'
         run: |
           echo "UI tests failed: see the native-xcresult artifact and the screenshots."
           exit 1

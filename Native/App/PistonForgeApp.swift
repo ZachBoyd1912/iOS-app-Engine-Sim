@@ -18,8 +18,11 @@ struct PistonForgeApp: App {
             Group {
                 if route.preview {
                     PreviewRoot(screen: route.screen)
-                } else {
+                } else if route.explicit {
+                    // UI tests and screenshots open one engine directly.
                     EngineHomeView(driver: driver)
+                } else {
+                    RootView()
                 }
             }
             .preferredColorScheme(.dark)

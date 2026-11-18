@@ -27,6 +27,20 @@ final class GameStore {
     private(set) var currentPull: DynoResult?
     private(set) var lastPull: DynoResult?
 
+    // Drive (drag strip)
+    var driveMode: DriveMode = .comfort
+    var driveAutomatic = true
+    var dragLengthM = DragRun.quarterMileM
+    var launchControl = false
+    var gasPedal = false
+    var brakePedal = false
+    var shiftUpRequest = false
+    var shiftDownRequest = false
+    private(set) var dragRun: DragRun?
+    private(set) var driveState: DriveState?
+    private(set) var dragFinished = false
+    private var pedal = 0.0
+
     private let store: SaveStore
     private var loopTask: Task<Void, Never>?
     private var soundTask: Task<Void, Never>?
@@ -125,6 +139,30 @@ final class GameStore {
         return false
     }
 
+    // MARK: Driving
+
+    var isDriving: Bool { dragRun != nil && !dragFinished }
+
+    func startDrag() {
+        stop()
+        pedal = 0
+        dragFinished = false
+        let car = DriveSim(build: build, car: save.car, mode: driveMode, automatic: driveAutomatic)
+        dragRun = DragRun(sim: car, lengthM: dragLengthM)
+        driveState = car.state
+    }
+
+    func endDrag() {
+        dragRun = nil
+        driveState = nil
+        dragFinished = false
+        gasPedal = false
+        brakePedal = false
+        sound.drive(rpm: 0, throttle: 0, ignition: false)
+    }
+
+    var timeslip: DragTimeslip? { dragRun?.timeslip }
+
     // MARK: Sound loading
 
     func loadSoundIfNeeded() {
@@ -161,6 +199,27 @@ final class GameStore {
     }
 
     private func frame(dt: Double) {
+        if var run = dragRun, !dragFinished {
+            // Pedal ramps so a tap is gentle and a hold is full throttle.
+            let target = gasPedal ? 1.0 : 0.0
+            pedal += (target - pedal) * min(1, dt * 6)
+            let input = DriveInput(
+                throttle: pedal, brake: brakePedal ? 1 : 0,
+                manualShiftUp: shiftUpRequest, manualShiftDown: shiftDownRequest, launchControl: launchControl
+            )
+            shiftUpRequest = false
+            shiftDownRequest = false
+            let snap = run.step(dt: dt, input: input)
+            dragRun = run
+            driveState = snap.state
+            displayCrank = (displayCrank + snap.state.rpm * 6 * dt).truncatingRemainder(dividingBy: 720)
+            sound.drive(rpm: snap.state.rpm, throttle: pedal, ignition: !snap.state.limiterActive)
+            if snap.finished {
+                dragFinished = true
+                sound.drive(rpm: 0, throttle: 0, ignition: false)
+            }
+            return
+        }
         if let run = pullRun, !run.isFinished {
             run.step(dt: dt)
             currentPull = run.result

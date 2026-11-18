@@ -23,3 +23,6 @@ Native/PistonForgeKit/.build/
 
 .superpowers/
 sideloadly*.log
+
+Native/engine-libs/
+Native/engine-resources/

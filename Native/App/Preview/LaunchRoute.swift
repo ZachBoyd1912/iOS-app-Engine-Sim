@@ -8,6 +8,8 @@ struct LaunchRoute {
     var layout: EngineLayout = .v8Cross
     var induction: Induction = .natural
     var preview = false
+    /// True when a test or screenshot named a screen or layout on the command line.
+    var explicit = false
 
     static func parse(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchRoute {
         var route = LaunchRoute()
@@ -19,6 +21,7 @@ struct LaunchRoute {
         if let layout = value(after: "-layout").flatMap(EngineLayout.init(rawValue:)) { route.layout = layout }
         if let induction = value(after: "-induction") { route.induction = Self.induction(named: induction) }
         route.preview = arguments.contains("-preview")
+        route.explicit = arguments.contains("-layout") || arguments.contains("-screen")
         return route
     }
 
