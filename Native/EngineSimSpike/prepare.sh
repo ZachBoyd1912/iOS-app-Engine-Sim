@@ -64,6 +64,29 @@ s = s[:i] + tail + s[i:]
 open(p, "w").write(s)
 PY
 
+# More MSVC-only habits found by compiling with clang (each is a tiny, behaviour-neutral edit):
+#  - Windows backslashes inside #include paths
+find "$ES/src" "$ES/include" "$ES/scripting" "$P/src" "$P/include" \( -name '*.cpp' -o -name '*.h' \) \
+  -exec sed -i '/^[[:space:]]*#[[:space:]]*include/ s#\\#/#g' {} +
+#  - the MSVC type name unsigned __int64
+find "$P" "$ES/src" "$ES/include" "$ES/scripting" \( -name '*.cpp' -o -name '*.h' \) \
+  -exec sed -i 's#unsigned __int64#unsigned long long#g; s#__int64#long long#g' {} +
+#  - an upstream typo MSVC accepted: ring_buffer.h overwrite() says `start` for `m_start`
+sed -i 's#if (start + index < m_capacity)#if (m_start + index < m_capacity)#' "$ES/include/ring_buffer.h"
+#  - a template parameter shadowed by a member template of the same name
+sed -i 's#template <typename Type>\n        void overrideType#&#' "$ES/scripting/include/object_reference_node.h"
+python3 - "$ES/scripting/include/object_reference_node.h" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+a = "template <typename Type>\n        void overrideType() {\n            m_output.overrideType(LookupChannelType<Type>());"
+b = "template <typename T_Override>\n        void overrideType() {\n            m_output.overrideType(LookupChannelType<T_Override>());"
+assert a in s
+open(p, "w").write(s.replace(a, b))
+PY
+#  - unqualified fpclassify
+sed -i 's#\([^:_a-zA-Z]\)fpclassify(#\1std::fpclassify(#g' "$ES/src/synthesizer.cpp"
+
 # B5: generate the script parser once, on the host, with the same commands piranha's CMake uses.
 (cd "$P" &&
   flex --header-file="$GEN/scanner.auto.h" -o "$GEN/scanner.auto.cpp" flex-bison/scanner.l &&
