@@ -53,7 +53,8 @@ jobs:
         run: sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
       - name: Build
         run: |
-          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          set -o pipefail
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/build" -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release \
             -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
           cmake --build "$RUNNER_TEMP/build" 2>&1 | tail -60
       - name: Render engines
@@ -101,7 +102,7 @@ jobs:
         run: |
           cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/b-mac" -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
-          cmake --build "$RUNNER_TEMP/b-mac" 2>&1 | tail -40
+          cmake --build "$RUNNER_TEMP/b-mac" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
           mkdir -p out
           cd "$RUNNER_TEMP/es/assets"
           run() { timeout 600 "$RUNNER_TEMP/b-mac/esim_render" "main_$1.mr" "$GITHUB_WORKSPACE/out/mac-$1.wav" "$1" "$2" || { echo "FAILED $1"; cat error_log.log 2>/dev/null; true; }; }
@@ -114,7 +115,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
-          cmake --build "$RUNNER_TEMP/b-sim" 2>&1 | tail -40
+          cmake --build "$RUNNER_TEMP/b-sim" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
 
       - name: Run inside the iOS Simulator
         continue-on-error: true
@@ -133,7 +134,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
-          cmake --build "$RUNNER_TEMP/b-dev" 2>&1 | tail -40
+          cmake --build "$RUNNER_TEMP/b-dev" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
           find "$RUNNER_TEMP/b-dev" -name '*.a' -exec ls -l {} \; -exec lipo -info {} \;
           lipo -info "$RUNNER_TEMP/b-dev/esim_render"
           echo "undefined symbols that mention delta/SDL/boost (should be none):"
