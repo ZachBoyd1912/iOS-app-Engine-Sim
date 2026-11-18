@@ -105,7 +105,7 @@ jobs:
           cmake --build "$RUNNER_TEMP/b-mac" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
           mkdir -p out
           cd "$RUNNER_TEMP/es/assets"
-          run() { timeout 600 "$RUNNER_TEMP/b-mac/esim_render" "main_$1.mr" "$GITHUB_WORKSPACE/out/mac-$1.wav" "$1" "$2" || { echo "FAILED $1"; cat error_log.log 2>/dev/null; true; }; }
+          run() { "$RUNNER_TEMP/b-mac/esim_render" "main_$1.mr" "$GITHUB_WORKSPACE/out/mac-$1.wav" "$1" "$2" || { echo "FAILED $1"; cat error_log.log 2>/dev/null; true; }; }
           run 08_ferrari_f136_v8 "1000:0.05:2,3000:0.3:4,6000:1.0:4"
           run 12_ferrari_412_t2  "3000:0.1:2,8000:0.5:4,12000:1.0:4"
 
@@ -124,7 +124,7 @@ jobs:
           echo "simulator $UDID"
           xcrun simctl boot "$UDID" || true
           export SIMCTL_CHILD_ES_ASSETS="$RUNNER_TEMP/es/assets"
-          timeout 600 xcrun simctl spawn "$UDID" "$RUNNER_TEMP/b-sim/esim_render" \
+          xcrun simctl spawn "$UDID" "$RUNNER_TEMP/b-sim/esim_render" \
             main_08_ferrari_f136_v8.mr "$GITHUB_WORKSPACE/out/ios-sim-08_ferrari_f136_v8.wav" 08_ferrari_f136_v8 \
             "1000:0.05:2,3000:0.3:4,6000:1.0:4"
 
