@@ -49,7 +49,18 @@ struct MeshBuilder {
 
     /// A hose or pipe of `radius` swept along a Catmull-Rom curve through `points`.
     mutating func addTube(through points: [SIMD3<Float>], radius: Float, segments: Int = 10, samplesPerSpan: Int = 8) {
-        let path = Self.catmullRom(points, samplesPerSpan: samplesPerSpan)
+        var path = Self.catmullRom(points, samplesPerSpan: samplesPerSpan)
+        // Drop consecutive duplicates. A repeated sample gives a zero-length tangent, and
+        // normalising that yields NaN vertices - which do not just hide one ring, they corrupt
+        // the whole buffer on the GPU and produce garbage geometry (giant clipped shapes) plus a
+        // huge performance hit. Seen on device with the W16 four-bank, 22/11/2026.
+        var cleaned: [SIMD3<Float>] = []
+        cleaned.reserveCapacity(path.count)
+        for point in path {
+            if let last = cleaned.last, simd_length(last - point) <= 1e-6 { continue }
+            cleaned.append(point)
+        }
+        path = cleaned
         guard path.count >= 2 else { return }
         var rings: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)] = []
         var e1 = SIMD3<Float>(0, 0, 0)
@@ -70,10 +81,16 @@ struct MeshBuilder {
         }
         guard rings.count >= 2, let first = rings.first, let last = rings.last else { return }
         addRingStrip(rings: rings, radius: radius, segments: segments)
-        let startTangent = simd_normalize(rings[1].0 - first.0)
-        let endTangent = simd_normalize(last.0 - rings[rings.count - 2].0)
-        addCap(center: last.0, normal: endTangent, e1: last.1, e2: last.2, radius: radius, segments: segments, flip: false)
-        addCap(center: first.0, normal: -startTangent, e1: first.1, e2: first.2, radius: radius, segments: segments, flip: true)
+        // Caps only when the end rings are actually apart; otherwise the tangent is zero-length
+        // and normalising it puts NaN in the normals buffer.
+        let startDelta = rings[1].0 - first.0
+        if simd_length(startDelta) > 1e-6 {
+            addCap(center: first.0, normal: -simd_normalize(startDelta), e1: first.1, e2: first.2, radius: radius, segments: segments, flip: true)
+        }
+        let endDelta = last.0 - rings[rings.count - 2].0
+        if simd_length(endDelta) > 1e-6 {
+            addCap(center: last.0, normal: simd_normalize(endDelta), e1: last.1, e2: last.2, radius: radius, segments: segments, flip: false)
+        }
     }
 
     @MainActor

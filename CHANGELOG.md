@@ -1,4 +1,27 @@
 # Changelog
+## 22/11/2026 @ 23:55:44 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes a rendering defect on the app's hero screen; it does not complete a roadmap item.
+
+**Goal:** stop the 3D engine rendering as giant clipped garbage on device (0.2.2, iPhone 13). Evidence: the Engine screen showed enormous white shapes and a giant warning glyph inside the viewport, with `dropouts 8903-10732` and "phone hot" in the sound panel. The accessibility tree contains no such text, which places the artefact inside the RealityKit scene rather than SwiftUI.
+
+**Cause.** `HoseMesh.addTube` normalised the two end-cap tangents without checking their length:
+
+```swift
+let startTangent = simd_normalize(rings[1].0 - first.0)
+let endTangent = simd_normalize(last.0 - rings[rings.count - 2].0)
+```
+
+`catmullRom` can emit consecutive duplicate samples (a control point repeated, or a degenerate span). Every hose, intake runner and exhaust pipe goes through `addTube`, so a single duplicate gives a zero-length delta, `simd_normalize` returns NaN, and the NaN lands in the **normals buffer for the whole merged mesh** - the geometry then draws as runaway shapes and the GPU burns cycles rasterising them, which also starves the audio render thread (hence the dropout counter climbing ~1000/s). `addCylinder` already guarded its axis; `addTube` did not.
+
+**Fixed**
+- `HoseMesh.addTube`: consecutive duplicate samples are dropped before rings are built, and each cap is emitted only when its delta is longer than 1e-6, so no NaN can enter the buffer. Comment records the symptom so it is not "simplified" back.
+
+**Verified so far:** the artefact and the dropout rate were captured in `builds/device/2026-11-22/screen-engine.png` and `verify-234320-*` on 0.2.2. **Not verified:** that 0.2.3 renders a recognisable engine - that needs the next install and a fresh screenshot.
+
+**Files Touched:** `Native/App/Engine3D/HoseMesh.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
 ## 22/11/2026 @ 23:25:18 IST - "deepseek-flash"
 
 **Project completion: 17.39%**

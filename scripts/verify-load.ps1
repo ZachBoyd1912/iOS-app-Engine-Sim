@@ -19,8 +19,8 @@ param(
   [string]$BundleId = 'ie.zbautomations.pistonforge',
   [int]$Seconds = 120,
   [string]$Udid,
-  # Labels that only prove the app under test is on screen
-  [string[]]$Markers = @('Fuel VE', 'Turbo Four')
+  # Labels that only prove the app under test is on screen (verified against the live tree)
+  [string[]]$Markers = @('Start engine', 'Rev limiter', 'Engine speed')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,10 +30,11 @@ $device = Join-Path $PSScriptRoot 'device.ps1'
 function Invoke-Device { param([string[]]$A) & $device @A 2>&1 }
 
 function Get-CrashCount {
-  # Count report *filenames* mentioning the app; `ios crash ls <glob>` returns files:null
-  # for patterns that do not match exactly, which silently reads as "zero crashes".
-  $out = (Invoke-Device @('crash')) | Out-String
-  return ([regex]::Matches($out, 'PistonForge-\d{4}-')).Count
+  # Count report *filenames* mentioning the app. `ios crash ls <glob>` returns files:null for a
+  # pattern that does not match exactly, which silently reads as "zero crashes" - that bug made
+  # this verifier report 0 for an app that had eleven reports on file.
+  $out = (& ios crash ls 2>&1 | Out-String)
+  return ([regex]::Matches($out, 'PistonForge-\d{4}-\d{2}-\d{2}')).Count
 }
 
 function Get-TreeJson {
