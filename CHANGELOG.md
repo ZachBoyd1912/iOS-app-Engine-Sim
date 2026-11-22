@@ -1,4 +1,30 @@
 # Changelog
+## 22/11/2026 @ 22:01:11 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged: this entry adds a testing harness, it does not finish a product feature. Item 23 ("Simulator screenshot and unsigned .ipa produced by CI and installed on Zach's iPhone") is now *half* proven — the installed app was verified on the device — but the item also covers the CI Simulator screenshot, so it stays unticked rather than being credited on a partial. Item 20 (performance on a real iPhone) stays open until numbers are actually sampled.
+
+**Goal:** give this repo a way to install, launch, screenshot and log Piston Forge on Zach's real iPhone from this Windows PC, with no Mac and no jailbreak, so the "cannot be proven from Windows" list in `docs/ios-release.md` can finally be worked through.
+
+**Why this shape.** Zach asked about `ipasimulator/ipasim` (IPA Sim) as a vPhone-style virtual iPhone. It is not one: it is a WinObjC-era UWP emulator whose README states "only simple applications can be emulated", it has no SwiftUI or RealityKit, and its author states he does not plan to continue it. vPhone needs Apple Silicon macOS, touchHLE only covers iPhone OS 2.x–4.x apps, and `vphone-win-port` does not run a VM yet. Since the goal was testing Piston Forge on a *real* iPhone, the harness drives the physical device over USB instead — the same binary a player installs.
+
+**Added**
+- `scripts/device.ps1` — one entry point for `status | start | stop | apps | launch | kill | install | shot | logs | report` plus pass-throughs for taps once a UI driver is signed. `shot` prints a bare absolute path so an agent can read the image back. Tunnel start is idempotent and polls until `apps --list` succeeds rather than sleeping blind.
+- `.opencode/skills/ios-device/SKILL.md` — the agent-facing contract, with the traps that cost time: unsigned IPAs are rejected by `install` (Sideloadly is the signer, not go-ios), always target an explicit UDID, free-account 3-app/7-day limits, and `ios screenshot` vs `ios ui screenshot` needing different prerequisites.
+- `docs/ios-device-testing.md` — runbook: verified device/tool state, daily commands, the one manual signing step, and what the harness still cannot prove (sound quality, haptic feel).
+
+**Changed**
+- `docs/ios-release.md` — the "NOT yet done: an actual install on a phone" line was stale; an install is now confirmed and the PC can drive the device, so it says so and points at the new runbook.
+
+**Verified on the device (not inferred):**
+- iPhone 13 (`iPhone14,5`), iOS 27.2 build 24B5099f, UDID `00008110-001A2D200CDB801E`.
+- go-ios 1.3.2 installed; **userspace tunnel negotiates with no admin rights and no `wintun.dll`** — the kernel path was tried first and correctly refused with "needs elevated privileges", which removed two UAC steps from the plan.
+- `apps` lists `ie.zbautomations.pistonforge  Piston Forge 0.2.0`; that version matches `builds/v2-latest/PistonForge-native-unsigned.ipa` (0.2.0 build 1, min iOS 18.0, arm64 `iphoneos`), so the phone is running the latest build already.
+- `launch` started the process (PID 69407) and a screenshot 9 s later shows the Tune screen with the "288 hp @ 6952, 305 Nm" readout — proving the launch/screenshot loop against the real app.
+- `syslog` streams (2700 lines in 8 s) and filters correctly (18/1154 matched `SpringBoard`).
+- **Not verified:** taps. `ios ui status` has no driver, and the DeviceKit runner IPA is unsigned for this device (`ApplicationVerificationFailed`), so UI automation waits on one Sideloadly signing pass.
+
+**Files Touched:** `scripts/device.ps1`, `.opencode/skills/ios-device/SKILL.md`, `docs/ios-device-testing.md`, `docs/ios-release.md`, `CHANGELOG.md`.
 ## 18/11/2026 @ 16:52:00 IST — "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
