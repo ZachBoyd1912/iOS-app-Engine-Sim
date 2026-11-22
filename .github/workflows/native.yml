@@ -262,10 +262,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          IPA="$GITHUB_WORKSPACE/Native/build/ipa/PistonForge-native-unsigned.ipa"
+          ls -lh "$IPA"
           gh release view device-test >/dev/null 2>&1 || gh release create device-test \
             --title "Device test builds" \
             --notes "Unsigned Piston Forge IPA for sideloading from Windows. Overwritten on every device build; not a user-facing release."
-          gh release upload device-test Native/build/ipa/PistonForge-native-unsigned.ipa --clobber
+          gh release upload device-test "$IPA" --clobber
           gh release view device-test --json assets -q '.assets[] | .name + " " + (.size|tostring) + " bytes"'
 
       - name: Upload Simulator app
