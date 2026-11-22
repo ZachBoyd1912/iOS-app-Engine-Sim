@@ -85,13 +85,7 @@ final class SoundEngine {
         }
         if source == nil {
             let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 44100, channels: 1, interleaved: false)!
-            let node = AVAudioSourceNode(format: format) { _, _, frameCount, audioBufferList in
-                let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
-                if let data = buffers[0].mData?.assumingMemoryBound(to: Float.self) {
-                    esim_read(data, Int32(frameCount))
-                }
-                return noErr
-            }
+            let node = AVAudioSourceNode(format: format, renderBlock: Self.render)
             source = node
             audio.attach(node)
             audio.connect(node, to: audio.mainMixerNode, format: format)
@@ -113,6 +107,24 @@ final class SoundEngine {
         poller = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.poll() }
         }
+    }
+
+    /// The audio render block. It is called on Core Audio's real-time I/O thread, never on the
+    /// main actor, so it must be `nonisolated`: a closure written inside this `@MainActor`
+    /// class inherits main-actor isolation under Swift 6, and the runtime isolation check traps
+    /// (`EXC_BREAKPOINT` inside `dispatch_assert_queue`) the first time audio is pulled. That is
+    /// exactly how 0.2.0 died on the phone - three identical crash reports on 22/11/2026.
+    private nonisolated static func render(
+        _ isSilence: UnsafeMutablePointer<ObjCBool>,
+        _ timestamp: UnsafePointer<AudioTimeStamp>,
+        _ frameCount: AVAudioFrameCount,
+        _ audioBufferList: UnsafeMutablePointer<AudioBufferList>
+    ) -> OSStatus {
+        let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
+        if let data = buffers[0].mData?.assumingMemoryBound(to: Float.self) {
+            esim_read(data, Int32(frameCount))
+        }
+        return noErr
     }
 
     func unload() {

@@ -1,4 +1,20 @@
 # Changelog
+## 22/11/2026 @ 22:09:38 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 20 (performance verified on a real iPhone) and item 23 stay open — but this entry does settle the first real-device question the iOS plan has been carrying since 15/11: the app crashed on every launch, and now we know why.
+
+**Goal:** stop Piston Forge 0.2.0 crashing on the phone. First real-device session immediately produced three identical crash reports, so the goal became "diagnose from those reports, not from guesswork".
+
+**Cause.** All three crashes are the same: `EXC_BREAKPOINT / SIGTRAP`, faulting thread `AURemoteIO::IOThread`, stack `_dispatch_assert_queue_fail` → `dispatch_assert_queue` → `_swift_task_checkIsolatedSwift` → `closure #2 in SoundEngine.load(build:exhaust:limiter:)`. `SoundEngine` is `@MainActor`, so the `AVAudioSourceNode` render closure written inside it **inherits main-actor isolation**. Core Audio calls that block on its real-time I/O thread, Swift 6 mode inserts a dynamic isolation check on the way in, the check fails, and the process traps the first time audio is pulled. `Native/project.yml` sets `SWIFT_VERSION: "6.0"`; the engine-sim spike app has the identical closure but built in Swift 5 mode, which is exactly why it "sounded perfect" on the phone while the real app dies. This was never a signing or sideloading problem — it would crash the same way from TestFlight.
+
+**Fixed**
+- `Native/App/Sound/SoundEngine.swift`: the render block is now `private nonisolated static func render(...)`, passed as `renderBlock: Self.render` instead of an inline closure. A `nonisolated` static function carries no actor isolation, so no runtime check is inserted and the audio thread can call it. The comment records the crash signature so nobody reintroduces the closure form.
+
+**Verified so far:** the crash reports were pulled off the device with `ios crash cp` and parsed (`EXC_BREAKPOINT`, thread, symbolicated frame). The fix itself is **not yet verified on the phone** — that needs a CI build (macOS) and a Sideloadly re-sign, which is the next step.
+
+**Files Touched:** `Native/App/Sound/SoundEngine.swift`, `CHANGELOG.md`.
+
 ## 22/11/2026 @ 22:01:11 IST - "deepseek-flash"
 
 **Project completion: 17.39%**
