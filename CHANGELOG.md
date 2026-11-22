@@ -1,4 +1,21 @@
 # Changelog
+## 22/11/2026 @ 22:22:42 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 23 ("unsigned .ipa produced by CI and installed on Zach's iPhone") is the one this touches, and it still cannot be ticked tonight: the CI can build the IPA but cannot deliver it, for a reason that has nothing to do with the app.
+
+**Goal:** get a build with the audio fix onto the phone. Two failed runs showed the real blocker.
+
+**Cause.** Run 45076156023 and 45076919133 both stopped in `sim-tests` with *"Failed to CreateArtifact: Artifact storage quota has been hit"*. Because `app` declares `needs: sim-tests`, that failure skipped the macOS job entirely — **the audio fix has never been compiled, let alone tested**. Deleting 1.4 GB of stale artifacts (91 of them, oldest first) did not help: GitHub states usage is recalculated only every 6-12 hours, so enforcement stays latched for the rest of the day. The app job was being blocked by an upload of engine-sim *test fixtures*, not by anything in the product.
+
+**Changed**
+- `.github/workflows/native.yml`: every `upload-artifact` step is now `continue-on-error: true`, so a storage-quota failure can no longer skip the macOS build. The `.ipa` is additionally published as a **release asset** on a `device-test` tag, which is not counted against Actions artifact storage, and the workflow gains `contents: write` for that one purpose. Pull it with `gh release download device-test -p "*.ipa" -D builds/device-latest --clobber`.
+- The release is explicitly not user-facing: title "Device test builds", overwritten every run, notes say so.
+
+**Verified:** the two run logs (`gh run view --log-failed`) name the quota error verbatim; the step list for 45076156023 shows `sim-tests: failure` at the two upload steps and `app: skipped`. Not yet verified: that the workflow edit runs green — that is the next dispatch.
+
+**Files Touched:** `.github/workflows/native.yml`, `CHANGELOG.md`.
+
 ## 22/11/2026 @ 22:09:38 IST - "deepseek-flash"
 
 **Project completion: 17.39%**

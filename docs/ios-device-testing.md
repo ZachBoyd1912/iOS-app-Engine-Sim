@@ -62,21 +62,65 @@ per device. The paid Developer Program removes both and adds TestFlight; not nee
 
 ## UI automation (taps, swipes, typing, element tree)
 
-The driver artifacts are already downloaded to `C:\Users\zboyd\tools\ioslab\ui\`:
+Artifacts live in `C:\Users\zboyd\tools\ioslab\ui\` — `devicekit-ios-runner-0.0.18.ipa`
+(preferred) and `WebDriverAgentRunner-13.2.0.zip` (fallback). They need the same Sideloadly
+signing pass once. Signing the driver costs one of the three free app slots.
 
-- `devicekit-ios-runner-0.0.18.ipa` (preferred)
-- `WebDriverAgentRunner-13.2.0.zip` (fallback)
+Then the sequence is **not** obvious, and three things block it in order:
 
-They are unsigned for this device, so they need the same Sideloadly step once. After that:
+**1. Mount the Developer Disk Image.** `ios ui run` needs `com.apple.dt.testmanagerd.remote`,
+which only exists once a DDI is mounted. go-ios's own `ios image auto` fails on this PC:
+
+```
+failed to get signature from Apple: Post "https://gs.apple.com/TSS/controller?action=2":
+tls: failed to verify certificate: x509: certificate signed by unknown authority
+```
+
+That is not an Apple outage. `gs.apple.com` returns only its leaf (issuer `Apple Server
+Authentication CA`) with no intermediate, and Windows' AIA fetch cannot build the chain —
+`curl` reports the same `SEC_E_UNTRUSTED_ROOT`. pymobiledevice3 ships its own trust bundle and
+gets through, so mount with that:
 
 ```powershell
-ios ui status                 # driver healthy?
-ios ui source                 # accessibility tree — match by label, not coordinates
+.\scripts\device.ps1 ddi        # pymobiledevice3 mounter auto-mount
+# -> DeveloperDiskImage mounted successfully
+```
+
+**2. Start the runner through testmanagerd.** The DeviceKit app is an `.xctrunner`, not a
+normal app: tapping it on the home screen aborts with `XCTRunnerDaemonSession sharedSession`
+assertion failure. It must be launched as a test session, and Sideloadly has rewritten its
+bundle id, so pass it explicitly:
+
+```powershell
+.\scripts\device.ps1 ui-run com.mobilenext.devicekit-iosUITests.xctrunner
+```
+
+**3. Enable UI Automation on the phone.** Without it the session authorizes and then dies with
+`Timed out while enabling automation mode (com.apple.dt.XCTest.XCTFuture, code 1000)` — the
+phone being locked is *not* the cause. Turn it on in **Settings → Developer → Enable UI
+Automation**, then re-run step 2. Keep Auto-Lock off while testing.
+
+Once `ios ui status` answers:
+
+```powershell
+ios ui source                 # accessibility tree - match by label, not coordinates
 ios ui tap --x=.. --y=..      # or tap by element once the tree is available
 .\scripts\device.ps1 tree | tap | swipe | type    # pass-through wrappers
 ```
 
-Signing the driver costs one of the three free app slots: Piston Forge + driver = 2 of 3.
+## Reading crash reports
+
+The single most useful thing this harness bought on day one. Crash reports come off the
+device and are symbolicated:
+
+```powershell
+.\scripts\device.ps1 crash                 # list (filter: crash 'PistonForge*')
+.\scripts\device.ps1 crash copy            # -> %TEMP%\ioscrash\*.ips
+```
+
+`.ips` files are a one-line JSON header plus a JSON body. Read `exception`, `termination`,
+the faulting thread's frames and `asi` — that is enough to name the bug without a debugger,
+which is how the Swift 6 audio-isolation SIGTRAP was found (see CHANGELOG 22/11/2026).
 
 ## What this finally makes answerable
 

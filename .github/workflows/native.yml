@@ -40,7 +40,9 @@ on:
       - '.github/workflows/native.yml'
 
 permissions:
-  contents: read
+  # write: the IPA is published as a release asset (Actions artifact storage is
+  # quota-capped per account and blocked device testing on 22/11/2026).
+  contents: write
 
 jobs:
   sim-tests:
@@ -57,6 +59,7 @@ jobs:
         run: swift test
       - name: Upload engine-sim scripts
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: engine-scripts
@@ -65,6 +68,7 @@ jobs:
 
       - name: Upload engine sounds
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: engine-sounds
@@ -115,6 +119,7 @@ jobs:
           cat "$GITHUB_WORKSPACE/out/summary.txt"
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: engine-sim-render-check
           path: out/
@@ -213,6 +218,7 @@ jobs:
 
       - name: Upload screenshots
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: native-screenshots
@@ -221,6 +227,7 @@ jobs:
 
       - name: Upload test results
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: native-xcresult
@@ -239,11 +246,27 @@ jobs:
           unzip -l PistonForge-native-unsigned.ipa | grep -E "PrivacyInfo|Assets.car|PistonForge$"
 
       - name: Upload unsigned .ipa
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: PistonForge-native-unsigned-ipa
           path: Native/build/ipa/PistonForge-native-unsigned.ipa
           if-no-files-found: error
+
+      - name: Publish unsigned .ipa to the device-test release
+        # Actions artifact storage is capped per account and the quota is recalculated
+        # only every 6-12 hours, so once it is hit every upload fails for the rest of
+        # the day - that is exactly what blocked device testing on 22/11/2026.
+        # Release assets are not counted against that quota. Pull it on the PC with:
+        #   gh release download device-test -p "*.ipa" -D builds/device-latest --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view device-test >/dev/null 2>&1 || gh release create device-test \
+            --title "Device test builds" \
+            --notes "Unsigned Piston Forge IPA for sideloading from Windows. Overwritten on every device build; not a user-facing release."
+          gh release upload device-test Native/build/ipa/PistonForge-native-unsigned.ipa --clobber
+          gh release view device-test --json assets -q '.assets[] | .name + " " + (.size|tostring) + " bytes"'
 
       - name: Upload Simulator app
         uses: actions/upload-artifact@v4

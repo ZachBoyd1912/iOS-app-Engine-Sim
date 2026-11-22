@@ -19,7 +19,7 @@
 param(
   [Parameter(Position = 0)]
   [ValidateSet('status', 'start', 'stop', 'apps', 'launch', 'kill', 'install', 'shot', 'logs',
-    'tree', 'tap', 'swipe', 'type', 'button', 'ui', 'report', 'help')]
+    'tree', 'tap', 'swipe', 'type', 'button', 'ui', 'report', 'ddi', 'ui-run', 'crash', 'help')]
   [string]$Command = 'status',
 
   [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
@@ -141,11 +141,53 @@ scripts/device.ps1 <command> [args]
   shot    [name]          screenshot -> builds\device\<date>\<name>.png
   logs    [-Seconds N]    sample syslog, optionally -Filter regex
   report                  screenshot + version + 20s syslog -> report.md
-  tree | tap | swipe | type | button | ui   (needs DeviceKit/WDA, see docs)
+  ddi                     mount the Developer Disk Image (needed for UI automation)
+  ui-run                  start the DeviceKit runner through testmanagerd
+  crash [pattern|copy]    list crash reports, or copy them to %TEMP%\ioscrash
+  tree | tap | swipe | type | button | ui   (needs ui-run first, see docs)
 
 Free Apple ID: an unsigned IPA is rejected by `install`. Sign it in Sideloadly
 first (that also refreshes the 7-day signature). Everything else is scriptable.
 '@
+  }
+
+  'ddi' {
+    # go-ios `image auto` cannot do this on Windows: gs.apple.com returns a bare
+    # leaf certificate that the Windows root store rejects (SEC_E_UNTRUSTED_ROOT).
+    # pymobiledevice3 carries its own trust bundle, so it gets through TSS.
+    Write-Host 'mounting Developer Disk Image via pymobiledevice3 ...' -ForegroundColor Cyan
+    & pymobiledevice3 mounter auto-mount
+    if ($LASTEXITCODE -ne 0) { throw 'DDI mount failed (is pymobiledevice3 installed? `uv tool install pymobiledevice3`)' }
+  }
+
+  'ui-run' {
+    Start-Tunnel | Out-Null
+    if (-not (Get-TunnelProcess)) { throw 'tunnel must be running first' }
+    $bundle = if ($Rest) { $Rest[0] } else { 'com.mobilenext.devicekit-iosUITests.xctrunner' }
+    $exe = Get-IosExe
+    Write-Host "starting DeviceKit runner ($bundle) - Sideloadly rewrites this id, check ``.\scripts\device.ps1 apps``" -ForegroundColor Cyan
+    Start-Process -FilePath $exe -WindowStyle Hidden -ArgumentList @(
+      'ui', 'run', 'devicekit', "--udid=$(Resolve-Udid)",
+      "--bundleid=$bundle", "--test-runner-bundleid=$bundle"
+    ) -RedirectStandardOutput (Join-Path $script:StateDir 'uirun.log') `
+      -RedirectStandardError (Join-Path $script:StateDir 'uirun.err') | Out-Null
+    Start-Sleep -Seconds 12
+    Get-Content (Join-Path $script:StateDir 'uirun.err') -ErrorAction SilentlyContinue | Select-Object -Last 3
+    Write-Host 'check with: ios ui status' -ForegroundColor DarkGray
+  }
+
+  'crash' {
+    $mode = if ($Rest) { $Rest[0] } else { 'list' }
+    if ($mode -eq 'copy') {
+      $dir = Join-Path $env:TEMP 'ioscrash'
+      New-Item -ItemType Directory -Force -Path $dir | Out-Null
+      $pattern = if ($Rest.Count -gt 1) { $Rest[1] } else { 'PistonForge*' }
+      Invoke-Ios @('crash', 'cp', $pattern, $dir) | Out-Host
+      Write-Output $dir
+    } else {
+      if ($mode -eq 'list') { Invoke-Ios @('crash', 'ls') | Out-Host }
+      else { Invoke-Ios @('crash', 'ls', $mode) | Out-Host }
+    }
   }
 
   'status' {
