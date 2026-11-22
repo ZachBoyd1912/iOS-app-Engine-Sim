@@ -26,6 +26,9 @@ final class SoundEngine {
     private var source: AVAudioSourceNode?
     private var loadedKey = ""
     private var poller: Timer?
+    // Serialises loads. Two overlapping calls used to race inside engine-sim's C++ state
+    // (a start in flight while a stop ran), which is one of the ways this app died on device.
+    private var loadChain: Task<Void, Never>?
 
     private var assetsPath: String {
         (Bundle.main.resourceURL ?? URL(fileURLWithPath: "/")).appendingPathComponent("engine/assets").path
@@ -36,7 +39,18 @@ final class SoundEngine {
     }
 
     /// Loads (or reloads) the engine's sound. Safe to call again with the same settings.
+    /// Calls are queued in order, so the bridge never sees two loads at once.
     func load(build: EngineBuild, exhaust: ExhaustPreset, limiter: LimiterStyle) async {
+        let previous = loadChain
+        let task = Task { @MainActor in
+            await previous?.value
+            await self.performLoad(build: build, exhaust: exhaust, limiter: limiter)
+        }
+        loadChain = task
+        await task.value
+    }
+
+    private func performLoad(build: EngineBuild, exhaust: ExhaustPreset, limiter: LimiterStyle) async {
         let key = "\(build.layout.rawValue)|\(Int(build.bore * 10))|\(Int(build.stroke * 10))|\(exhaust.rawValue)|\(limiter.rawValue)"
         if key == loadedKey, isLoaded { return }
         isLoading = true
@@ -65,6 +79,11 @@ final class SoundEngine {
                     var data = Data(bytes)
                     if name.hasSuffix(".mr"), var text = String(data: data, encoding: .utf8) {
                         text = text.replacingOccurrences(of: "../es/sound-library", with: es + "/sound-library")
+                        // The generated impulse responses are written to the caches work directory,
+                        // but engine-sim resolves relative names against `assetsDir`, which is the
+                        // read-only bundle folder. Without this, readWav16 misses and every
+                        // generated preset fails to load (code 4). Caught on device, 22/11/2026.
+                        text = text.replacingOccurrences(of: "filename: \"ir_", with: "filename: \"\(workDirectory.path)/ir_")
                         data = Data(text.utf8)
                     }
                     try data.write(to: workDirectory.appendingPathComponent(name))
@@ -147,6 +166,12 @@ final class SoundEngine {
     private func poll() {
         var stats = esim_stats()
         esim_stats_get(&stats)
+        if esim_fault() != 0, message.isEmpty {
+            // engine-sim failed on its own thread. Before the bridge was guarded this was a
+            // silent process abort; now it becomes something the player can see.
+            message = "Engine sound stopped after an internal fault."
+            isLoaded = false
+        }
         loadPercent = stats.load_percent
         dropouts = Int(stats.underruns)
         switch ProcessInfo.processInfo.thermalState {

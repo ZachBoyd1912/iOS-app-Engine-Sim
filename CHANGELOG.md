@@ -1,4 +1,25 @@
 # Changelog
+## 22/11/2026 @ 23:25:18 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged: this removes a crash and a broken feature, it does not finish a roadmap item. Item 23 stays open until a build is installed and verified from the phone side.
+
+**Goal:** kill the second crash found on the device (23:04, `std::terminate` in `SoundEngine.load`'s detached task) and fix what the investigation uncovered underneath it.
+
+**Cause (two bugs, one investigation).**
+1. **No exception boundary.** `esim_bridge.cpp` had zero `try`/`catch` and no lock anywhere. engine-sim and piranha throw (`EmptyPort`, `InvalidLiteralType`, `filesystem_error`, `bad_alloc`); every throw unwound out of the `extern "C"` functions into Swift's async thunk, whose cleanup calls `__clang_call_terminate` → `std::terminate` → SIGABRT. That is the 23:04 report exactly: no engine-sim frames, because the unwinder had already popped them.
+2. **Loads could overlap.** `SoundEngine.load` set `isLoading` but never checked it, and the bridge's `esim_start` began with an unlocked `esim_stop()`. Two picker changes ~300 ms apart (the debounce in `GameStore.reloadSound`) put a stop inside a start; two starts in flight both reach `g.thread = std::thread(simLoop)`, and assigning to a joinable `std::thread` is defined to call `std::terminate()` with nothing to catch.
+
+**Fixed**
+- `esim_bridge.cpp`: lifecycle `std::mutex` around start/stop; every public entry point wrapped so no C++ exception crosses the boundary (codes 5 `system_error`, 6 `std::exception`, 7 unknown); teardown inside catch handlers is itself guarded; the sim thread body is wrapped and latches a fault instead of terminating; `esim_read` no longer allocates on the audio thread (fixed 8 KiB buffer, `try`/`catch` → silence + fault); `esim_stats_get` null-checks; new `esim_fault()`.
+- `esim_bridge.h`: declares `esim_fault()`.
+- `SoundEngine.swift`: loads are queued on a `Task` chain so the bridge never sees two at once; `esim_fault()` is polled and surfaced as "Engine sound stopped after an internal fault" instead of a silent death.
+- `SoundEngine.swift`: **impulse-response path fix.** Generated IRs are written to the caches work directory but referenced by a bare filename, and engine-sim resolves it against the read-only bundle folder. `readWav16` therefore missed and **every generated preset returned code 4** — only `.reference` could ever load. The rewrite now emits the absolute path, the same way the reference recording was already handled.
+
+**Verified:** the crash signature was read off the device (`.ips` via `ios crash cp`), and every claim above was traced to a specific file:line by a read-only audit agent. **Not yet verified:** that 0.2.2 compiles and that the presets load and the app survives a rapid preset switch — that is the next device run.
+
+**Files Touched:** `Native/EngineSimSpike/App/Bridge/esim_bridge.cpp`, `Native/EngineSimSpike/App/Bridge/esim_bridge.h`, `Native/App/Sound/SoundEngine.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
 ## 22/11/2026 @ 22:22:42 IST - "deepseek-flash"
 
 **Project completion: 17.39%**

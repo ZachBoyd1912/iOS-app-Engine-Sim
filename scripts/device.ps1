@@ -19,7 +19,7 @@
 param(
   [Parameter(Position = 0)]
   [ValidateSet('status', 'start', 'stop', 'apps', 'launch', 'kill', 'install', 'shot', 'logs',
-    'tree', 'tap', 'swipe', 'type', 'button', 'ui', 'report', 'ddi', 'ui-run', 'crash', 'help')]
+    'tree', 'tap', 'swipe', 'type', 'button', 'ui', 'report', 'ddi', 'ui-run', 'ui-off', 'crash', 'help')]
   [string]$Command = 'status',
 
   [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
@@ -143,6 +143,7 @@ scripts/device.ps1 <command> [args]
   report                  screenshot + version + 20s syslog -> report.md
   ddi                     mount the Developer Disk Image (needed for UI automation)
   ui-run                  start the DeviceKit runner through testmanagerd
+  ui-off                  stop the runner when you are done (always do this)
   crash [pattern|copy]    list crash reports, or copy them to %TEMP%\ioscrash
   tree | tap | swipe | type | button | ui   (needs ui-run first, see docs)
 
@@ -174,6 +175,21 @@ first (that also refreshes the 7-day signature). Everything else is scriptable.
     Start-Sleep -Seconds 12
     Get-Content (Join-Path $script:StateDir 'uirun.err') -ErrorAction SilentlyContinue | Select-Object -Last 3
     Write-Host 'check with: ios ui status' -ForegroundColor DarkGray
+  }
+
+  'ui-off' {
+    $p = Get-CimInstance Win32_Process -Filter "Name='ios.exe'" -ErrorAction SilentlyContinue |
+      Where-Object { $_.CommandLine -match 'ui' -and $_.CommandLine -match 'run' }
+    if (-not $p) {
+      Write-Host 'ui-run: not running'
+    } else {
+      $p | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+      Write-Host 'ui-run: stopped'
+    }
+    Write-Host ''
+    Write-Host 'Reminder: the device-side "Enable UI Automation" switch is a device-wide' -ForegroundColor Yellow
+    Write-Host 'debugging setting. Turn it off in Settings > Developer when you are done for' -ForegroundColor Yellow
+    Write-Host 'the day - it cannot be turned back on remotely, so it needs a human tap.' -ForegroundColor Yellow
   }
 
   'crash' {

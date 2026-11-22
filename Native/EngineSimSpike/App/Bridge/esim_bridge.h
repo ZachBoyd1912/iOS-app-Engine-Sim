@@ -31,6 +31,7 @@ void esim_set_aux(int kind, double boost01, double rpm); // 0 none, 1 turbo whis
 void esim_blow_off(void);              // blow-off valve "pshh"
 void esim_read(float *out, int frames); // audio render callback; never blocks long
 void esim_stats_get(esim_stats *out);
+int esim_fault(void); // 1 = engine-sim failed asynchronously; poll alongside esim_stats_get
 
 #ifdef __cplusplus
 }

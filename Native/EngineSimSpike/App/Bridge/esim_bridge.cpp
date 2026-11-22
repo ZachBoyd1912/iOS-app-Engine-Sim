@@ -15,7 +15,10 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <mutex>
+#include <new>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <vector>
 
@@ -32,6 +35,13 @@ struct Session {
 };
 
 Session g;
+// Serialises start/stop. Without it, two overlapping loads can both reach
+// `g.thread = std::thread(...)`, and assigning to a joinable std::thread is defined to call
+// std::terminate() with no exception to catch. Verified crash path, 22/11/2026.
+std::mutex g_lifecycle;
+// Latched when something inside engine-sim fails asynchronously (sim thread, audio thread);
+// the Swift side polls it so a failure becomes a message instead of a silent process death.
+std::atomic<int> g_fault{0};
 std::atomic<bool> g_running{false};
 std::atomic<double> g_throttle{0.2};
 std::atomic<int> g_hold{0};
@@ -149,8 +159,7 @@ void simLoop() {
 
 extern "C" {
 
-int esim_start(const char *assetsDir, const char *mainScript, char *err, int errLen) {
-    esim_stop();
+static int startImpl(const char *assetsDir, const char *mainScript, char *err, int errLen) {
     if (chdir(assetsDir) != 0) {
         setError(err, errLen, std::string("cannot enter ") + assetsDir);
         return 1;
@@ -224,11 +233,19 @@ int esim_start(const char *assetsDir, const char *mainScript, char *err, int err
     g_rpm.store(0);
     g.sim->startAudioRenderingThread();
     g_running.store(true);
-    g.thread = std::thread(simLoop);
+    g.thread = std::thread([] {
+        try {
+            simLoop();
+        } catch (...) {
+            // engine-sim threw on its own thread: latch it instead of terminating the app.
+            g_fault.store(1);
+            g_running.store(false);
+        }
+    });
     return 0;
 }
 
-void esim_stop(void) {
+static void stopImpl() {
     if (!g_running.exchange(false) && g.sim == nullptr) return;
     if (g.thread.joinable()) g.thread.join();
     if (g.sim != nullptr) {
@@ -251,6 +268,37 @@ void esim_stop(void) {
     }
 }
 
+// Public entry points. engine-sim and piranha throw (EmptyPort, InvalidLiteralType,
+// filesystem_error, bad_alloc); none of it is caught inside the bridge, so before this
+// wrapper every throw unwound straight into Swift and became std::terminate / SIGABRT.
+// Nothing may cross this boundary as an exception.
+int esim_start(const char *assetsDir, const char *mainScript, char *err, int errLen) {
+    std::lock_guard<std::mutex> life(g_lifecycle);
+    stopImpl();
+    g_fault.store(0);
+    try {
+        return startImpl(assetsDir, mainScript, err, errLen);
+    } catch (const std::system_error &e) {
+        setError(err, errLen, std::string("engine-sim: ") + e.what());
+        try { stopImpl(); } catch (...) {}
+        return 5;
+    } catch (const std::exception &e) {
+        setError(err, errLen, std::string("engine-sim: ") + e.what());
+        try { stopImpl(); } catch (...) {}
+        return 6;
+    } catch (...) {
+        setError(err, errLen, "engine-sim: unknown C++ exception");
+        try { stopImpl(); } catch (...) {}
+        return 7;
+    }
+}
+
+void esim_stop(void) {
+    std::lock_guard<std::mutex> life(g_lifecycle);
+    // Teardown itself can throw (destroy()/join()); it must not escape to the caller.
+    try { stopImpl(); } catch (...) { g_fault.store(1); }
+}
+
 void esim_set(double throttle, int holdMode, double holdRpm) {
     g_throttle.store(throttle < 0 ? 0 : (throttle > 1 ? 1 : throttle));
     g_hold.store(holdMode);
@@ -270,10 +318,19 @@ void esim_set_aux(int kind, double boost01, double rpm) {
 void esim_blow_off(void) { g_bov.store(true); }
 
 void esim_read(float *out, int frames) {
-    static std::vector<int16_t> scratch;
-    if (static_cast<int>(scratch.size()) < frames) scratch.resize(static_cast<size_t>(frames));
+    if (out == nullptr || frames <= 0) return;
+    // Runs on Core Audio's real-time I/O thread. No allocation and no escaping exception:
+    // a resize() here could block or throw, and a throw on this thread kills the process.
+    static int16_t scratch[8192];
+    if (frames > 8192) frames = 8192;
     int got = 0;
-    if (g_running.load() && g.sim != nullptr) got = g.sim->readAudioOutput(frames, scratch.data());
+    try {
+        if (g_running.load() && g.sim != nullptr) got = g.sim->readAudioOutput(frames, scratch);
+    } catch (...) {
+        std::memset(out, 0, sizeof(float) * static_cast<size_t>(frames));
+        g_fault.store(1);
+        return;
+    }
     if (got < frames) g_underruns.fetch_add(1);
     const float volume = g_volume.load();
     const float gain = volume / 32768.0f;
@@ -317,6 +374,7 @@ void esim_read(float *out, int frames) {
 }
 
 void esim_stats_get(esim_stats *s) {
+    if (s == nullptr) return;
     s->rpm = g_rpm.load();
     s->frame_ms = g_frameMs.load();
     s->load_percent = g_frameMs.load() / (1000.0 / 60.0) * 100.0;
@@ -326,5 +384,9 @@ void esim_stats_get(esim_stats *s) {
     s->cylinders = g_cylinders.load();
     s->running = g_running.load() ? 1 : 0;
 }
+
+// 1 when engine-sim failed asynchronously (sim thread or audio thread). The Swift side polls
+// this so the failure becomes a visible message instead of a silent death.
+int esim_fault(void) { return g_fault.load(); }
 
 } // extern "C"

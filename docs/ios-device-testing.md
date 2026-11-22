@@ -100,6 +100,15 @@ bundle id, so pass it explicitly:
 phone being locked is *not* the cause. Turn it on in **Settings → Developer → Enable UI
 Automation**, then re-run step 2. Keep Auto-Lock off while testing.
 
+**Always turn it off again.** That switch is a device-wide debugging setting, not a per-session
+one: it keeps the phone in automation mode for every app, which costs performance and changes
+behaviour. Nothing can turn it off *or back on* remotely, so the rule is:
+
+- when finished driving: `.\scripts\device.ps1 ui-off` (stops the runner)
+- when finished for the day: **Settings → Developer → Enable UI Automation → off**, by hand
+
+Leave it off. A future session starts by asking for the tap again.
+
 Once `ios ui status` answers:
 
 ```powershell

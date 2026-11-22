@@ -61,6 +61,11 @@ C:\Users\zboyd\tools\ioslab\ui\WebDriverAgentRunner-13.2.0.zip
 `ios ui source` is the important one: tap by accessibility label instead of pixel
 guessing, which is what makes agent-driven UI testing reliable.
 
+**Turn the device switch off when you are done.** `Enable UI Automation` in Settings →
+Developer is device-wide and persists across apps — it is not scoped to your session. Stop the
+runner with `.\scripts\device.ps1 ui-off` when you finish a task, and switch the toggle off by
+hand when you finish for the day. It cannot be re-enabled remotely.
+
 ## Piston Forge specifics
 
 - Bundle: `ie.zbautomations.pistonforge`
