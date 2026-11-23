@@ -26,3 +26,7 @@ sideloadly*.log
 
 Native/engine-libs/
 Native/engine-resources/
+
+# go-ios developer disk images (downloaded by 'ios image auto')
+devimages/
+
