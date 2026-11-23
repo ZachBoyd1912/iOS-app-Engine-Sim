@@ -1,4 +1,25 @@
 # Changelog
+## 23/11/2026 @ 20:54:32 IST - "deepseek-flash"
+
+**Project completion: 19.57%**
+Basis: 9 of 46 items ticked in `docs/roadmap.md`, unchanged this entry.
+
+**Goal:** prove the physics tests can fail before trusting them, then get the suite genuinely green.
+
+**Mutation check.** `slidingGripFraction` changed 0.85 → 0.55 (`3b30b3b`). Run `45260125307` failed: `✘ Test theDrivenAxleLosesGripWhileCornering()` — 2 issues, `Test run with 143 tests failed`. The constant was restored in `c851bf7`. So those 24 agent-written tests do bite, even though they were written after the code.
+
+**A correction to my own reporting.** I called the catalogue run `45116946403` green on the strength of its XCTest line. It was not: the swift-testing half was red the whole time, and `sim-tests` had been failing since `0a832f1`. Reading one suite's summary is not reading the run.
+
+**Cause of that red.** Two assertions used exact `==` on `Double`:
+- `#expect(grip == 6600)` failed on `6600.000000000001`
+- `#expect(saturated == 0)` failed on a `9.83e-05` ellipse residue
+
+Both now use tolerances (`< 1e-6`, `< 1e-3`). These tested IEEE rounding, not the tyre model; the physical expectations are unchanged.
+
+**Verified:** run `45263294800` — `sim-tests: success`, `✔ Test run with 143 tests passed`, `sound-check: success`, `app: success`.
+
+**Files Touched:** `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/VehicleDynamics.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/VehiclePhysicsTests.swift`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 05:25:56 IST - "deepseek-flash"
 
 **Project completion: 19.57%**
