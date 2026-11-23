@@ -30,7 +30,8 @@ public struct EngineCatalogEntry: Sendable, Hashable {
     public let id: String
     public let name: String
     public let architecture: Architecture
-    public let cylinders: Int
+    /// Nil when the research says "Not stated": unknown is not zero.
+    public let cylinders: Int?
     public let layout: String
     public let crank: String
     public let firingOrder: String?
@@ -39,7 +40,7 @@ public struct EngineCatalogEntry: Sendable, Hashable {
     /// Source tags as written in the research file, e.g. "S2, E14".
     public let sources: String
 
-    public init(id: String, name: String, architecture: Architecture, cylinders: Int, layout: String,
+    public init(id: String, name: String, architecture: Architecture, cylinders: Int?, layout: String,
                 crank: String, firingOrder: String?, firingSource: FiringSource,
                 displacementCc: Int?, sources: String) {
         self.id = id

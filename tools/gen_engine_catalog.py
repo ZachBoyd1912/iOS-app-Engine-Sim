@@ -43,9 +43,10 @@ def parse():
         displacement, sources = cells[7], cells[13]
 
         try:
-            cylinders = int(re.sub(r"[^\d]", "", cyl) or "0")
+            digits = re.sub(r"[^\d]", "", cyl)
+            cylinders = int(digits) if digits else None
         except ValueError:
-            cylinders = 0
+            cylinders = None
 
         raw = clean(firing)
         low = raw.lower()
@@ -94,10 +95,11 @@ def emit(rows) -> str:
     for r in rows:
         firing = "nil" if r["firing"] is None else swift_string(r["firing"])
         cc = "nil" if r["cc"] is None else str(r["cc"])
+        cyl = "nil" if r["cylinders"] is None else str(r["cylinders"])
         lines.append(
             "        EngineCatalogEntry(id: {}, name: {}, architecture: .{}, cylinders: {}, layout: {}, "
             "crank: {}, firingOrder: {}, firingSource: .{}, displacementCc: {}, sources: {}),".format(
-                swift_string(r["id"]), swift_string(r["name"]), r["architecture"], r["cylinders"],
+                swift_string(r["id"]), swift_string(r["name"]), r["architecture"], cyl,
                 swift_string(r["layout"]), swift_string(r["crank"]), firing,
                 r["provenance"], cc, swift_string(r["sources"]))
         )

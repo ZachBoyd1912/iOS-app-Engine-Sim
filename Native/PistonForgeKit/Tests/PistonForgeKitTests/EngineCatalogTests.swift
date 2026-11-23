@@ -29,10 +29,19 @@ final class EngineCatalogTests: XCTestCase {
         }
     }
 
-    func testPistonEnginesHaveAtLeastOneCylinder() {
+    func testPistonEnginesHaveAtLeastOneCylinderWhenTheCountIsKnown() {
         for entry in EngineCatalog.all where entry.architecture == .piston {
-            XCTAssertGreaterThan(entry.cylinders, 0, "piston entry \(entry.id) has no cylinders")
+            if let cylinders = entry.cylinders {
+                XCTAssertGreaterThan(cylinders, 0, "piston entry \(entry.id) has \(cylinders) cylinders")
+            }
         }
+    }
+
+    func testUnknownCylinderCountsAreRareRatherThanTheDefault() {
+        let pistons = EngineCatalog.all.filter { $0.architecture == .piston }
+        let unknown = pistons.filter { $0.cylinders == nil }.count
+        XCTAssertLessThan(unknown, pistons.count / 4,
+                          "\(unknown) of \(pistons.count) piston rows have no cylinder count")
     }
 
     func testNonPistonEnginesDoNotClaimFiringOrders() {
