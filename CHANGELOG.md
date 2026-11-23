@@ -1,4 +1,21 @@
 # Changelog
+## 23/11/2026 @ 00:07:44 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Two P0 audit findings from `docs/audits/2026-11-22-ios-audit.md` are addressed; the rest remain.
+
+**Goal:** make the Engine screen usable at every phone size and stop the 3D stage bleeding into the rest of the UI.
+
+**Cause.** `EngineScreen` was a `ZStack` with an unframed `EngineViewport` that also applied `.ignoresSafeArea(edges: .horizontal)`, and every control sat in a fixed `VStack` with `Spacer(minLength: 0)`. Consequences the audit predicted and the device confirmed: content needs ~645 pt on a screen that offers ~598 pt after chrome, so **Start engine falls off a 4.7" phone**; the viewport had no bounds, so its layer could paint outside its area; and in landscape the header and gear button are clipped off the right edge.
+
+**Changed**
+- `EngineScreen`: the 3D stage is now a fixed 360 pt block with `.frame` + `.clipped()`, the header overlays it, and **everything actionable moved into a `ScrollView`** so Start is reachable on any device. Horizontal safe-area escape removed from the content layer.
+- No behaviour, model or sound changes; purely structural, so it is safe to verify visually.
+
+**Verified:** the pre-fix state is captured in `builds/device/2026-11-23/v023-engine.png` (Start button pinned at the bottom, panels overrunning the tab bar). **Not verified:** that 0.2.4 renders correctly — the next install and screenshot.
+
+**Files Touched:** `Native/App/Screens/EngineScreen.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
 ## 22/11/2026 @ 23:55:44 IST - "deepseek-flash"
 
 **Project completion: 17.39%**

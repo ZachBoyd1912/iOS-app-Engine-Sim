@@ -18,18 +18,33 @@ struct EngineScreen: View {
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-            EngineViewport(build: build, state: state, onSelect: onSelectPart)
-                .ignoresSafeArea(edges: .horizontal)
-            VStack(spacing: Theme.Space.m) {
-                header
-                if preview { PreviewTag(rules: "Rules: one accent (Start), status = icon + word, 44 pt targets, persistent banner for warnings") }
-                WarningBanner(warnings: warnings)
-                Spacer(minLength: 0)
-                accessory()
-                controls
+            VStack(spacing: 0) {
+                // Fixed-height, clipped 3D stage. It used to be an unframed ZStack child that
+                // ignored the horizontal safe area, which let content bleed and pushed the
+                // primary action off a 4.7" screen.
+                ZStack(alignment: .top) {
+                    EngineViewport(build: build, state: state, onSelect: onSelectPart)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 360)
+                        .clipped()
+                    VStack(spacing: Theme.Space.s) {
+                        header
+                        if preview { PreviewTag(rules: "Rules: one accent (Start), status = icon + word, 44 pt targets, persistent banner for warnings") }
+                    }
+                    .padding(.horizontal, Theme.Space.l)
+                    .padding(.vertical, Theme.Space.s)
+                }
+                // Everything actionable scrolls, so Start is always reachable.
+                ScrollView {
+                    VStack(spacing: Theme.Space.m) {
+                        WarningBanner(warnings: warnings)
+                        accessory()
+                        controls
+                    }
+                    .padding(.horizontal, Theme.Space.l)
+                    .padding(.vertical, Theme.Space.m)
+                }
             }
-            .padding(.horizontal, Theme.Space.l)
-            .padding(.vertical, Theme.Space.s)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screen.engine")
