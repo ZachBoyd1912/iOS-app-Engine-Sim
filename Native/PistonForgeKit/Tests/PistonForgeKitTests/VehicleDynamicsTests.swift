@@ -37,9 +37,9 @@ final class VehicleDynamicsTests: XCTestCase {
     }
 
     func testGeometricRadiusFollowsWheelbaseOverTangent() {
-        // 2.6 / tan(0.1) = 25.946...
+        // 2.6 / tan(0.1) = 25.913...
         let r = VehicleDynamics.geometricCorneringRadius(wheelbase: 2.6, steerAngle: 0.1)
-        XCTAssertEqual(r, 25.946, accuracy: 0.01)
+        XCTAssertEqual(r, 25.913, accuracy: 0.01)
     }
 
     func testSteeringHarderGivesATighterRadius() {
@@ -80,7 +80,7 @@ final class VehicleDynamicsTests: XCTestCase {
         // 5 m/s in a 25.9 m radius corner needs only 5²/(25.9·g) ≈ 0.098 g: well inside 1.0.
         let r = VehicleDynamics.achievableCorneringRadius(speed: 5, wheelbase: 2.6, steerAngle: 0.1,
                                                           friction: 1.0)
-        XCTAssertEqual(r, 25.946, accuracy: 0.01)
+        XCTAssertEqual(r, 25.913, accuracy: 0.01)
     }
 
     func testAtHighSpeedGripLimitsTheRadiusNotTheSteering() {
