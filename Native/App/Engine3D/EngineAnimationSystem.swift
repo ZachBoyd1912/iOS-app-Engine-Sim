@@ -1,4 +1,5 @@
 import Foundation
+import PistonForgeKit
 import RealityKit
 import simd
 import UIKit
@@ -37,6 +38,47 @@ struct ReciprocatingComponent: Component {
     var crownOffset: Float
 }
 
+/// Marks a camshaft: the shafts and lobes of one valve row, turning about their own axis.
+struct CamshaftComponent: Component {
+    /// Tilt of the bank, radians. The cam's frame starts from here and turns on from it.
+    var tilt: Float = 0
+}
+
+/// A valve, its spring or its rocker, and where its own cam puts it at a crank angle.
+struct ValveTrainComponent: Component {
+    enum Motion {
+        /// A valve: slides along `axis` by the lift as it opens.
+        case slide(axis: SIMD3<Float>)
+        /// A spring: shortens along its local y, which points up the bank, by the lift.
+        case compress(free: Float)
+        /// A rocker: turns about the crank axis from `angle`, by `swing` as the valve opens.
+        case rock(angle: Float, swing: Float)
+    }
+
+    var motion: Motion
+    /// Where the part sits with the valve shut.
+    var rest: SIMD3<Float>
+    /// Crank degrees at full lift, 0..<720.
+    var centre: Double
+    /// Half the valve's open duration, in crank degrees.
+    var halfDuration: Double
+    /// Full lift at the peak of the lobe, metres.
+    var lift: Float
+}
+
+/// The cam's lift curve, delegated to `PistonForgeKit.ValveTrainKinematics` so the timing is
+/// the version covered by tests rather than a second copy that can drift from it.
+enum CamLift {
+    /// 0 with the valve shut, 1 at full lift.
+    /// `centre` and `halfDuration` stay in crank degrees at this call site, because that is what
+    /// the model builder computes from the firing order; the kinematics work in cam degrees.
+    static func fraction(centre: Double, halfDuration: Double, crankAngle: Double) -> Float {
+        Float(ValveTrainKinematics.normalisedLift(camAngle: crankAngle / 2,
+                                                  eventCentre: centre / 2,
+                                                  duration: halfDuration))
+    }
+}
+
 /// Slider-crank geometry shared by the system and the model builder.
 enum EngineKinematics {
     /// Where the crank pin, the gudgeon pin and the bank axis are for `part` at `crankAngle`.
@@ -53,10 +95,13 @@ enum EngineKinematics {
     }
 }
 
-/// Poses the crank, pistons and rods every frame from the root's `EngineMotionComponent`.
+/// Poses the crank, pistons, rods and valve train every frame from the root's
+/// `EngineMotionComponent`.
 struct EngineAnimationSystem: System {
     static let movers = EntityQuery(where: .has(ReciprocatingComponent.self))
     static let cranks = EntityQuery(where: .has(CrankComponent.self))
+    static let shafts = EntityQuery(where: .has(CamshaftComponent.self))
+    static let valveTrain = EntityQuery(where: .has(ValveTrainComponent.self))
     static let glowers = EntityQuery(where: .has(HeatGlowComponent.self))
 
     init(scene: RealityKit.Scene) {}
@@ -92,6 +137,27 @@ struct EngineAnimationSystem: System {
             guard let motion = crank.parent?.components[EngineMotionComponent.self] else { continue }
             crank.orientation = simd_quatf(angle: Float(motion.crankAngle * .pi / 180), axis: [1, 0, 0])
         }
+        for shaft in context.entities(matching: Self.shafts, updatingSystemWhen: .rendering) {
+            guard let cam = shaft.components[CamshaftComponent.self],
+                  let motion = shaft.parent?.components[EngineMotionComponent.self] else { continue }
+            // The cam turns once for every two turns of the crank.
+            shaft.orientation = simd_quatf(angle: cam.tilt + Float(motion.crankAngle * 0.5 * .pi / 180), axis: [1, 0, 0])
+        }
+        for entity in context.entities(matching: Self.valveTrain, updatingSystemWhen: .rendering) {
+            guard let part = entity.components[ValveTrainComponent.self],
+                  let motion = entity.parent?.components[EngineMotionComponent.self] else { continue }
+            let open = CamLift.fraction(centre: part.centre, halfDuration: part.halfDuration, crankAngle: motion.crankAngle)
+            switch part.motion {
+            case .slide(let axis):
+                entity.position = part.rest - axis * (part.lift * open)
+            case .compress(let free):
+                // A coil spring cannot close to nothing, so stop it at a quarter of its length.
+                let length = max(free - part.lift * open, free * 0.25)
+                entity.scale = [1, length / free, 1]
+            case .rock(let angle, let swing):
+                entity.orientation = simd_quatf(angle: angle + swing * open, axis: [1, 0, 0])
+            }
+        }
         for entity in context.entities(matching: Self.movers, updatingSystemWhen: .rendering) {
             guard let part = entity.components[ReciprocatingComponent.self],
                   let motion = entity.parent?.components[EngineMotionComponent.self] else { continue }
@@ -119,6 +185,8 @@ enum Engine3D {
         CrankComponent.registerComponent()
         HeatGlowComponent.registerComponent()
         ReciprocatingComponent.registerComponent()
+        CamshaftComponent.registerComponent()
+        ValveTrainComponent.registerComponent()
         EngineAnimationSystem.registerSystem()
     }
 }

@@ -1,4 +1,20 @@
 # Changelog
+## 23/11/2026 @ 22:37:26 IST - "deepseek-flash"
+
+**Project completion: 21.74%**
+Basis: 10 of 46 items ticked in `docs/roadmap.md`, unchanged; this wires tested maths into the 3D layer.
+
+**Goal:** connect the valve train to the tested kinematics and get a device build to look at.
+
+**Changed**
+- `EngineAnimationSystem.swift` / `EngineModelBuilder.swift` taken from `wave1-unverified` (256 lines: cams, valves, springs, rockers).
+- `CamLift.fraction` no longer carries its own raised-cosine implementation. It now delegates to `PistonForgeKit.ValveTrainKinematics.normalisedLift`, converting the call site's crank degrees to cam degrees. The two formulas are algebraically identical — `(1 + cos(π·δ/halfDuration))/2` either way — so this is a de-duplication, not a behaviour change, and it means the timing has one tested definition.
+- `import PistonForgeKit` added to that file.
+
+**Why this is still not "verified":** the maths is covered by 16 assertions, but *rendering* cannot be unit-tested. This build exists so the phone can answer three questions: do valves actually move, are they phased to the firing order, and does a W16 still hold frame rate with ~145 entities instead of ~43.
+
+**Files Touched:** `Native/App/Engine3D/EngineAnimationSystem.swift`, `Native/App/Engine3D/EngineModelBuilder.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 22:08:29 IST - "deepseek-flash"
 
 **Project completion: 21.74%**
