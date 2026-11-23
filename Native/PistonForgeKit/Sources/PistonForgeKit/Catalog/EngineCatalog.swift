@@ -43,8 +43,7 @@ public struct EngineCatalogEntry: Sendable, Hashable {
     }
 }
 
-/// The whole catalogue. Deliberately empty until `EngineCatalogTests` is satisfied:
-/// the tests are the specification, the data is generated from the research file.
-public enum EngineCatalog {
-    public static let all: [EngineCatalogEntry] = []
-}
+/// The whole catalogue. The rows live in `EngineCatalogData.swift`, generated from
+/// `docs/research/raw/engines.md` by `tools/gen_engine_catalog.py`.
+/// `EngineCatalogTests` is the specification for what that data must satisfy.
+public enum EngineCatalog {}
