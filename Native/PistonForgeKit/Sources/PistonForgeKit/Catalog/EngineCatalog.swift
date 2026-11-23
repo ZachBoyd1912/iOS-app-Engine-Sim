@@ -7,6 +7,15 @@ import Foundation
 /// pretend otherwise, so `firingSource` is required and `firingOrder` is nil unless the source
 /// actually stated one.
 public struct EngineCatalogEntry: Sendable, Hashable {
+    /// Not every row is a piston engine: the research covers rotaries, gas turbines and an
+    /// electric motor. Cylinder count and firing order only mean something for pistons.
+    public enum Architecture: String, Sendable, CaseIterable {
+        case piston
+        case rotary
+        case turbine
+        case electric
+    }
+
     public enum FiringSource: String, Sendable, CaseIterable {
         /// A source states the order outright.
         case sourced
@@ -20,6 +29,7 @@ public struct EngineCatalogEntry: Sendable, Hashable {
 
     public let id: String
     public let name: String
+    public let architecture: Architecture
     public let cylinders: Int
     public let layout: String
     public let crank: String
@@ -29,10 +39,12 @@ public struct EngineCatalogEntry: Sendable, Hashable {
     /// Source tags as written in the research file, e.g. "S2, E14".
     public let sources: String
 
-    public init(id: String, name: String, cylinders: Int, layout: String, crank: String,
-                firingOrder: String?, firingSource: FiringSource, displacementCc: Int?, sources: String) {
+    public init(id: String, name: String, architecture: Architecture, cylinders: Int, layout: String,
+                crank: String, firingOrder: String?, firingSource: FiringSource,
+                displacementCc: Int?, sources: String) {
         self.id = id
         self.name = name
+        self.architecture = architecture
         self.cylinders = cylinders
         self.layout = layout
         self.crank = crank

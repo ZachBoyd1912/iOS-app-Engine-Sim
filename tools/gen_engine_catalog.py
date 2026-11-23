@@ -49,9 +49,23 @@ def parse():
 
         raw = clean(firing)
         low = raw.lower()
-        if low.startswith("n/a") or low.startswith("not applicable"):
+        name_low = clean(name).lower()
+        layout_low = clean(layout).lower()
+
+        if "turbine" in name_low or "turbofan" in name_low or "turboshaft" in name_low or "turboprop" in name_low:
+            architecture = "turbine"
+        elif "electric" in name_low or "bldc" in name_low:
+            architecture = "electric"
+        elif "wankel" in name_low or "rotary" in name_low or "rotor" in layout_low:
+            architecture = "rotary"
+        else:
+            architecture = "piston"
+
+        if architecture != "piston":
             firing_order, provenance = None, "notApplicable"
-        elif low.startswith("not sourced") or low in ("", "unverified", "none"):
+        elif low.startswith("n/a") or low.startswith("not applicable") or low.startswith("none"):
+            firing_order, provenance = None, "notApplicable"
+        elif low.startswith("not sourced") or low in ("", "unverified"):
             firing_order, provenance = None, "unsourced"
         elif "derived" in low:
             firing_order, provenance = raw, "derived"
@@ -61,9 +75,9 @@ def parse():
         match = CC.search(displacement)
         cc = int(match.group(1).replace(",", "")) if match else None
 
-        rows.append(dict(id=ident, name=clean(name), cylinders=cylinders, layout=clean(layout),
-                         crank=clean(crank), firing=firing_order, provenance=provenance,
-                         cc=cc, sources=clean(sources)))
+        rows.append(dict(id=ident, name=clean(name), architecture=architecture, cylinders=cylinders,
+                         layout=clean(layout), crank=clean(crank), firing=firing_order,
+                         provenance=provenance, cc=cc, sources=clean(sources)))
 
     return rows
 
@@ -81,9 +95,9 @@ def emit(rows) -> str:
         firing = "nil" if r["firing"] is None else swift_string(r["firing"])
         cc = "nil" if r["cc"] is None else str(r["cc"])
         lines.append(
-            "        EngineCatalogEntry(id: {}, name: {}, cylinders: {}, layout: {}, crank: {}, "
-            "firingOrder: {}, firingSource: .{}, displacementCc: {}, sources: {}),".format(
-                swift_string(r["id"]), swift_string(r["name"]), r["cylinders"],
+            "        EngineCatalogEntry(id: {}, name: {}, architecture: .{}, cylinders: {}, layout: {}, "
+            "crank: {}, firingOrder: {}, firingSource: .{}, displacementCc: {}, sources: {}),".format(
+                swift_string(r["id"]), swift_string(r["name"]), r["architecture"], r["cylinders"],
                 swift_string(r["layout"]), swift_string(r["crank"]), firing,
                 r["provenance"], cc, swift_string(r["sources"]))
         )

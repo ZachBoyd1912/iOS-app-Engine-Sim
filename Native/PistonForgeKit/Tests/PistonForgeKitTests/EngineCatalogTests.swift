@@ -29,10 +29,18 @@ final class EngineCatalogTests: XCTestCase {
         }
     }
 
-    func testCylinderCountIsPositiveExceptForRotaries() {
-        for entry in EngineCatalog.all {
-            if entry.layout.lowercased().contains("rotary") { continue }
-            XCTAssertGreaterThan(entry.cylinders, 0, "entry \(entry.id) has no cylinders")
+    func testPistonEnginesHaveAtLeastOneCylinder() {
+        for entry in EngineCatalog.all where entry.architecture == .piston {
+            XCTAssertGreaterThan(entry.cylinders, 0, "piston entry \(entry.id) has no cylinders")
+        }
+    }
+
+    func testNonPistonEnginesDoNotClaimFiringOrders() {
+        // Turbines, electric motors and rotaries do not fire cylinders in an order.
+        for entry in EngineCatalog.all where entry.architecture != .piston {
+            XCTAssertEqual(entry.firingSource, .notApplicable,
+                           "entry \(entry.id) is \(entry.architecture) and must not claim a firing source")
+            XCTAssertNil(entry.firingOrder, "entry \(entry.id) is \(entry.architecture) but carries an order")
         }
     }
 
@@ -55,8 +63,8 @@ final class EngineCatalogTests: XCTestCase {
         }
     }
 
-    func testSingleCylinderIsNotApplicableRatherThanUnsourced() {
-        let singles = EngineCatalog.all.filter { $0.cylinders == 1 }
+    func testSingleCylinderPistonIsNotApplicableRatherThanUnsourced() {
+        let singles = EngineCatalog.all.filter { $0.architecture == .piston && $0.cylinders == 1 }
         XCTAssertFalse(singles.isEmpty, "the catalogue should contain single-cylinder engines")
         for entry in singles {
             XCTAssertEqual(entry.firingSource, .notApplicable,
