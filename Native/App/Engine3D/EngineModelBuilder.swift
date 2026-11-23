@@ -244,7 +244,6 @@ enum EngineModelBuilder {
             rod.components.set(rodGeometry)
             root.addChild(rod)
         }
-        try addValveTrain(root, g, spec)
         return root
     }
 
@@ -284,28 +283,13 @@ enum EngineModelBuilder {
     }
 
     private static func addHeads(_ parts: inout Assembly, _ g: Geometry) {
-        let top = g.deck + g.headHeight
         for bank in g.tilts.indices {
             let axis = g.axis(bank)
-            let inner = g.inner(bank)
             let x = g.bankCentreX(bank)
             let length = g.bankLength(bank) + 0.02
             let rotation = g.rotation(bank)
-            let base = SIMD3<Float>(x, 0, 0)
-            parts.box(.heads, .aluminium, center: base + axis * (g.deck + g.headHeight / 2), size: [length, g.headHeight, g.bore * 1.55], rotation: rotation)
-            // The cam cover is a lid-less frame, two rails and two end caps, so the cams, springs
-            // and rockers sitting on the head stay visible from above.
-            for side in [Float(-1), 1] {
-                parts.box(.heads, .valveCover, center: base + axis * (top + 0.028) + inner * (side * g.bore * 0.74), size: [length * 0.96, 0.056, 0.014], rotation: rotation)
-                // A pedestal under each row of rockers, which turn about a shaft on top of it.
-                parts.box(.heads, .aluminium, center: base + axis * (top + 0.014) + inner * (side * g.bore * 0.60), size: [length * 0.9, 0.030, g.bore * 0.18], rotation: rotation)
-            }
-            // A tower at each end carries each camshaft: one per valve row.
-            for side in [Float(-1), 1] {
-                for end in [Float(-1), 1] {
-                    parts.box(.heads, .aluminium, center: base + axis * (top + 0.024) + inner * (side * g.bore * 0.42) + SIMD3<Float>(end * (length / 2 - 0.008), 0, 0), size: [0.014, 0.052, g.bore * 0.34], rotation: rotation)
-                }
-            }
+            parts.box(.heads, .aluminium, center: SIMD3<Float>(x, 0, 0) + axis * (g.deck + g.headHeight / 2), size: [length, g.headHeight, g.bore * 1.55], rotation: rotation)
+            parts.box(.heads, .valveCover, center: SIMD3<Float>(x, 0, 0) + axis * (g.deck + g.headHeight + 0.02), size: [length * 0.96, 0.04, g.bore * 1.25], rotation: rotation)
         }
     }
 
@@ -492,9 +476,7 @@ enum EngineModelBuilder {
             let inner = g.inner(bank)
             let x = g.bankCentreX(bank)
             let half = g.bankLength(bank) / 2
-            // Lifted clear of the cam cover, outboard of it, so the valve train underneath and
-            // the intake ports it crosses both stay readable.
-            let base = axis * (g.deck + g.headHeight + 0.052) + inner * (g.bore * 0.88)
+            let base = axis * (g.deck + g.headHeight + 0.025) + inner * (g.bore * 0.55)
             parts.tube(.wiring, .rubber, through: [
                 base + SIMD3<Float>(x - half - 0.12, -0.08, 0),
                 base + SIMD3<Float>(x - half, 0, 0),
@@ -516,172 +498,6 @@ enum EngineModelBuilder {
             parts.box(.nitrous, .fuelRail, center: solenoid + SIMD3<Float>(0, 0, -0.04), size: [0.04, 0.03, 0.03])
         }
         parts.tube(.nitrous, .steel, through: [bottleEnd + SIMD3<Float>(0.04, 0, 0), bottleEnd + SIMD3<Float>(0.08, 0.1, 0), SIMD3<Float>(0, solenoid.y, z * 0.6), solenoid], radius: 0.005)
-    }
-
-    // MARK: - Valve train
-
-    /// Valve events in crank degrees after each cylinder's firing top dead centre, and half the
-    /// duration each valve is off its seat. Roughly a fast road cam: exhaust opens early for
-    /// blowdown and shuts after TDC, intake opens before TDC and shuts well after bottom dead
-    /// centre, leaving a little overlap.
-    private static let intakeTiming = (centre: 460.0, halfDuration: 116.0)
-    private static let exhaustTiming = (centre: 258.0, halfDuration: 118.0)
-
-    /// Adds a cam, two valves, their springs and their rockers per cylinder, above each bank's
-    /// head. Nothing here moves: `EngineAnimationSystem` poses it all from the crank angle.
-    private static func addValveTrain(_ root: Entity, _ g: Geometry, _ spec: LayoutSpec) throws {
-        // The crank angle of each cylinder's firing top dead centre, indexed by cylinder - 1.
-        var firingTDC = [Double](repeating: 0, count: spec.cylinders)
-        for (index, cylinder) in spec.firingOrder.enumerated() where cylinder >= 1 && cylinder <= spec.cylinders {
-            firingTDC[cylinder - 1] = spec.firingAngles[index]
-        }
-
-        let b = g.bore
-        let top = g.deck + g.headHeight
-        let valveRow = b * 0.26
-        let camRow = b * 0.42
-        let pivotRow = b * 0.60
-        let lift = b * 0.11
-        // The valve tip, the retainer's underside, and where the rocker pad rests on top of it.
-        let tip = top + 0.028
-        let retainer = tip - 0.005
-        let toe = top + 0.032
-        let pivot = top + 0.030
-        let seat = top + 0.002
-        let spring = retainer - seat
-        let camRadius = b * 0.14
-        let rollerRadius = b * 0.045
-        // Where along the rocker, as a fraction of its length out from the pivot, the cam presses.
-        let roller: Float = 0.53
-        // The rocker doubles the cam's lift at the valve, so the lobe only has to be half as tall.
-        let camRise = lift * roller
-        let rollerU = pivot + (toe - pivot) * roller
-        // The base circle rests on the roller, so the shaft sits one base circle above it.
-        let camU = rollerU + rollerRadius + camRadius
-        let reach = ((pivotRow - valveRow) * (pivotRow - valveRow) + (pivot - toe) * (pivot - toe)).squareRoot()
-
-        // Intake valves face the valley, exhaust valves face the outside of the bank.
-        let rows: [(v: Float, timing: (centre: Double, halfDuration: Double))] = [
-            (valveRow, Self.intakeTiming),
-            (-valveRow, Self.exhaustTiming),
-        ]
-
-        var valveShape = MeshBuilder()
-        // The stem hangs down into the head; its tip and retainer are what you see moving.
-        valveShape.addCylinder(from: [0, -0.024, 0], to: [0, 0, 0], radius: b * 0.028, segments: 8)
-        valveShape.addCylinder(from: [0, -0.005, 0], to: [0, 0.001, 0], radius: b * 0.085, segments: 10)
-        let valveMesh = try valveShape.meshResource(named: "valve")
-
-        var springShape = MeshBuilder()
-        springShape.addCylinder(from: [0, 0, 0], to: [0, spring, 0], radius: b * 0.075, segments: 8)
-        for coil in 0..<4 {
-            let y = spring * (Float(coil) + 0.5) / 4
-            springShape.addCylinder(from: [0, y - spring * 0.03, 0], to: [0, y + spring * 0.03, 0], radius: b * 0.10, segments: 10)
-        }
-        let springMesh = try springShape.meshResource(named: "spring")
-
-        // A rocker from its pivot at the origin out to the valve: blade, pad, cam roller, hub.
-        var rockerShape = MeshBuilder()
-        rockerShape.addBox(center: [0, reach / 2, 0], size: [b * 0.07, reach, b * 0.045])
-        rockerShape.addBox(center: [0, reach * 0.97, 0], size: [b * 0.09, reach * 0.12, b * 0.055])
-        rockerShape.addCylinder(from: [-b * 0.045, reach * roller, 0], to: [b * 0.045, reach * roller, 0], radius: rollerRadius, segments: 10)
-        rockerShape.addCylinder(from: [-b * 0.05, 0, 0], to: [b * 0.05, 0, 0], radius: b * 0.03, segments: 8)
-        let rockerMesh = try rockerShape.meshResource(named: "rocker")
-
-        let valveMaterial = Finish.polished.material
-        let springMaterial = Finish.steel.material
-        let rockerMaterial = Finish.aluminium.material
-        let camMaterial = Finish.polished.material
-
-        for bank in g.tilts.indices {
-            let tilt = g.tilts[bank]
-            let axis = g.axis(bank)
-            let inner = g.inner(bank)
-            let rotation = g.rotation(bank)
-            let front = g.bankCentreX(bank) - g.bankLength(bank) / 2
-            let back = g.bankCentreX(bank) + g.bankLength(bank) / 2
-
-            func place(_ x: Float, _ u: Float, _ v: Float) -> SIMD3<Float> {
-                SIMD3<Float>(x, 0, 0) + axis * u + inner * v
-            }
-
-            for (v, timing) in rows {
-                // A cam turns about its own shaft, not about the crank, so each one is its own
-                // entity sitting on the shaft's centre line with the lobes built around it.
-                var camShape = MeshBuilder()
-                camShape.addCylinder(from: [front, 0, 0], to: [back, 0, 0], radius: camRadius, segments: 12)
-
-                for index in g.bankCylinders(bank) {
-                    let x = g.cylinderX[index]
-                    // Normalised into the 720-degree cycle so the lift curve only has to
-                    // unwrap one turn when an event crosses the wrap.
-                    let centre = (firingTDC[index] + timing.centre).truncatingRemainder(dividingBy: 720)
-                    let halfDuration = timing.halfDuration
-
-                    let valve = ModelEntity(mesh: valveMesh, materials: [valveMaterial])
-                    valve.name = "part.heads.valve"
-                    valve.orientation = rotation
-                    valve.position = place(x, tip, v)
-                    valve.components.set(ValveTrainComponent(
-                        motion: .slide(axis: axis), rest: valve.position,
-                        centre: centre, halfDuration: halfDuration, lift: lift
-                    ))
-                    makeTappable(valve)
-                    root.addChild(valve)
-
-                    let coil = ModelEntity(mesh: springMesh, materials: [springMaterial])
-                    coil.name = "part.heads.spring"
-                    coil.orientation = rotation
-                    coil.position = place(x, seat, v)
-                    coil.components.set(ValveTrainComponent(
-                        motion: .compress(free: spring), rest: coil.position,
-                        centre: centre, halfDuration: halfDuration, lift: lift
-                    ))
-                    root.addChild(coil)
-
-                    let arm = ModelEntity(mesh: rockerMesh, materials: [rockerMaterial])
-                    arm.name = "part.heads.rocker"
-                    // The pivot sits outboard of the valve, with the cam between the two.
-                    let hub = place(x, pivot, v > 0 ? pivotRow : -pivotRow)
-                    let contact = place(x, toe, v) - hub
-                    // The arm carries a rotation about x and nothing else, and its mesh runs along
-                    // local +y, so the angle has to be the contact direction's *world* angle from
-                    // +y. Measured in the bank's own frame instead it would come up short by the
-                    // bank angle: the pad would miss the valve by 23 mm on a 45° bank and 43 mm
-                    // on a boxer, which is the bug this comment exists to stop coming back.
-                    let angle = atan2(contact.z, contact.y)
-                    arm.position = hub
-                    arm.orientation = simd_quatf(angle: angle, axis: [1, 0, 0])
-                    // The toe's height along the bank is reach·cos(angle − tilt), so it descends
-                    // as the arm turns in the direction sign(sin(angle − tilt)); using the world
-                    // angle alone would open a boxer's valves backwards.
-                    arm.components.set(ValveTrainComponent(
-                        motion: .rock(angle: angle, swing: (sin(angle - tilt) >= 0 ? 1 : -1) * lift / reach),
-                        rest: hub, centre: centre, halfDuration: halfDuration, lift: lift
-                    ))
-                    root.addChild(arm)
-
-                    // The lobe is an offset disc that points straight down the bank, onto the
-                    // rocker, at the crank angle where this valve reaches full lift.
-                    let psi = Float.pi - Float(centre * 0.5 * .pi / 180)
-                    let offset = camRadius * 0.22 + camRise
-                    let lobeU = offset * cos(psi)
-                    let lobeZ = offset * sin(psi)
-                    camShape.addCylinder(
-                        from: [x - g.pitch * 0.17, lobeU, lobeZ], to: [x + g.pitch * 0.17, lobeU, lobeZ],
-                        radius: camRadius * 0.78, segments: 12
-                    )
-                }
-
-                let row = v > 0 ? "in" : "ex"
-                let cam = ModelEntity(mesh: try camShape.meshResource(named: "cam.\(bank).\(row)"), materials: [camMaterial])
-                cam.name = "part.heads.cam"
-                cam.position = place(0, camU, v > 0 ? camRow : -camRow)
-                cam.components.set(CamshaftComponent(tilt: tilt))
-                makeTappable(cam)
-                root.addChild(cam)
-            }
-        }
     }
 
     // MARK: - Crank

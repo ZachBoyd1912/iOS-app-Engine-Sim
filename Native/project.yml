@@ -12,8 +12,8 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.3.0"
-    CURRENT_PROJECT_VERSION: "9"
+    MARKETING_VERSION: "0.2.7"
+    CURRENT_PROJECT_VERSION: "8"
 targets:
   PistonForge:
     type: application

@@ -1,26 +1,4 @@
 # Changelog
-## 23/11/2026 @ 03:14:38 IST - "deepseek-flash"
-
-**Project completion: 17.39%**
-Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Four workstreams landed code; none is proven until CI compiles it.
-
-**Goal:** land the first wave of workstream agents (WS1 catalogue, WS2 valve train, WS8 tune editing, WS9 dyno, WS10 vehicle physics) and let CI decide whether it compiles.
-
-**Added**
-- WS1: `PistonForgeKit/.../Catalog/EngineCatalog.swift` — 83 provenance-tagged engine rows (14 sourced firing orders, 13 derived, 46 unsourced, 10 not applicable) plus `EngineCatalogTests`. Deliberately does **not** add `EngineLayout` cases: every `allCases` test requires a firing order and starter geometry, and inventing them was out of bounds.
-- WS2: valve train — `CamshaftComponent`/`ValveTrainComponent` in `EngineAnimationSystem`, `addValveTrain` geometry in `EngineModelBuilder`. Cams at half crank speed, valves moving 0.11·bore, springs compressing, rockers swinging. Driven by the existing `EngineMotionComponent`; no new timer.
-- WS8: `TuneScreen` cells are editable controls (tap → inspector bar with Less/More, numeric field, slider; long-press then drag to paint), writing through the existing `@Binding build`. Cells are 44 pt and `@ScaledMetric`.
-- WS9: `DynoScreen` gains Hold/Pull modes, wheel/crank toggle, `DynoLogView`, disabled and empty states.
-- WS10: `VehicleDynamics.swift` — steering, lateral grip, understeer/oversteer, cornering radius, braking with weight transfer, as pure functions with tests.
-- `docs/workstreams/ws01…ws10.md` — each agent's design note, file:line map and stated limits.
-
-**Known risks carried into the build**
-- Two WS2 agents ran concurrently on the same two Engine3D files and overwrote each other mid-task; the surviving version is the world-frame one, and the collision is documented at `EngineModelBuilder.swift:647`.
-- WS1 reports that 6 of the 16 shipped firing orders disagree with the research (`i3`, `i8`, `v8Cross`, `v8Flat`, `v10`, `flat4`). Correcting them changes crank pose and sound, so it is left as an owner decision.
-- **Nothing has been compiled**: CI was billing-blocked while these were written. This commit exists to find out.
-
-**Files Touched:** `Native/App/Engine3D/*`, `Native/App/Screens/TuneScreen.swift`, `Native/App/Screens/DynoScreen.swift`, `Native/App/Screens/DynoLogView.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/EngineCatalog.swift`, `.../Physics/VehicleDynamics.swift`, `.../Car/DriveSim.swift`, `Native/PistonForgeKit/Tests/.../EngineCatalogTests.swift`, `Native/project.yml`, `docs/workstreams/*`, `CHANGELOG.md`.
-
 ## 23/11/2026 @ 01:02:50 IST - "deepseek-flash"
 
 **Project completion: 17.39%**
