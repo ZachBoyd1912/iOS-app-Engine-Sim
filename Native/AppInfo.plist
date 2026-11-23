@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Merged with the Info.plist Xcode generates (GENERATE_INFOPLIST_FILE = YES), so only
+	  keys that cannot be set through INFOPLIST_KEY_* belong here.
+
+	  LSSupportsGameMode (iOS 18.6+): without it iOS 27 draws a full-screen warning over the
+	  app - "LSSupportsGameMode key not found in Info.plist. This key will become required to
+	  be eligible for ..." - and Game Mode is not guaranteed to engage. Seen on device
+	  23/11/2026. GCSupportsGameMode was deprecated in favour of this key.
+
+	  Kept outside Native/App so it is never copied into the bundle as a resource.
+	-->
+	<key>LSSupportsGameMode</key>
+	<true/>
+</dict>
+</plist>

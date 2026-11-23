@@ -13,7 +13,8 @@ Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This removes a syst
 iOS 27.2 draws that warning **over the app** when a game does not declare Game Mode support. It is absent from the accessibility tree because the system, not the app, renders it - which is why every tree dump came back clean and why the string did not exist anywhere in our source. `GCSupportsGameMode` was deprecated in iOS 18.6 and replaced by `LSSupportsGameMode` (Apple: "If you don't include this key in your Info.plist, Game Mode might not turn on for your game"). The project generates its Info.plist from `INFOPLIST_KEY_*` settings, so nothing was ever declaring it.
 
 **Fixed**
-- `Native/project.yml`: `INFOPLIST_KEY_LSSupportsGameMode: YES`, with a comment recording the exact warning and the date it was seen, so nobody removes it as noise.
+- `Native/AppInfo.plist` (new, outside `Native/App` so it is never copied in as a resource) declares `LSSupportsGameMode`, and `Native/project.yml` sets `INFOPLIST_FILE: AppInfo.plist` so Xcode merges it into the generated plist.
+- First attempt used `INFOPLIST_KEY_LSSupportsGameMode`, which **silently does nothing**: 0.2.5 built and shipped, and unpacking the .ipa showed `LSSupportsGameMode: None`. `INFOPLIST_KEY_*` only covers keys Xcode knows. Caught by inspecting the built bundle rather than trusting the build being green.
 
 **Why it matters beyond the cosmetic:** Apple states the key will become required, and without it Game Mode may not engage - which is precisely the mode that would stop background activity from stealing CPU from the simulator while a pull is running.
 
