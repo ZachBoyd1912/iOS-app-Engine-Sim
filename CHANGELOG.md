@@ -1,4 +1,36 @@
 # Changelog
+## 23/11/2026 @ 05:25:56 IST - "deepseek-flash"
+
+**Project completion: 19.57%**
+Basis: 9 of 46 items ticked in `docs/roadmap.md` — the engine-data family (item 2) now has a sourced, tested catalogue. Item 8 and the device checklist stay open.
+
+**Goal:** replace the "agents wrote it, CI compiled it" approach with test-first development, and prove it on two workstreams.
+
+**Process change.** Wave-1 code was reverted off trunk (preserved on `wave1-unverified`; later agent work on `agents-spike-2`) because it was written before any test existed. Every workstream now starts with a failing test in CI.
+
+**Vehicle dynamics (complete)**
+- RED `45105625631`: stub traps at `VehicleDynamics.swift:35` inside a named test.
+- GREEN `45106348502`: `19 tests, 0 failures`.
+- Five closed-form helpers: grip limit, geometric radius, grip-limited speed, achievable radius, braking distance.
+
+**Engine catalogue (complete)**
+- RED `45114961953`: `XCTAssertEqual failed: ("0") is not equal to ("83")`.
+- GREEN `45116946403`: `31 tests, 0 failures`.
+- 83 rows generated from `docs/research/raw/engines.md` by `tools/gen_engine_catalog.py`; provenance preserved — 23 sourced orders, 6 derived, 41 unsourced, 13 not-applicable.
+
+**Three real modelling bugs the tests found, none of which a compile would have caught**
+1. Turbines, the electric motor and the Wankel were treated as piston engines and given firing orders. Fixed by adding `Architecture` and marking non-piston rows `.notApplicable`.
+2. Row 57 (Wankel 1-rotor) claimed a *sourced* order because its cell read "None (rotary, no firing order)" and the parser only recognised a bare "none".
+3. Row 71 states "Not stated" for cylinder count; the parser turned that into `0`. `cylinders` is now `Int?` — unknown stays unknown instead of rendering as "0 cylinders".
+
+**Also**
+- `tools/gen_engine_catalog.py` is the single writer of `EngineCatalogData.swift`; the data file is generated, never hand-edited.
+- I corrected my own arithmetic in the physics spec (`2.6/tan(0.1)` is 25.913, not 25.946) after the RED run exposed it.
+
+**Not verified:** the parked `agents-spike-2` work (dyno modes, extended handling) stays unmerged; its 24 tests were written after its code and have not been shown to fail.
+
+**Files Touched:** `Native/PistonForgeKit/.../Physics/VehicleDynamics.swift`, `.../Catalog/EngineCatalog.swift`, `.../Catalog/EngineCatalogData.swift` (generated), `Native/PistonForgeKit/Tests/PistonForgeKitTests/{VehicleDynamicsTests,EngineCatalogTests}.swift`, `tools/gen_engine_catalog.py`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 01:02:50 IST - "deepseek-flash"
 
 **Project completion: 17.39%**
