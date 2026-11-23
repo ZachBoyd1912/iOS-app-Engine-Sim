@@ -1,0 +1,2 @@
+  XCUIElementTypeApplication | L=Car Dealer Sim | V= | r=0,0 390x844
+

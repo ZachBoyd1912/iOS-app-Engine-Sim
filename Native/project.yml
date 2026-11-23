@@ -12,8 +12,8 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.2.4"
-    CURRENT_PROJECT_VERSION: "5"
+    MARKETING_VERSION: "0.2.5"
+    CURRENT_PROJECT_VERSION: "6"
 targets:
   PistonForge:
     type: application
@@ -43,6 +43,10 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        # iOS 18.6+ Game Mode declaration. Without it the system draws a large warning over
+        # the app ("LSSupportsGameMode key not found in Info.plist ... will become required")
+        # and Game Mode is not guaranteed to engage. Observed on device, iOS 27.2, 23/11/2026.
+        INFOPLIST_KEY_LSSupportsGameMode: YES
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.racing-games
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # engine-sim's sound core: built by CMake in CI into engine-libs/<sdk>/, called through a plain C bridge

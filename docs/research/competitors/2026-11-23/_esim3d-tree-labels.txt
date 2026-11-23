@@ -1,0 +1,92 @@
+  XCUIElementTypeApplication | L=Engine Simulator 3D | V= | r=0,0 390x844
+                      XCUIElementTypeOther | L=Engine Simulator 3D asks for your consent to use your personal data for the following purposes:, web dialogue | V= | r=18,82 352x678
+                        XCUIElementTypeImage | L=Welcome to Engine Simulator 3D | V= | r=162,107 64x65
+                        XCUIElementTypeOther | L=Engine Simulator 3D asks for your consent to use your personal data for the following purposes: | V=1 | r=43,183 302x76
+                          XCUIElementTypeStaticText | L=Engine Simulator 3D asks for your consent to use your personal data for the following purposes: | V=Engine Simulator 3D asks for your consent to use your personal data for the following purposes: | r=50,183 288x76
+                            XCUIElementTypeStaticText | L=Personalised advertising and content, advertising and content measurement, audience research and services development | V=Personalised advertising and content, advertising and content measurement, audience research and services development | r=87,282 227x66
+                            XCUIElementTypeStaticText | L=Store and/or access information on a device | V=Store and/or access information on a device | r=87,371 255x18
+                        XCUIElementTypeButton | L=Learn more | V= | r=43,407 302x29
+                          XCUIElementTypeStaticText | L=Your personal data will be processed and information from your device (cookies, unique identifiers, and other device data) may be stored by, accessed by and shared with 210 partners, or used specifically by this app. We and our partners may use precise geolocation data. | V=Your personal data will be processed and information from your device (cookies, unique identifiers, and other device data) may be stored by, accessed by and shared with 210 partners, or used specifically by this app. We and our partners may use precise geolocation data.  | r=43,446 300x98
+                          XCUIElementTypeButton | L=List of partners. | V= | r=142,527 89x18
+                          XCUIElementTypeStaticText | L=Some vendors may process your personal data on the basis of legitimate interest, which you can object to by managing your options below. Look for a link or button in the app menu to manage or withdraw consent in privacy and cookie settings. | V=Some vendors may process your personal data on the basis of legitimate interest, which you can object to by managing your options below. Look for a link or button in the app menu to manage or withdraw consent in privacy and cookie settings. | r=43,554 298x82
+                        XCUIElementTypeButton | L=Consent | V= | r=35,595 318x39
+                        XCUIElementTypeButton | L=Do not consent | V= | r=35,649 318x40
+                        XCUIElementTypeButton | L=Manage options | V= | r=137,704 114x39
+            XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=356,46 30x750.67
+            XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=45.33,810 297.34x30
+            XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=356,46 30x750.67
+            XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=45.33,810 297.34x30
+              XCUIElementTypeOther | L=Engine studio | V= | r=0,0 390x305.666666666667
+                XCUIElementTypeOther | L=Drag the engine to change the angle | V= | r=0,0 390x305.666666666667
+                  XCUIElementTypeOther | L=Observation tools | V= | r=12,249.66667175293 181.33332824707x44.0000152587891
+                    XCUIElementTypeButton | L=Cutaway view of the engine | V= | r=16,249.666666666667 94x44
+                      XCUIElementTypeStaticText | L=Cutaway | V= | r=16,249.666666666667 94x44
+                      XCUIElementTypeImage | L=Transparent Three-Dimensional Cube With Visible Edges | V= | r=27.3333333333333,264.666666666667 12.6666669845581x14.3333339691162
+                    XCUIElementTypeButton | L=Slow motion view | V= | r=112,249.666666666667 77.3333333333333x44
+                      XCUIElementTypeStaticText | L=Slow | V= | r=112,249.666666666667 77.3333333333333x44
+                      XCUIElementTypeImage | L=Decrease Speed | V= | r=123.333333333333,266.333333333333 20.3333339691162x10.6666669845581
+                  XCUIElementTypeOther | L=View and expand | V= | r=244.66667175293,249.66667175293 133.33332824707x44.0000152587891
+                    XCUIElementTypeButton | L=View | V= | r=248.666666666667,249.666666666667 76.3333333333333x44
+                      XCUIElementTypeStaticText | L=View | V= | r=248.666666666667,249.666666666667 76.3333333333333x44
+                      XCUIElementTypeImage | L=Go Down | V= | r=301,268.333333333333 10.6666669845581x6.66666698455811
+                    XCUIElementTypeButton | L=View full screen | V= | r=330,249.666666666667 44x44
+                      XCUIElementTypeImage | L=Enter Full Screen | V= | r=330,249.666666666667 44x44
+                XCUIElementTypeButton | L=Select | V= | r=228,302.666666666667 68x58
+                XCUIElementTypeButton | L=Close | V= | r=304,302.666666666667 68x58
+                XCUIElementTypeStaticText | L=Daily free engine · V10 Race | V= | r=18,324.433333333333 167x14.3333333333333
+              XCUIElementTypeOther | L=Instruments | V= | r=0,357.666656494141 390x180.333343505859
+                XCUIElementTypeImage | L=Speed — | V= | r=18,381.666666666667 120x98.3333333333333
+                XCUIElementTypeOther | L=Gear and engine status | V= | r=146,384 98x96
+                  XCUIElementTypeOther | L=Gear 1 | V= | r=182,387 26x52.6666666666667
+                    XCUIElementTypeStaticText | L=1 | V= | r=182,387 26x52.6666666666667
+                  XCUIElementTypeImage | L=Coolant temperature low | V= | r=152.33332824707,442.833343505859 85.3333435058594x11
+                    XCUIElementTypeStaticText | L=C | V= | r=152.333333333333,442.833333333333 5.66666666666666x11
+                    XCUIElementTypeStaticText | L=H | V= | r=232,442.833333333333 5.66666666666666x11
+                XCUIElementTypeImage | L=0 rpm | V= | r=252,381.666666666667 120x98.3333333333333
+                XCUIElementTypeButton | L=Drive mode | V=Comfort | r=18,490 98.3333333333333x44
+                  XCUIElementTypeStaticText | L=Comfort | V= | r=18,490 98.3333333333333x44
+                XCUIElementTypeButton | L=Start | V= | r=328,490 44x44
+                  XCUIElementTypeImage | L=Power | V= | r=328,490 44x44
+                XCUIElementTypeStaticText | L=Start | V= | r=295.333333333333,506.333333333333 26.6666666666667x11.9999999999999
+              XCUIElementTypeButton | L=My setup | V= | r=129,490 58x44
+              XCUIElementTypeButton | L=Record | V= | r=195,490 58x44
+              XCUIElementTypeOther | L=Gear and pedals | V= | r=0,538 390x167
+                  XCUIElementTypeStaticText | L=Gear | V= | r=18,548.666666666667 27.6666666666667x14.3333333333334
+                  XCUIElementTypeOther | L=Gear 1 | V= | r=131.885416666667,548.666666666667 38.3333333333333x14.3333333333334
+                    XCUIElementTypeStaticText | L=Gear 1 | V= | r=131.885416666667,548.666666666667 38.3333333333333x14.3333333333334
+                  XCUIElementTypeOther | L=7-speed dual-clutch gears | V= | r=18,571 152.333343505859x126
+                    XCUIElementTypeButton | L=Reverse | V= | r=18,571 46.6666666666667x44
+                      XCUIElementTypeStaticText | L=R | V= | r=18,571 46.6666666666667x44
+                    XCUIElementTypeButton | L=Neutral | V= | r=70.6666666666667,571 46.6666666666667x44
+                      XCUIElementTypeStaticText | L=N | V= | r=70.6666666666667,571 46.6666666666667x44
+                    XCUIElementTypeButton | L=Drive | V= | r=123.333333333333,571 47x44
+                      XCUIElementTypeStaticText | L=D | V= | r=123.333333333333,571 47x44
+                    XCUIElementTypeButton | L=Shift down | V= | r=18,621 73x76
+                      XCUIElementTypeStaticText | L=− | V= | r=18,621 73x76
+                      XCUIElementTypeStaticText | L=DOWN | V= | r=36.8333333333333,669 35.3333333333333x11.6666666666666
+                    XCUIElementTypeButton | L=Shift up | V= | r=97,621 73.3333333333333x76
+                      XCUIElementTypeStaticText | L=+ | V= | r=97,621 73.3333333333333x76
+                      XCUIElementTypeStaticText | L=UP | V= | r=125.666666666667,669 16x11.6666666666666
+                  XCUIElementTypeStaticText | L=Brake | V= | r=186.21875,547.666666666667 33x14.3333333333334
+                  XCUIElementTypeStaticText | L=— | V= | r=255.333333333333,547 19.6666666666667x14
+                  XCUIElementTypeStaticText | L=Throttle | V= | r=304.388020833333,547.666666666667 46.3333333333333x14.3333333333334
+                  XCUIElementTypeOther | L=Brake | V=— | r=186,571 89x126
+                  XCUIElementTypeOther | L=Throttle | V=— | r=283,571 89x126
+                    XCUIElementTypeStaticText | L=— | V= | r=323.888020833333,675.666666666667 7.33333333333331x14.3333333333334
+                XCUIElementTypeButton | L=Settings, change engine, gearbox and sound | V=Inline-6 Silky · 7-speed dual-clutch · Stock | r=18,705 354x44
+                  XCUIElementTypeImage | L=Edit | V= | r=21,720.666666666667 16.3333339691162x14
+                  XCUIElementTypeStaticText | L=Settings | V= | r=46,719.766666666667 52x14.3333333333334
+                  XCUIElementTypeStaticText | L=Inline-6 Silky · 7-speed dual-clutch · Stock | V= | r=128,721.466666666667 218x13.3333333333334
+                  XCUIElementTypeImage | L=Forward | V= | r=359,721.333333333333 8x12.6666669845581
+              XCUIElementTypeOther | L=Advertisement | V= | r=0,749 390x61
+                                XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=357,749 30x47.67
+                                XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=13.33,777 363.34x30
+                                XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=357,749 30x47.67
+                                XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=13.33,777 363.34x30
+          XCUIElementTypeStaticText | L=12:18 a.m. | V= | r=31.6666666666667,15.6666666666667 46.3333333333333x20.3333333333333
+          XCUIElementTypeImage | L=Personal | V= | r=81.3333333333333,19 14.6666666666667x14
+          XCUIElementTypeOther | L=Mobile Service | V=2 of 4 bars, signal strength | r=285.333333333333,19 19.3333333333333x13
+          XCUIElementTypeOther | L= | V=SSID, 3 of 3 Wi-Fi bars | r=311.666666666667,19.6666666666667 17x12.3333333333333
+            XCUIElementTypeImage | L=Wi-Fi | V= | r=309.333333333333,17.6666666666667 21.6666666666667x16.3333333333333
+          XCUIElementTypeOther | L=83% battery power | V=Charging | r=335.666666666667,19 28x13.6666666666667
+

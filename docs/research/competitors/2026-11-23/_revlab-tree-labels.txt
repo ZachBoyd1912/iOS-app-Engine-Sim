@@ -1,0 +1,54 @@
+  XCUIElementTypeApplication | L=RevLab | V= | r=0,0 390x844
+                      XCUIElementTypeOther | L=RevLab asks for your consent to use your personal data for the following purposes:, web dialogue | V= | r=18,82 352x678
+                        XCUIElementTypeImage | L=Welcome to RevLab | V= | r=162,107 64x65
+                        XCUIElementTypeOther | L=RevLab asks for your consent to use your personal data for the following purposes: | V=1 | r=43,183 302x76
+                          XCUIElementTypeStaticText | L=RevLab asks for your consent to use your personal data for the following purposes: | V=RevLab asks for your consent to use your personal data for the following purposes: | r=59,183 270x76
+                            XCUIElementTypeStaticText | L=Personalised advertising and content, advertising and content measurement, audience research and services development | V=Personalised advertising and content, advertising and content measurement, audience research and services development | r=87,282 227x66
+                            XCUIElementTypeStaticText | L=Store and/or access information on a device | V=Store and/or access information on a device | r=87,371 255x18
+                        XCUIElementTypeButton | L=Learn more | V= | r=43,407 302x29
+                          XCUIElementTypeStaticText | L=Your personal data will be processed and information from your device (cookies, unique identifiers and other device data) may be stored by, accessed by and shared with 210 partners or used specifically by this app. We and our partners may use precise geolocation data. | V=Your personal data will be processed and information from your device (cookies, unique identifiers and other device data) may be stored by, accessed by and shared with 210 partners or used specifically by this app. We and our partners may use precise geolocation data.  | r=43,446 300x98
+                          XCUIElementTypeButton | L=List of partners. | V= | r=142,527 89x18
+                          XCUIElementTypeStaticText | L=Some vendors may process your personal data on the basis of legitimate interest, which you can object to by managing your options below. Look for a link or button in the app menu to manage or withdraw consent in privacy and cookie settings. | V=Some vendors may process your personal data on the basis of legitimate interest, which you can object to by managing your options below. Look for a link or button in the app menu to manage or withdraw consent in privacy and cookie settings. | r=43,554 298x82
+                        XCUIElementTypeButton | L=Consent | V= | r=35,595 318x39
+                        XCUIElementTypeButton | L=Do not consent | V= | r=35,649 318x40
+                        XCUIElementTypeButton | L=Manage options | V= | r=137,704 114x39
+            XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=356,46 30x750.67
+            XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=45.33,810 297.34x30
+            XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=356,46 30x750.67
+            XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=45.33,810 297.34x30
+              XCUIElementTypeButton | L=Engine I4. Open the Garage. | V= | r=16,47 45.3333333333333x44
+              XCUIElementTypeButton | L=Gearbox 6SEQ. Open Setup. | V= | r=62.3333333333333,47 78.3333333333333x44
+                XCUIElementTypeStaticText | L=6SEQ | V= | r=76.3333333333333,60 41.6666666666667x18
+                XCUIElementTypeStaticText | L=▾ | V= | r=124,64.5 4.66666666666666x11
+              XCUIElementTypeButton | L=Drag strip | V= | r=218.333333333333,47 79.6666666666667x44
+                XCUIElementTypeStaticText | L=DRAG | V= | r=218.333333333333,47 79.6666666666667x44
+              XCUIElementTypeButton | L=Controls help | V= | r=302,47 30x44
+              XCUIElementTypeButton | L=Menu | V= | r=336,47 44x44
+              XCUIElementTypeImage | L=Engine on the dyno cell stage, driven by the simulation | V= | r=0,91 390x364
+              XCUIElementTypeButton | L=Next camera: PROFILE | V= | r=16,88.3333333333333 62.6666666666667x41.3333333333333
+              XCUIElementTypeStaticText | L=RevLab | V= | r=16,90.3968098958333 68.6666666666667x23
+              XCUIElementTypeStaticText | L=· | V= | r=70.6666666666667,102.333333333333 4.66666666666667x13.3333333333333
+              XCUIElementTypeStaticText | L=Real time | V= | r=81.3333333333333,102.333333333333 66.3333333333333x13.3333333333333
+              XCUIElementTypeStaticText | L=· | V= | r=153.666666666667,102.333333333333 4.66666666666666x13.3333333333333
+              XCUIElementTypeStaticText | L=45 mm | V= | r=164.333333333333,102.333333333333 42x13.3333333333333
+              XCUIElementTypeStaticText | L=Physics-driven engine sounds | V= | r=16,114.333333333333 174x13.3333333333333
+              XCUIElementTypeOther | L=Ready to start | V=100 % | r=103,256.833343505859 184x32.1666564941406
+                XCUIElementTypeStaticText | L=Ready to start | V= | r=141.666666666667,256.833333333333 106.666666666667x13.3333333333333
+              XCUIElementTypeOther | L=Focus views | V= | r=81.6666641235352,413 226.666687011719x44
+                XCUIElementTypeButton | L=ALL | V= | r=81.6666666666667,413 60x44
+                XCUIElementTypeButton | L=Cylinder | V= | r=127.666666666667,413 99x44
+                XCUIElementTypeButton | L=Exhaust | V= | r=212.666666666667,413 95.6666666666667x44
+              XCUIElementTypeOther | L=Engine cycle: one amber line through every trace and the 3D crank | V=— | r=0,459 390x56
+                XCUIElementTypeButton | L=Playback speed | V= | r=0,459 390x56
+              XCUIElementTypeButton | L=Instruments: 0 rpm, 0 km/h, N. Warning lamps: none. | V= | r=0,519 390x112
+              XCUIElementTypeButton | L=Engine start and stop. Tap to start, tap again to switch off. | V= | r=314,539 72x72
+              XCUIElementTypeOther | L=Sequential lever, neutral. Pull back to shift up, push forward to shift down. | V= | r=16,635 202.666666666667x175
+              XCUIElementTypeOther | L=Brake pedal. Drag up to press. On a phone, roll the thumb right to blip the throttle. | V=0 % | r=226,635 71.6666666666666x175
+              XCUIElementTypeOther | L=Accelerator pedal. Drag up to press, flick up to blip. | V=0 % | r=301.666666666667,635 72.3333333333333x175
+          XCUIElementTypeStaticText | L=12:08 a.m. | V= | r=30.3333333333333,15.6666666666667 49x20.3333333333333
+          XCUIElementTypeImage | L=Personal | V= | r=82.6666666666667,19 14.6666666666667x14
+          XCUIElementTypeOther | L=Mobile Service | V=1 of 4 bars, signal strength | r=285.333333333333,19 19.3333333333333x13
+          XCUIElementTypeOther | L= | V=SSID, 3 of 3 Wi-Fi bars | r=311.666666666667,19.6666666666667 17x12.3333333333333
+            XCUIElementTypeImage | L=Wi-Fi | V= | r=309.333333333333,17.6666666666667 21.6666666666667x16.3333333333333
+          XCUIElementTypeOther | L=84% battery power | V=Charging | r=335.666666666667,19 28x13.6666666666667
+

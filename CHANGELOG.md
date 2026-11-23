@@ -1,4 +1,26 @@
 # Changelog
+## 23/11/2026 @ 00:45:20 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This removes a system-drawn obstruction from the hero screen and closes a submission requirement; it does not complete a roadmap item.
+
+**Goal:** find out what the giant white text over the 3D engine actually was, and remove it.
+
+**Cause.** It was never SwiftUI and never RealityKit. Enlarging the screenshot showed the sentence:
+
+> "…SupportsGameMode key not found in Info.plist. This key will become required to be eligible for …"
+
+iOS 27.2 draws that warning **over the app** when a game does not declare Game Mode support. It is absent from the accessibility tree because the system, not the app, renders it - which is why every tree dump came back clean and why the string did not exist anywhere in our source. `GCSupportsGameMode` was deprecated in iOS 18.6 and replaced by `LSSupportsGameMode` (Apple: "If you don't include this key in your Info.plist, Game Mode might not turn on for your game"). The project generates its Info.plist from `INFOPLIST_KEY_*` settings, so nothing was ever declaring it.
+
+**Fixed**
+- `Native/project.yml`: `INFOPLIST_KEY_LSSupportsGameMode: YES`, with a comment recording the exact warning and the date it was seen, so nobody removes it as noise.
+
+**Why it matters beyond the cosmetic:** Apple states the key will become required, and without it Game Mode may not engage - which is precisely the mode that would stop background activity from stealing CPU from the simulator while a pull is running.
+
+**Verified:** the warning is legible in `builds/device/2026-11-23/v024-engine.png`, and Apple's documentation for `LSSupportsGameMode` / deprecated `GCSupportsGameMode` confirms the key name and version. **Not verified:** that 0.2.5 no longer shows the warning - that is the next install.
+
+**Files Touched:** `Native/project.yml`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 00:07:44 IST - "deepseek-flash"
 
 **Project completion: 17.39%**
