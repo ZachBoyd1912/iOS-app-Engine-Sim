@@ -86,7 +86,7 @@ final class ValveTrainKinematicsTests: XCTestCase {
         let v8 = ValveTrainKinematics.firingAngles(cylinderCount: 8)
         XCTAssertEqual(v8.count, 8)
         XCTAssertEqual(v8[1], 90, accuracy: eps)
-        XCTAssertEqual(v8.last, 630, accuracy: eps)
+        XCTAssertEqual(v8.last ?? .nan, 630, accuracy: eps)
     }
 
     func testSingleCylinderFiresOncePerCycle() {
