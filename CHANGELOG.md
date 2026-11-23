@@ -1,4 +1,24 @@
 # Changelog
+## 23/11/2026 @ 22:08:29 IST - "deepseek-flash"
+
+**Project completion: 21.74%**
+Basis: 10 of 46 items ticked in `docs/roadmap.md` — the valve-train timing that item 11 depends on now exists and is tested.
+
+**Goal:** take the valve train through test-first, in the layer where it can actually be proven.
+
+**Why the maths lives in `PistonForgeKit` now.** The parked agent version put lift inside `EngineAnimationSystem`, which only runs on a device — unprovable in CI. `ValveTrainKinematics` is pure: cam speed, lift profile, firing angles, event centres. The RealityKit layer will only *apply* these numbers.
+
+**RED `45274066207`:** `Fatal error: ValveTrainKinematics.camAngle is unimplemented` at `ValveTrainKinematics.swift:12`, thrown inside a named test.
+**GREEN `45275411422`:** `Test Suite 'ValveTrainKinematicsTests' passed`, `143 tests passed`, and `sim-tests`/`sound-check`/`app` all green.
+
+**Two spec errors I caught before implementing** (both mine, both found by re-reading the geometry rather than by the compiler):
+1. A four-stroke cycle is 720 **cam** degrees, so cam angle 350 is *not* equivalent to −10. The wrap test was rewritten as a periodic test (`lift(a) == lift(a + 720)`).
+2. With event centre 240 and duration 240 the window is 120…360, so the value `0` I had asserted as "outside" was inside a different assumption's window. Every lift test now uses one consistent event.
+
+An earlier compile error in my own test (`v8.last` is `Double?`) was fixed before the real RED, so the failing run fails on behaviour, not on syntax.
+
+**Files Touched:** `Native/PistonForgeKit/Sources/PistonForgeKit/Engine/ValveTrainKinematics.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/ValveTrainKinematicsTests.swift`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 20:54:32 IST - "deepseek-flash"
 
 **Project completion: 19.57%**
