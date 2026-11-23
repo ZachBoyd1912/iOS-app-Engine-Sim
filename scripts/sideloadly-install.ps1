@@ -63,6 +63,10 @@ function Invoke-Element($element) {
 if (-not (Test-Path $Exe)) { throw "Sideloadly not found at $Exe" }
 $source = (Resolve-Path $IpaPath).Path
 
+# installd will not replace an app that is running: the install sits at 89% "Installing..."
+# until it is killed. Terminate it before handing the IPA to Sideloadly.
+try { & ios kill 'ie.zbautomations.pistonforge' 2>&1 | Out-Null } catch { }
+
 # Unique name per build so the window label is proof of what is being signed.
 $stamp = if ($Tag) { $Tag } else { Get-Date -Format 'yyyyMMdd-HHmmss' }
 $staged = Join-Path $env:TEMP "PistonForge-$stamp.ipa"

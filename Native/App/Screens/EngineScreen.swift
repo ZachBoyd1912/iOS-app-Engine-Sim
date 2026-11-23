@@ -42,7 +42,9 @@ struct EngineScreen: View {
                         controls
                     }
                     .padding(.horizontal, Theme.Space.l)
-                    .padding(.vertical, Theme.Space.m)
+                    .padding(.top, Theme.Space.m)
+                    // Clear the floating tab bar; without this the primary action sits under it.
+                    .padding(.bottom, 96)
                 }
             }
         }

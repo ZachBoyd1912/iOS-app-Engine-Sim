@@ -1,4 +1,27 @@
 # Changelog
+## 23/11/2026 @ 01:02:50 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged.
+
+**Goal:** confirm the Game Mode fix on device and stop the tab bar covering the primary action.
+
+**Verified on device (0.2.6, build 7):**
+- The iOS warning is **gone**. `builds/device/2026-11-23/v026-clean.png` shows the header reading cleanly where the overlay used to be.
+- The Metal HUD now reports **`Game Mode: On`** (it read `On` before too, but the system claimed the key was missing); frame rate 60.01 FPS, GPU 2.07 ms, `dropouts 0`, thermal `Fair`.
+- The engine renders behind the HUD on the Engine screen, at the Inline 2 selection.
+- The sound panel shows **no load error**, which is the first evidence that the impulse-response path fix works: a failed load would print "Engine sound failed to load (4)".
+
+**Cause of the one visible regression.** Moving the controls into a `ScrollView` in 0.2.4 left them scrolling *under* the floating tab bar, so "Start engine" was half covered.
+
+**Fixed**
+- `EngineScreen`: 96 pt bottom padding inside the scroll content, sized to clear the tab bar, with a comment so it is not removed as arbitrary spacing.
+
+**Also changed**
+- `scripts/sideloadly-install.ps1` now terminates the app before installing. A running app makes installd stall at **89% "Installing…"** indefinitely - the 0.2.6 install hung there until `ios kill` was issued, and then completed. Without this the automation can wedge for the full timeout.
+
+**Files Touched:** `Native/App/Screens/EngineScreen.swift`, `Native/project.yml`, `scripts/sideloadly-install.ps1`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 00:45:20 IST - "deepseek-flash"
 
 **Project completion: 17.39%**
