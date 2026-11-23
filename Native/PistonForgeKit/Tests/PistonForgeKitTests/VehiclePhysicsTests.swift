@@ -144,7 +144,10 @@ private func reach(_ sim: inout DriveSim, _ target: Double) {
     let grip = VehicleDynamics.axleLongitudinalGripN(
         loadN: 6000, lateralN: 0, muLong: 1.1, muLat: 1.1
     )
-    #expect(grip == 6600)
+    // Tolerance, not exact equality: 6000 · 1.1 lands on 6600.000000000001 in binary
+    // floating point, and the ellipse leaves a ~1e-4 residue at full lateral saturation.
+    // Asserting == there tests IEEE rounding, not the tyre.
+    #expect(abs(grip - 6600) < 1e-6)
     let cornering = VehicleDynamics.axleLongitudinalGripN(
         loadN: 6000, lateralN: 3300, muLong: 1.1, muLat: 1.1
     )
@@ -153,7 +156,7 @@ private func reach(_ sim: inout DriveSim, _ target: Double) {
     let saturated = VehicleDynamics.axleLongitudinalGripN(
         loadN: 6000, lateralN: 6600, muLong: 1.1, muLat: 1.1
     )
-    #expect(saturated == 0)
+    #expect(abs(saturated) < 1e-3)
 }
 
 // MARK: - Cornering geometry
