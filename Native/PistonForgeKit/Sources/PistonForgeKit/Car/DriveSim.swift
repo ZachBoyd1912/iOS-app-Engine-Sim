@@ -1,23 +1,28 @@
 import Foundation
 
 /// One step's input. Pedals are 0...1. A shift flag counts only on its rising edge (false to
-/// true between two steps), so holding a button does not shift again.
+/// true between two steps), so holding a button does not shift again. Steering is -1...1, full
+/// right to full left, and maps to the body's road-wheel lock.
 public struct DriveInput: Sendable, Equatable {
     public var throttle: Double
     public var brake: Double
     public var manualShiftUp: Bool
     public var manualShiftDown: Bool
     public var launchControl: Bool
+    /// Steering wheel position, -1 (full right) to 1 (full left). 0 is straight ahead and
+    /// leaves the longitudinal model exactly as it was before cornering existed.
+    public var steering: Double
 
     public init(
         throttle: Double = 0, brake: Double = 0, manualShiftUp: Bool = false,
-        manualShiftDown: Bool = false, launchControl: Bool = false
+        manualShiftDown: Bool = false, launchControl: Bool = false, steering: Double = 0
     ) {
         self.throttle = throttle
         self.brake = brake
         self.manualShiftUp = manualShiftUp
         self.manualShiftDown = manualShiftDown
         self.launchControl = launchControl
+        self.steering = steering
     }
 }
 
@@ -39,6 +44,10 @@ public struct DriveState: Sendable, Equatable {
     /// Clutch locked (manual, dual-clutch), converter locked up (automatic), or always true.
     public var clutchEngaged: Bool
     public var limiterActive: Bool
+    /// Steering, lateral grip, yaw and tyre scrub for this step.
+    public var cornering: CorneringState
+    /// Brake force split, axle loads and lock state for this step.
+    public var braking: BrakingState
 
     public var speedKph: Double { speedMps * 3.6 }
     public var speedMph: Double { speedMps * DriveState.mphPerMps }
@@ -46,9 +55,11 @@ public struct DriveState: Sendable, Equatable {
     static let mphPerMps = 2.2369362920544
 }
 
-/// Longitudinal model of one car. Engine torque comes from the build's dyno pull and goes
-/// through the gearbox and final drive to the driven tyres, limited by grip and weight
-/// transfer. Deterministic: the same inputs always give the same states.
+/// Longitudinal and lateral model of one car. Engine torque comes from the build's dyno pull
+/// and goes through the gearbox and final drive to the driven tyres, limited by grip and weight
+/// transfer. Steering adds a bicycle-model cornering limit, a friction circle on the driven
+/// tyres and tyre scrub; with no steering the longitudinal model is exactly what it always was.
+/// Deterministic: the same inputs always give the same states.
 public struct DriveSim: Sendable {
     static let idleRpm = 900.0
     /// Engine speed a launch holds with launch control, as a share of redline.
@@ -59,11 +70,13 @@ public struct DriveSim: Sendable {
     static let clutchCapFactor = 1.6
     /// Engine braking at zero pedal, as a share of the wide-open torque at that speed.
     static let engineBrakeFraction = 0.12
-    static let gravity = 9.81
-    static let airDensity = 1.2
-    static let rollingCoefficient = 0.012
+    /// Road and brake constants now live in `VehicleDynamics`, which the lateral and braking
+    /// model shares. The values are unchanged.
+    static let gravity = VehicleDynamics.gravity
+    static let airDensity = VehicleDynamics.airDensity
+    static let rollingCoefficient = VehicleDynamics.rollingCoefficient
     /// Brake force at full pedal, as a multiple of weight. Capped by grip.
-    static let brakeDecel = 1.1
+    static let brakeDecel = VehicleDynamics.brakeCommandDecel
     /// All-wheel drive uses the whole weight, with this efficiency factor on its grip (from the brief).
     static let awdGripFactor = 0.85
     /// Engine mass estimate, kg per litre of displacement.
@@ -93,7 +106,11 @@ public struct DriveSim: Sendable {
     private let cgHeightM: Double
     private let wheelRadiusM: Double
     private let gripMu: Double
+    /// Peak grip sideways. Differs from `gripMu` only for a drag radial.
+    private let lateralGripMu: Double
     private let driveEfficiency: Double
+    /// The car as set up, kept for the cornering and braking model.
+    private let carSetup: CarSetup
     /// Dyno pull as (rpm, Nm) pairs in rpm order, 100 rpm apart from the dyno's start speed.
     private let curveRpm: [Double]
     private let curveNm: [Double]
@@ -145,13 +162,8 @@ public struct DriveSim: Sendable {
         let widthMm = bounded(car.tyre.widthMm, 100...400, or: 225)
         let radius = 0.32 + 0.0001 * (widthMm - 200)
 
-        let grip: Double
-        switch car.tyre.compound {
-        case .street: grip = 1.0
-        case .sport: grip = 1.1
-        case .semiSlick: grip = 1.3
-        case .dragRadial: grip = 1.5
-        }
+        let grip = VehicleDynamics.longitudinalMu(car.tyre.compound)
+        let lateralGrip = VehicleDynamics.lateralMu(car.tyre.compound)
 
         let efficiency: Double
         switch gearboxSpec.kind {
@@ -181,7 +193,9 @@ public struct DriveSim: Sendable {
         self.cgHeightM = body.cgHeightM
         self.wheelRadiusM = radius
         self.gripMu = grip
+        self.lateralGripMu = lateralGrip
         self.driveEfficiency = efficiency
+        self.carSetup = car
         self.curveRpm = rpms
         self.curveNm = torques
         self.peakNm = peak
@@ -200,7 +214,8 @@ public struct DriveSim: Sendable {
         self.prevShiftDown = false
         self.state = DriveState(
             time: 0, distanceM: 0, speedMps: 0, rpm: DriveSim.idleRpm, gear: 1, shifting: false,
-            wheelSlip: 0, driveForceN: 0, accelG: 0, clutchEngaged: false, limiterActive: false
+            wheelSlip: 0, driveForceN: 0, accelG: 0, clutchEngaged: false, limiterActive: false,
+            cornering: .straight, braking: .none
         )
     }
 
@@ -210,6 +225,7 @@ public struct DriveSim: Sendable {
         guard h > 0 else { return state }
         let pedal = bounded(input.throttle, 0...1, or: 0)
         let brake = bounded(input.brake, 0...1, or: 0)
+        let steer = bounded(input.steering, -1...1, or: 0)
         let hold = input.launchControl || kind == .dualClutch
         shiftAge += h
 
@@ -281,18 +297,56 @@ public struct DriveSim: Sendable {
         let wheelNm = engineNm * total * driveEfficiency
         let demandN = shifting ? 0.0 : wheelNm / wheelRadiusM
 
+        // Lateral state from the steering angle. With no steering this is all exactly zero and
+        // none of the terms below move: the straight-line model is unchanged.
+        let cornering = VehicleDynamics.cornering(
+            speedMps: speed, steering: steer, car: carSetup, massKg: massKg,
+            longitudinalAccelMps2: lastAccel
+        )
+        let lateralN = massKg * cornering.lateralAccelMps2
+
         // Grip from the load on the driven axle. Acceleration moves weight to the rear.
         let weight = massKg * DriveSim.gravity
         let transfer = massKg * lastAccel * cgHeightM / wheelbaseM
+        let frontLoad = max(0, weight * frontWeight - transfer)
+        let rearLoad = max(0, weight * (1 - frontWeight) + transfer)
         var drivenLoad = weight
         var gripFactor = 1.0
         switch drivetrain {
-        case .rwd: drivenLoad = weight * (1 - frontWeight) + transfer
-        case .fwd: drivenLoad = weight * frontWeight - transfer
+        case .rwd: drivenLoad = rearLoad
+        case .fwd: drivenLoad = frontLoad
         case .awd: gripFactor = DriveSim.awdGripFactor
         }
         drivenLoad = max(0, drivenLoad)
-        let gripN = gripMu * gripFactor * drivenLoad
+
+        // Friction circle: the lateral force the driven axle is carrying leaves less for drive.
+        let gripN: Double
+        if lateralN == 0 {
+            gripN = gripMu * gripFactor * drivenLoad
+        } else {
+            switch drivetrain {
+            case .rwd:
+                gripN = VehicleDynamics.axleLongitudinalGripN(
+                    loadN: rearLoad, lateralN: lateralN * (1 - frontWeight),
+                    muLong: gripMu, muLat: lateralGripMu
+                )
+            case .fwd:
+                gripN = VehicleDynamics.axleLongitudinalGripN(
+                    loadN: frontLoad, lateralN: lateralN * frontWeight,
+                    muLong: gripMu, muLat: lateralGripMu
+                )
+            case .awd:
+                let front = VehicleDynamics.axleLongitudinalGripN(
+                    loadN: frontLoad, lateralN: lateralN * frontWeight,
+                    muLong: gripMu, muLat: lateralGripMu
+                )
+                let rear = VehicleDynamics.axleLongitudinalGripN(
+                    loadN: rearLoad, lateralN: lateralN * (1 - frontWeight),
+                    muLong: gripMu, muLat: lateralGripMu
+                )
+                gripN = DriveSim.awdGripFactor * (front + rear)
+            }
+        }
 
         let tractive = min(max(demandN, -gripN), gripN)
         var slip = 0.0
@@ -300,11 +354,14 @@ public struct DriveSim: Sendable {
             slip = 1 - gripN / demandN
         }
 
-        // Resistance: brakes (capped by grip), drag and rolling.
-        let brakeN = min(brake * DriveSim.brakeDecel * weight, gripMu * weight)
+        // Resistance: brakes, drag, rolling and the drag the slip angles make.
+        let brakes = VehicleDynamics.braking(
+            pedal: brake, speedMps: speed, car: carSetup, massKg: massKg,
+            lateralAccelMps2: cornering.lateralAccelMps2
+        )
         let drag = 0.5 * DriveSim.airDensity * cdA * speed * speed
         let rolling = speed > 0.01 ? DriveSim.rollingCoefficient * weight : 0.0
-        let net = tractive - drag - rolling - brakeN
+        let net = tractive - drag - rolling - brakes.totalForceN - cornering.scrubForceN
 
         var newSpeed = speed + net / massKg * h
         if newSpeed < 0 {
@@ -325,7 +382,9 @@ public struct DriveSim: Sendable {
             driveForceN: tractive,
             accelG: accel / DriveSim.gravity,
             clutchEngaged: engagedNow(),
-            limiterActive: limiterActive
+            limiterActive: limiterActive,
+            cornering: cornering,
+            braking: brakes
         )
         state = next
         return next
