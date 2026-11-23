@@ -89,7 +89,7 @@ public enum VehicleDynamics {
     /// A tyre that has lost grip slides with this share of its peak force. Dry asphalt peak is
     /// 0.80 to 0.90 against 0.75 sliding (research file §2.1, Wong 1993), so 0.75 / 0.85 is
     /// about 0.88; 0.85 is used here and also covers the loss on the unloaded inner tyre.
-    public static let slidingGripFraction = 0.55
+    public static let slidingGripFraction = 0.85
     /// Extra slip angle at the grip limit, as a fraction of the linear estimate. The linear
     /// bicycle model gives 5 to 7 degrees at the limit; real tyres go a little past that
     /// before they let go, so the scrub force is raised by this share squared at saturation.
