@@ -1,4 +1,18 @@
 # Changelog
+## 25/11/2026 @ 23:02:24 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is housekeeping only.
+
+**Goal:** keep machine-local editor and Xcode tooling files out of `git status` so they can't be committed by accident.
+
+**Changed**
+- `.gitignore` now ignores `.vscode/`, `buildServer.json` (sourcekit-lsp's build server config for VS Code Swift support), `selfIdentity.plist` (written locally by tooling, not part of the app) and the Capacitor-era `App.xcodeproj/.../xcshareddata/swiftpm/` resolution folder. All four are generated per machine, and none feed CI.
+
+**Verification:** `git status --short` lists none of them after the change.
+
+**Files Touched:** `.gitignore`, `CHANGELOG.md`.
+
 ## 25/11/2026 @ 22:56:32 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

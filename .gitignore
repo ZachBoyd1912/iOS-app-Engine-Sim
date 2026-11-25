@@ -30,3 +30,9 @@ Native/engine-resources/
 # go-ios developer disk images (downloaded by 'ios image auto')
 devimages/
 
+
+# Local editor / Xcode tooling (sourcekit-lsp, VS Code, SwiftPM resolution)
+.vscode/
+buildServer.json
+selfIdentity.plist
+PistonForge/ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
