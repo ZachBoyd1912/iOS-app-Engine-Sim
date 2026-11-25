@@ -1,4 +1,20 @@
 # Changelog
+## 25/11/2026 @ 23:11:15 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a CI fix.
+
+**Goal:** make the Simulator build link again, so UI tests run and the AI testers get a Simulator app.
+
+**Fixed**
+- **Symptom:** run `45718298659` (the first full, non-IPA-only dispatch since the sound engine was linked in) failed at "Compile app and UI tests once" with `ld: symbol(s) not found for architecture x86_64`, listing every `_esim_*` call in `SoundEngine.o`.
+- **Cause:** the engine-sim bridge is built with `-DCMAKE_OSX_ARCHITECTURES=arm64` for both SDKs. A `generic/platform=iOS Simulator` destination builds the app for arm64 *and* x86_64, so the x86_64 slice had no library to link against. The runs that went green on 23/11 were all dispatched through `scripts/ci-build.ps1`, which sets `ipa_only=true` and skips this step entirely. That's why the break went unnoticed.
+- **Fix:** pass `ARCHS=arm64 ONLY_ACTIVE_ARCH=NO` to the Simulator `build-for-testing`. The macos-26 runners and the AI testers' simulators are all Apple silicon, so x86_64 is never needed. Building a fat engine library instead would double CMake time for an architecture nobody runs.
+
+**Verification:** YAML parses. CI evidence comes from the re-dispatched run.
+
+**Files Touched:** `.github/workflows/native.yml`, `CHANGELOG.md`.
+
 ## 25/11/2026 @ 23:02:24 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

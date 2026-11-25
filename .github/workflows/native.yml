@@ -184,7 +184,10 @@ jobs:
 
       - name: Compile app and UI tests once
         if: ${{ github.event.inputs.ipa_only != 'true' }}
-        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim build-for-testing
+        # ARCHS=arm64: the engine-sim library above is built arm64-only, and a generic Simulator
+        # destination otherwise also links x86_64, which fails with undefined _esim_* symbols.
+        # Runners and the AI testers both use Apple-silicon simulators, so x86_64 is never needed.
+        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build-for-testing
 
       - name: UI tests on iPhone and iPad
         if: ${{ github.event.inputs.ipa_only != 'true' }}
