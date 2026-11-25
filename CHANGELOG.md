@@ -1,4 +1,22 @@
 # Changelog
+## 25/11/2026 @ 22:56:32 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked `[x]` in `docs/roadmap.md` (recounted this session). The two previous entries said 10 of 46 (21.74%), but the file holds only 8 ticked boxes, so this is the honest figure, not a regression. This commit is CI plumbing and ticks no roadmap item.
+
+**Goal:** give the AI phone testers (`mobile-agent-testers` template, installed 25/11/2026) a Simulator build of Piston Forge they can download without rebuilding engine-sim or holding a token.
+
+**Added**
+- `native.yml`: new step "Publish Simulator app to the device-test release", placed after the IPA upload. It zips `PistonForge.app` with `ditto` (which keeps the bundle's symlinks and metadata) and uploads `PistonForge-simulator-app.zip` and `PistonForge-simulator-app.sha` to the existing public `device-test` release with `--clobber`.
+- **Why a release asset and not an Actions artifact:** artifacts need an authenticated token to download and count against the storage quota. Release assets are public and don't count.
+- **Why the `.sha` file:** each tester report can name the exact commit it exercised, so a stale asset can't be mistaken for current HEAD.
+- **arm64 guard:** the step checks the binary with `lipo -archs` and skips publishing (with a warning, without failing the job) when there's no arm64 slice, since the testers run on Apple-silicon simulators.
+- Same `ipa_only != 'true'` condition as the Simulator build, so IPA-only runs skip it.
+
+**Verification:** YAML parses (`yaml.safe_load`). It runs for real only on macOS CI. The next dispatched run must show both assets on the `device-test` release before this counts as verified.
+
+**Files Touched:** `.github/workflows/native.yml`, `CHANGELOG.md`.
+
 ## 23/11/2026 @ 22:37:26 IST - "deepseek-flash"
 
 **Project completion: 21.74%**

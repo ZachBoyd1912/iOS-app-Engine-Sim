@@ -270,6 +270,24 @@ jobs:
           gh release upload device-test "$IPA" --clobber
           gh release view device-test --json assets -q '.assets[] | .name + " " + (.size|tostring) + " bytes"'
 
+      - name: Publish Simulator app to the device-test release
+        # For the AI testers repo (mobile-agent-testers template): it downloads this public
+        # asset with no token instead of rebuilding engine-sim, and release assets do not count
+        # against the artifact quota. The .sha asset ties each tester report to a commit.
+        if: ${{ github.event.inputs.ipa_only != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APP=build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
+          archs=$(lipo -archs "$APP/PistonForge")
+          echo "Simulator app archs: $archs"
+          case " $archs " in *" arm64 "*) ;; *) echo "::warning::no arm64 slice, not publishing"; exit 0 ;; esac
+          mkdir -p build/simzip
+          ditto -c -k --keepParent "$APP" build/simzip/PistonForge-simulator-app.zip
+          echo "$GITHUB_SHA" > build/simzip/PistonForge-simulator-app.sha
+          gh release upload device-test build/simzip/PistonForge-simulator-app.zip build/simzip/PistonForge-simulator-app.sha --clobber
+          ls -lh build/simzip
+
       - name: Upload Simulator app
         uses: actions/upload-artifact@v4
         with:
