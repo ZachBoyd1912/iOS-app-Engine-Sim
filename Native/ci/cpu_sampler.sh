@@ -20,7 +20,8 @@ while [ ! -f "$out/stop" ]; do
   # A thread-level stack sample of the app itself, at most 6 per run (each is a few MB).
   if [ -n "$pid" ] && [ "$samples" -lt 6 ]; then
     samples=$((samples + 1))
-    sample "$pid" 3 -mayDie -file "$out/sample-$samples-$stamp.txt" >/dev/null 2>&1 &
+    # No colons in the file name: upload-artifact rejects them (lost run 45735387185's samples).
+    sample "$pid" 3 -mayDie -file "$out/sample-$samples-$(date -u +%H%M%S).txt" >/dev/null 2>&1 &
   fi
   sleep 20
 done

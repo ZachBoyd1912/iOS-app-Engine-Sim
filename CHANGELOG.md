@@ -1,4 +1,18 @@
 # Changelog
+## 26/11/2026 @ 01:41:25 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes the instrumentation.
+
+**Goal:** get the CPU samples back from CI.
+
+**Fixed**
+- `cpu_sampler.sh` named its stack samples with a `HH:MM:SS` stamp. `upload-artifact` refuses any path containing a colon, so run `45735387185` collected 5 files and uploaded none ("Contains the following character: Colon :"). Sample files are now named `HHMMSS`.
+
+**Observed in that run (no samples, but useful):** `testLiveApp` did *not* freeze this time. It got through Start, revving, Tune, Dyno and two Garage tabs, with single steps taking 40-75 s, before one query timed out at `LiveAppUITests.swift:63`. That fits extreme CPU contention rather than a deadlock.
+
+**Files Touched:** `Native/ci/cpu_sampler.sh`, `CHANGELOG.md`.
+
 ## 26/11/2026 @ 01:22:18 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
