@@ -8,8 +8,10 @@ final class SmokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        let title = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Piston Forge")).firstMatch
-        XCTAssertTrue(title.waitForExistence(timeout: 20), "No text containing \"Piston Forge\" within 20 s")
+        // A plain launch opens RootView, which has no "Piston Forge" title (only the explicit
+        // test route does), so the Engine tab is the sign the real first screen is up.
+        let engineTab = app.tabBars.buttons["Engine"]
+        XCTAssertTrue(engineTab.waitForExistence(timeout: 20), "Engine tab not shown within 20 s")
 
         let device = UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

@@ -1,4 +1,29 @@
 # Changelog
+## 26/11/2026 @ 01:22:18 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is debugging instrumentation and a test fix.
+
+**Goal:** find out why the iPhone UI tests wedge after Start, from evidence rather than a guess.
+
+**What run `45719432044` showed:** this is not a launch hang. `testLiveApp` launched, sound loaded, and Start was tapped. After that, every UI query timed out. The next test could not terminate that process ("Failed to terminate …:20347"), and every later "Timed out while launching" failure follows from it. The screenshots show engine-sim at **280% of a frame before Start** and **235% after**, so on the CI simulator its sim loop is always behind and never sleeps.
+
+There are two controls:
+- Before Start, with engine-sim pinning a core and the 3D scene static, the UI responded.
+- iPad `testEngineLayouts` passed with the 3D scene animating and no engine-sim (the explicit route never loads sound).
+
+So neither alone wedges the app; the combination does. The open question is which threads take the CPU.
+
+**Added**
+- `Native/ci/cpu_sampler.sh`, run in the background around each simulator's tests: `top` every 20 s, plus up to six `sample` thread stacks of the `PistonForge` process. Uploaded as the `native-cpu-samples` artifact. The result decides the fix: engine-sim's sim and audio threads (fix the bridge loop that never yields when behind), or the main thread and RealityKit (the launch report shows Metal API validation `param_diag_gpu_validation_enable = 1`).
+
+**Fixed**
+- `SmokeUITests` looked for text containing "Piston Forge". A plain launch opens `RootView`, which has no such title (only the explicit test route shows it), so the test failed on iPad even though the app was up. It now waits for the Engine tab.
+
+**Verification:** YAML parses, and `bash -n` passes on the sampler. The smoke fix is unverified until an iPad run, and the sampler output comes from the next dispatch.
+
+**Files Touched:** `.github/workflows/native.yml`, `Native/ci/cpu_sampler.sh`, `Native/UITests/SmokeUITests.swift`, `CHANGELOG.md`.
+
 ## 25/11/2026 @ 23:38:23 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
