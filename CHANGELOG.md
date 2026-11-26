@@ -1,4 +1,19 @@
 # Changelog
+## 26/11/2026 @ 02:09:47 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes the instrumentation again.
+
+**Goal:** get CPU figures that actually say which threads starve the CI simulator.
+
+**Fixed (`cpu_sampler.sh`)**
+- Run `45737490966` uploaded `top.txt`, but every process showed 0.0%. macOS `top -l 1` has no previous sample to compute a delta from. It now takes `-l 2 -s 2` and keeps the second report.
+- `sample` produced no files, and its errors had been sent to `/dev/null`. Its errors are now kept, and `ps -M` (per-thread CPU) is recorded alongside, so one tool failing doesn't lose the evidence. The core count and model are recorded once in `host.txt`.
+
+**Evidence already in hand:** the 20 s sampling loop had a **7-minute gap** (01:55:44 to 02:02:55) while the app was under test. The whole runner was starved, not just the app. Across three runs `testLiveApp` stopped at three different places (right after Start, line 63, line 44), which points to contention rather than a deterministic bug.
+
+**Files Touched:** `Native/ci/cpu_sampler.sh`, `CHANGELOG.md`.
+
 ## 26/11/2026 @ 01:41:25 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
