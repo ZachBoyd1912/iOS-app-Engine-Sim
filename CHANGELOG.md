@@ -1,4 +1,20 @@
 # Changelog
+## 25/11/2026 @ 23:38:23 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is tooling.
+
+**Goal:** let `scripts/ci-build.ps1` start full CI runs, not only IPA-only ones.
+
+**Changed**
+- New `-Full` switch: dispatches with `ipa_only=false`, so CI builds the Simulator app, runs the UI tests and publishes the Simulator zip + `.sha` for the AI testers. Without `-Full` the behaviour is unchanged (fast IPA-only).
+- **Why:** the script hard-coded `ipa_only=true`, so every scripted run skipped the Simulator build. That's how the x86_64 link break (fixed in the previous entry) and the UI test failures it was hiding went unseen from 23/11 to 25/11.
+- The run lookup now filters `--event workflow_dispatch`. A push to the branch also starts a `native.yml` run, and without the filter the "newest run" could be that push run rather than the dispatch. The headSha check would then be comparing against the wrong run.
+
+**Verification:** the PowerShell parser reports 0 errors. `Get-Help` shows `[-Branch] [-Full] [-Wait]`. The `ipa_only=false` dispatch path was exercised by hand in run `45719432044`: the Simulator build passed, and `PistonForge-simulator-app.sha` on the release reads `1189e1d…`.
+
+**Files Touched:** `scripts/ci-build.ps1`, `CHANGELOG.md`.
+
 ## 25/11/2026 @ 23:11:15 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
