@@ -1,4 +1,27 @@
 # Changelog
+## 27/11/2026 @ 01:36:48 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is an accessibility fix found by the UI test.
+
+**Goal:** make each drag-strip pedal a single accessibility element.
+
+**Result of full run `45920342777` (`-noEngineSound` split):** the CI overload is solved.
+- `testLiveApp` ran every step in 115 s (before, it timed out right after Start).
+- `testSoundLoads` passed.
+- `SmokeUITests` passed on **both** iPhone and iPad, which confirms the `c669692` fix.
+- `testEngineLayouts` passed on both.
+
+What's left: `testEveryScreen`'s accessibility audit (known, separate), and one `testLiveApp` failure at line 89: "Multiple matching elements found" for "Gas pedal".
+
+**Fixed**
+- `DriveTab.pedal`: `.accessibilityLabel` sat on a `VStack` with no `.accessibilityElement`, so SwiftUI applied the label to both the icon and the text. VoiceOver read each pedal twice, and the UI test matched two elements. Adding `.accessibilityElement(children: .ignore)` makes each pedal one labelled button.
+- `testLiveApp` now queries `app.buttons["Gas pedal"]` instead of any descendant.
+
+**Verification:** a scoped CI run (`only_testing=LiveAppUITests`, iPhone).
+
+**Files Touched:** `Native/App/Screens/DriveTab.swift`, `Native/UITests/LiveAppUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 01:03:05 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

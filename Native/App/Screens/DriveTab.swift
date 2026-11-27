@@ -209,6 +209,10 @@ struct DriveTab: View {
                 .onChanged { _ in set(true) }
                 .onEnded { _ in set(false) }
         )
+        // One element per pedal: without `.ignore` the label spread to the icon and the text,
+        // so VoiceOver read each pedal twice and the UI test found two "Gas pedal" elements
+        // (run 45920342777, LiveAppUITests.swift:89).
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(title.capitalized + " pedal")
         .accessibilityAddTraits(.isButton)
     }

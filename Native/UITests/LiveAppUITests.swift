@@ -84,7 +84,7 @@ final class LiveAppUITests: XCTestCase {
         shot("live-10-drive-setup")
         go.tap()
         Thread.sleep(forTimeInterval: 2)
-        let gas = app.descendants(matching: .any)["Gas pedal"]
+        let gas = app.buttons["Gas pedal"]
         if gas.waitForExistence(timeout: 10) {
             gas.press(forDuration: 9)
             shot("live-11-drive-after-9s")
