@@ -1,4 +1,28 @@
 # Changelog
+## 27/11/2026 @ 00:15:40 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a performance fix in the sound bridge.
+
+**Goal:** stop engine-sim's simulation thread from taking a whole CPU core when the device can't simulate in real time.
+
+**Evidence (run `45740620196`, 3-core `VirtualMac2,1` runner):**
+- Before Start, the app used 20-30% CPU.
+- After Start, it used **6 min 44 s of CPU in about 8 minutes (~89% of one core)**, with a single thread clearly ahead of the rest.
+- The host sampler loop starved for 8 minutes over the same window.
+- The engine screen showed engine-sim at 235-280% of a frame.
+
+`sample` returned empty call graphs (the host can't read a simulator app's stacks on these runners), so the thread is identified by its behaviour rather than by name. That's the one gap in the evidence.
+
+**Fixed (`esim_bridge.cpp`, `simLoop`)**
+- **Cause:** when a frame overran, the loop set `next = now` and called `sleep_until(next)`, which returns immediately. A device that can't keep up therefore ran this thread at 100% of a core forever, starving the UI and, on CI, the UI tests.
+- **Fix:** when behind, rest for a third of that frame's own work time before the next frame. That caps the thread at about 75% of a core. Sound is already dropping out whenever this branch runs, so no audio is lost that wasn't lost already. A device that keeps up never reaches this branch, so its behaviour is unchanged.
+- **Why not more:** halving the simulation rate or skipping frames would change the sound on devices that are only marginally behind. This is the smallest change that removes the spin.
+
+**Verification:** no unit test is possible for thread timing in this setup, since the bridge only compiles on macOS CI. The check is a full CI run (`ci-build.ps1 -Full`): the bridge compiles, `testLiveApp` gets further or passes, and on-screen "Sound load" stays well above 100% (it measures work time, so it shouldn't change). Phone behaviour is unverified until an on-device run.
+
+**Files Touched:** `Native/EngineSimSpike/App/Bridge/esim_bridge.cpp`, `CHANGELOG.md`.
+
 ## 26/11/2026 @ 02:09:47 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

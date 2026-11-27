@@ -150,7 +150,17 @@ void simLoop() {
 
         next += std::chrono::microseconds(16667);
         const auto now = clock::now();
-        if (next < now) next = now; // fell behind: do not try to catch up in a burst
+        if (next < now) {
+            // Fell behind: do not try to catch up in a burst, and do not spin either. This used
+            // to be `next = now; sleep_until(next)`, which returns at once, so a device that
+            // cannot simulate in real time had this thread on 100% of a core forever. On the
+            // 3-core CI simulator (engine-sim at 235-280% of a frame) that starved the UI: one
+            // thread of the app held ~89% of a core and UI tests timed out (runs 45719432044,
+            // 45740620196). Resting a third of the frame's own work time caps the thread at
+            // about 75% of a core. Sound is already dropping out whenever this branch runs, so
+            // this costs no audio that was not lost anyway; a device that keeps up never gets here.
+            next = now + std::chrono::microseconds(static_cast<long long>(ms * 1000.0 / 3.0));
+        }
         std::this_thread::sleep_until(next);
     }
 }
