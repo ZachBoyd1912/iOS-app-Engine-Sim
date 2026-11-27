@@ -54,6 +54,9 @@ struct PreviewTag: View {
             Text("PREVIEW · sample data")
                 .font(.caption.weight(.heavy))
                 .foregroundStyle(Theme.accent)
+                // Without this the line was squeezed ~1 pt inside the engine screen's fixed
+                // 360 pt stage overlay and the audit reported "Text clipped" (iPhone).
+                .fixedSize(horizontal: false, vertical: true)
             Text(rules)
                 .font(.caption2)
                 .foregroundStyle(Theme.textSecondary)

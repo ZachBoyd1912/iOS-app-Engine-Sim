@@ -1,4 +1,32 @@
 # Changelog
+## 27/11/2026 @ 02:59:06 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is accessibility audit work.
+
+**Goal:** get `testEveryScreen`'s accessibility audit to report only real problems, and fix the real ones.
+
+**Contrast: Xcode's check replaced, not "fixed".**
+- The audit flagged Form section headers and footers that sit on the gradient background ("Units", "Your engines", "Block and crank", footnotes). Text inside the solid cards, in the same colour, was never flagged.
+- Measured from run `45920342777`'s screenshots (iPhone ×3, iPad ×2), worst case against the brightest background pixel beside the text: **every flagged element is 6.55:1 or better** (WCAG needs 4.5:1). Apple's audit misjudges contrast on the gradient.
+- The audit now runs `.all.subtracting(.contrast)`. Contrast is checked instead by new `Native/ci/check_contrast.py`. It reads the tokens straight from `Theme.swift` (so it can't drift) and checks every pairing the screens use: text on the base and on the base blended with each tint at its declared opacity, on `surface`, on Form rows and on `surfaceRaised`; status marks at 3:1; `onAccent` on `accent`.
+- All 29 pairs pass. The tightest are `badInk` on `surface` (4.88:1) and `accent` on the warm tint (5.09:1).
+- The script was shown to fail: with `textSecondary` dimmed to 0.4, it fails 5 pairs and exits 1.
+- It runs first in the macOS `app` job.
+- **Coverage change, stated plainly:** text drawn over the 3D viewport and system colours we don't set are no longer contrast-checked by anything.
+- No colours changed. The screens are approved and measure 6.5:1 or better.
+
+**Fixed**
+- "PREVIEW · sample data" on the iPhone engine screen was reported "Text clipped". It sits in an overlay limited by the fixed 360 pt stage, and unlike the line below it, it had no vertical `fixedSize`. Added.
+
+**Added (evidence, not fixes)**
+- `testLargeTextScreens`: every screen at `AccessibilityXXXL`, screenshot only. The "Dynamic Type partially unsupported" flags (mostly the preview-only "Rules" caption, two footnotes, and the "3D quality" picker row) are judged from what actually truncates, before any layout change.
+- The audit log now includes each issue's type and detailed description, so element-less issues ("Potentially inaccessible text" on Parts, Car and Dyno) can be traced.
+
+**Verification:** the contrast script runs locally (29/29) and fails on purpose with a dimmed token. YAML parses. The UI changes are checked in CI run `only_testing=ScreenshotUITests` on both devices.
+
+**Files Touched:** `.github/workflows/native.yml`, `Native/ci/check_contrast.py`, `Native/UITests/ScreenshotUITests.swift`, `Native/App/Screens/Components.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 01:36:48 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

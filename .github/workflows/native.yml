@@ -141,6 +141,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Contrast is checked from the colour tokens here, not by Xcode's audit, which misjudged
+      # text on the gradient background (every flagged element measured >= 6.55:1).
+      - name: Colour contrast (tokens)
+        run: python3 ci/check_contrast.py App/Theme.swift
+
       - name: Tools
         run: |
           brew install xcodegen

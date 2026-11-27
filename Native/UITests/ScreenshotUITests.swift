@@ -52,13 +52,16 @@ final class ScreenshotUITests: XCTestCase {
                     // Collect every issue so one run shows them all.
                     var issues: [String] = []
                     do {
-                        try app.performAccessibilityAudit { issue in
+                        // Contrast is checked from the theme tokens by ci/check_contrast.py instead:
+                        // this audit flagged headers and footers on the gradient background that
+                        // measure 6.55:1 or better in the screenshots (run 45920342777).
+                        try app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting(.contrast)) { issue in
                             // Name the element so the fix can be found without a Mac.
                             var element = "-"
                             if let found = issue.element {
                                 element = "\(found.elementType.rawValue) id='\(found.identifier)' label='\(found.label.prefix(60))' frame=\(found.frame.integral)"
                             }
-                            issues.append("\(issue.compactDescription) [\(element)]")
+                            issues.append("\(issue.compactDescription) (type \(issue.auditType.rawValue): \(issue.detailedDescription)) [\(element)]")
                             return true
                         }
                     } catch {
@@ -72,5 +75,26 @@ final class ScreenshotUITests: XCTestCase {
             }
         }
         XCUIDevice.shared.orientation = .portrait
+    }
+
+    /// Every screen at the largest accessibility text size, screenshot only. This is the evidence
+    /// for the audit's "Dynamic Type partially unsupported" findings: what actually truncates.
+    func testLargeTextScreens() throws {
+        XCUIDevice.shared.orientation = .portrait
+        for screen in ["engine", "parts", "tune", "dyno", "car", "settings", "garage"] {
+            let app = XCUIApplication()
+            app.launchArguments = [
+                "-screen", screen, "-preview",
+                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+            ]
+            app.launch()
+            XCTAssertTrue(app.descendants(matching: .any)["screen.\(screen)"].waitForExistence(timeout: 30), "\(screen) did not open")
+            Thread.sleep(forTimeInterval: 1)
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = "largetext-\(screen)-\(device)"
+            shot.lifetime = .keepAlways
+            add(shot)
+            app.terminate()
+        }
     }
 }
