@@ -55,7 +55,12 @@ final class ScreenshotUITests: XCTestCase {
                         // Contrast is checked from the theme tokens by ci/check_contrast.py instead:
                         // this audit flagged headers and footers on the gradient background that
                         // measure 6.55:1 or better in the screenshots (run 45920342777).
-                        try app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting(.contrast)) { issue in
+                        // Dynamic Type is judged from testLargeTextScreens' screenshots instead:
+                        // the audit said text "will not change size" when every flagged text
+                        // visibly scaled at AccessibilityXXXL, and it flagged 17 plain Dyno
+                        // labels in one run and none in the run before (run 45931568847).
+                        // .textClipped stays on.
+                        try app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting([.contrast, .dynamicType])) { issue in
                             // Name the element so the fix can be found without a Mac.
                             var element = "-"
                             if let found = issue.element {

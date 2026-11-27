@@ -15,9 +15,43 @@ struct EngineScreen: View {
     /// Extra panel above the readouts (the exhaust and rev-limiter choices live here).
     var accessory: () -> AnyView = { AnyView(EmptyView()) }
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private static let previewRules = "Rules: one accent (Start), status = icon + word, 44 pt targets, persistent banner for warnings"
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
+            if typeSize.isAccessibilitySize { largeTextLayout } else { standardLayout }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screen.engine")
+    }
+
+    /// Accessibility text sizes: one scrolling column. The standard layout overlays the header on
+    /// the fixed 360 pt stage, and at these sizes the name, subtitle and PREVIEW tag drew over
+    /// each other and the engine, with the name under the status bar (largetext-engine,
+    /// run 45931568847).
+    private var largeTextLayout: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.m) {
+                header
+                if preview { PreviewTag(rules: Self.previewRules) }
+                EngineViewport(build: build, state: state, onSelect: onSelectPart)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 300)
+                    .clipped()
+                WarningBanner(warnings: warnings)
+                accessory()
+                controls
+            }
+            .padding(.horizontal, Theme.Space.l)
+            .padding(.top, Theme.Space.s)
+            // Clear the floating tab bar.
+            .padding(.bottom, 96)
+        }
+    }
+
+    private var standardLayout: some View {
             VStack(spacing: 0) {
                 // Fixed-height, clipped 3D stage. It used to be an unframed ZStack child that
                 // ignored the horizontal safe area, which let content bleed and pushed the
@@ -29,7 +63,7 @@ struct EngineScreen: View {
                         .clipped()
                     VStack(spacing: Theme.Space.s) {
                         header
-                        if preview { PreviewTag(rules: "Rules: one accent (Start), status = icon + word, 44 pt targets, persistent banner for warnings") }
+                        if preview { PreviewTag(rules: Self.previewRules) }
                     }
                     .padding(.horizontal, Theme.Space.l)
                     .padding(.vertical, Theme.Space.s)
@@ -47,9 +81,6 @@ struct EngineScreen: View {
                     .padding(.bottom, 96)
                 }
             }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("screen.engine")
     }
 
     private var header: some View {

@@ -1,4 +1,24 @@
 # Changelog
+## 27/11/2026 @ 04:09:36 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is large-text layout fixes (awaiting Zach's approval) and an audit scope change.
+
+**Goal:** fix the two layouts that break at accessibility text sizes, and stop the audit failing on its own false Dynamic Type reports. Zach approved both directions on 27/11/2026. The rendered result is a **preview** for his sign-off under the ZB UX standard.
+
+**Changed (accessibility text sizes only; normal sizes keep the exact current layout)**
+- `EngineScreen`: at `dynamicTypeSize.isAccessibilitySize` the screen becomes one scrolling column: header, PREVIEW tag, the 3D stage (300 pt), then warnings, accessory and controls. Before, the header was an overlay on the fixed 360 pt stage, and at XXXL the name, subtitle and PREVIEW tag drew over each other and the engine, with the name under the status bar. Known trade-off: at these sizes the 3D stage sits inside a scroll view.
+- `DynoScreen.peaks`: the three peak readouts stack vertically at accessibility sizes (`AnyLayout` switch). In three columns, words broke mid-word and figures wrapped one digit per line.
+
+**Audit scope**
+- `testEveryScreen` now audits `.all.subtracting([.contrast, .dynamicType])`. The Dynamic Type check said text "will not change size", when every flagged text visibly scaled in the `AccessibilityXXXL` screenshots. It was also unstable (17 plain Dyno labels flagged in one run, none in the previous one).
+- **Coverage change, stated plainly:** text-size problems are now caught by people reviewing `testLargeTextScreens`' screenshots, not by an automatic failure. That review is what found both layout bugs above.
+- `.textClipped` stays on.
+
+**Verification:** the CI run of `ScreenshotUITests` on both devices produces the after screenshots (before: run `45931568847`). Not merged as approved until Zach signs off the preview.
+
+**Files Touched:** `Native/App/Screens/EngineScreen.swift`, `Native/App/Screens/DynoScreen.swift`, `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 03:41:33 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

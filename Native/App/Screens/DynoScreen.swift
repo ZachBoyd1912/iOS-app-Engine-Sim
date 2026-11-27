@@ -56,8 +56,15 @@ struct DynoScreen: View {
         .accessibilityIdentifier("screen.dyno")
     }
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     private var peaks: some View {
-        HStack(spacing: Theme.Space.m) {
+        // Side by side at normal sizes; stacked at accessibility sizes, where three columns broke
+        // words mid-word and wrapped the figures one digit per line (largetext-dyno, run 45931568847).
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.Space.m))
+            : AnyLayout(HStackLayout(spacing: Theme.Space.m))
+        return layout {
             Readout(label: "Peak power", value: current.map { "\(Int($0.peakHp.rounded()))" } ?? "–", unit: "hp")
                 .accessibilityIdentifier("label.peakHp")
             Readout(label: "At the wheels", value: current.map { "\(Int(($0.peakHp * 0.85).rounded()))" } ?? "–", unit: "whp")
