@@ -143,6 +143,11 @@ struct PartsScreen: View {
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
+            // The value is drawn in the label but was not exposed: the audit reported it as
+            // "Potentially inaccessible text" (Parts, run 45931568847), and VoiceOver did not
+            // read the current bore or stroke when stepping. Title as label, number as value.
+            .accessibilityLabel(title)
+            .accessibilityValue(String(format: format, value.wrappedValue))
             Text(effect)
                 .font(.footnote)
                 .foregroundStyle(Theme.textSecondary)

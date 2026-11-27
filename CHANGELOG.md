@@ -1,4 +1,24 @@
 # Changelog
+## 27/11/2026 @ 03:41:33 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is an accessibility fix plus findings.
+
+**Goal:** expose the Parts steppers' values to VoiceOver, and record what run `45931568847` proved about the rest of the audit.
+
+**Run `45931568847` (ScreenshotUITests, both devices):**
+- Token contrast passed 29/29 in CI. `testEngineLayouts` and `testLargeTextScreens` passed on both devices. `testEveryScreen` still fails on the remaining audit types.
+- **Dynamic Type (type 65536, "User will not be able to change the font size"):** false. The `AccessibilityXXXL` screenshots show every flagged text scaling: the "Rules" captions, the footnotes, "3D quality". It's also flaky: iPhone Dyno flagged 17 plain labels this run and none the run before.
+- **Real layout bugs the screenshots exposed (not yet fixed, needs Zach's approval of a preview):**
+  1. Engine screen: the name, subtitle and PREVIEW tag overlap each other and the 3D engine, and the name runs under the status bar. The header is an overlay in the fixed 360 pt stage.
+  2. Dyno: the three peak readouts stay side by side, so words break mid-word and numbers wrap one digit per line.
+- **Element detection (type 2, "Potentially inaccessible text"):** Parts (iPhone 1, iPad 3), Dyno iPad 1, Car iPad 1.
+
+**Fixed**
+- `PartsScreen.stepper`: the value ("102 mm") was drawn inside the Stepper's label but not exposed as its value. The Stepper now has the title as its label and the formatted number as `accessibilityValue`. No visual change. It's likely the Parts element-detection flags (the iPad shows three steppers and had three flags); unverified until the next run. The Dyno and Car element-detection items are still unidentified.
+
+**Files Touched:** `Native/App/Screens/PartsScreen.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 02:59:06 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
