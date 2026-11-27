@@ -1,4 +1,22 @@
 # Changelog
+## 27/11/2026 @ 00:49:56 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a test fix.
+
+**Goal:** make the smoke test check the real first screen on both iPhone and iPad.
+
+**Result of full run `45915804981` (the bridge fix in the previous entry):**
+- On iPhone, `testLiveApp` still times out right after Start (`LiveAppUITests.swift:34`). But the cascade is gone. Earlier runs left a process that couldn't be terminated, so every later test failed to launch. This time `testEngineLayouts` and `SmokeUITests` passed on iPhone, and `testEveryScreen` launched every screen; it fails only on its accessibility audit, which is known and separate.
+- So the fix removed the wedge, but the CI simulator still can't run engine-sim plus the live UI fast enough for `testLiveApp`.
+
+**Fixed**
+- `SmokeUITests` waited for `app.tabBars.buttons["Engine"]`. That passed on iPhone and failed on iPad ("Engine tab not shown within 20 s"), because iPadOS 26 draws tabs outside `tabBars`. It now waits for `button.start`, which is on the first screen of both devices.
+
+**Verification:** unverified until the next run that includes iPad.
+
+**Files Touched:** `Native/UITests/SmokeUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 00:15:40 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

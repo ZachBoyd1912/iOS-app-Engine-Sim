@@ -9,9 +9,11 @@ final class SmokeUITests: XCTestCase {
         app.launch()
 
         // A plain launch opens RootView, which has no "Piston Forge" title (only the explicit
-        // test route does), so the Engine tab is the sign the real first screen is up.
-        let engineTab = app.tabBars.buttons["Engine"]
-        XCTAssertTrue(engineTab.waitForExistence(timeout: 20), "Engine tab not shown within 20 s")
+        // test route does). Not the tab bar either: iPadOS 26 draws tabs outside `tabBars`, so
+        // that query passed on iPhone and failed on iPad (run 45915804981). The Start button is
+        // on the first screen of both.
+        let start = app.buttons["button.start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 20), "Start button not shown within 20 s")
 
         let device = UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
