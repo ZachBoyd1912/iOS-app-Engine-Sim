@@ -73,6 +73,13 @@ final class ScreenshotUITests: XCTestCase {
                         issues.append("audit error: \(error)")
                     }
                     if !issues.isEmpty {
+                        // The audit names no element for "potentially inaccessible text" or
+                        // "text clipped", so keep the whole element tree to match the flag
+                        // against what the accessibility API actually exposes.
+                        let tree = XCTAttachment(string: app.debugDescription)
+                        tree.name = "tree-\(screen)-\(device).txt"
+                        tree.lifetime = .keepAlways
+                        add(tree)
                         XCTFail("\(screen) accessibility (\(issues.count)): " + issues.joined(separator: " | "))
                     }
                 }

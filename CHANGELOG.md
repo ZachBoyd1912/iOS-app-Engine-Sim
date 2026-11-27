@@ -1,4 +1,25 @@
 # Changelog
+## 27/11/2026 @ 22:33:28 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This records an approval and adds a diagnostic to the test suite.
+
+**Goal:** record Zach's approval of the large-text layouts, and find which elements the accessibility audit flags but does not name.
+
+**Approved:** on 27/11/2026 Zach approved the large-text Engine and Dyno layouts from run `45938353556`, so they are no longer a preview.
+
+**Added**
+- In `testEveryScreen`, every screen the audit flags now saves its full element tree (`app.debugDescription`) as the attachment `tree-<screen>-<device>.txt`.
+- Why: run `45938353556` still had 8 flags with no element attached:
+  - "potentially inaccessible text" on Parts (iPhone 1, iPad 3), iPad Dyno and iPad Car;
+  - "text clipped" on iPhone Car.
+- The stepper fix (`fdf7f62`) did not clear the Parts flags, so guessing has stopped working. Comparing what is drawn on screen with what the accessibility tree exposes shows which text is missing from the tree.
+- Test-only change; the app is untouched.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. The flagged screens should produce `tree-*.txt` attachments.
+
+**Files Touched:** `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 04:09:36 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
