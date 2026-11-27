@@ -1,9 +1,9 @@
 import UIKit
 import XCTest
 
-/// Opens the real app (no launch arguments), starts the engine, runs a dyno pull and a drag run,
-/// and keeps a screenshot of each step. This is how the live tabs and engine-sim's sound loading
-/// are checked without a Mac or a phone in the loop.
+/// Opens the real app, starts the engine, runs a dyno pull and a drag run, and keeps a
+/// screenshot of each step. This is how the live tabs and engine-sim's sound loading are checked
+/// without a Mac or a phone in the loop.
 @MainActor
 final class LiveAppUITests: XCTestCase {
     private func shot(_ name: String) {
@@ -13,19 +13,31 @@ final class LiveAppUITests: XCTestCase {
         add(attachment)
     }
 
+    /// engine-sim compiles the engine script and loads its impulse response. Checked on its own
+    /// and before Start: once the engine runs, the CI simulator cannot keep up with engine-sim
+    /// and the live UI together, so the walkthrough below runs without engine-sim.
+    func testSoundLoads() throws {
+        try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "phone only")
+        let app = XCUIApplication()
+        app.launch()
+        XCTAssertTrue(app.buttons["button.start"].waitForExistence(timeout: 30), "Engine screen did not open")
+        let soundReady = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Sound load'")).firstMatch
+        let loaded = soundReady.waitForExistence(timeout: 45)
+        shot("sound-loaded")
+        XCTAssertTrue(loaded, "engine-sim sound did not report loaded within 45 s")
+        app.terminate()
+    }
+
     func testLiveApp() throws {
         try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "phone only")
         continueAfterFailure = true
         let app = XCUIApplication()
+        app.launchArguments = ["-noEngineSound"]
         app.launch()
 
         let start = app.buttons["button.start"]
         XCTAssertTrue(start.waitForExistence(timeout: 30), "Engine screen did not open")
-        // engine-sim compiles the engine script and loads its impulse response.
-        let soundReady = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Sound load'")).firstMatch
-        let loaded = soundReady.waitForExistence(timeout: 45)
         shot("live-1-engine-idle")
-        XCTAssertTrue(loaded, "engine-sim sound did not report loaded within 45 s")
 
         start.tap()
         Thread.sleep(forTimeInterval: 3)

@@ -1,4 +1,22 @@
 # Changelog
+## 27/11/2026 @ 01:03:05 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a test-harness change.
+
+**Goal:** let the iPhone live walkthrough (`testLiveApp`) pass on CI without losing the check that engine-sim loads.
+
+**Why:** the bridge fix (`3d900b8`) removed the wedge, but run `45915804981` still timed out right after Start. The 3-core CI simulator can't run engine-sim (235-280% of a frame) and the live UI together fast enough for XCUITest's queries. That's a limit of the CI hardware, not something a phone run shows.
+
+**Added / Changed**
+- `GameStore`: a `-noEngineSound` launch argument skips loading engine-sim. It's only read at launch and only passed by UI tests, so the shipped app never sees it.
+- `LiveAppUITests.testLiveApp` now launches with `-noEngineSound`, and its sound-loaded assertion moved out.
+- New `LiveAppUITests.testSoundLoads`: a normal launch that waits for "Sound load", takes a screenshot and terminates *before* Start. Before Start, the UI stayed responsive in every run so far, so engine-sim's loading keeps its coverage. The `sound-check` job still renders every engine's sound.
+
+**Verification:** unverified until full run `ci-build.ps1 -Full`. The iPad smoke fix (`c669692`) is checked in the same run.
+
+**Files Touched:** `Native/App/Game/GameStore.swift`, `Native/UITests/LiveAppUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 00:49:56 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

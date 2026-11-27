@@ -176,7 +176,13 @@ final class GameStore {
         reloadSound()
     }
 
+    /// UI tests on CI pass `-noEngineSound`. The CI simulator runs engine-sim at 235-280% of a
+    /// frame, and with the live UI on top the test runner times out (runs 45719432044 to
+    /// 45915804981). Sound loading has its own short test, and the `sound-check` job renders it.
+    private static let soundDisabled = ProcessInfo.processInfo.arguments.contains("-noEngineSound")
+
     private func reloadSound() {
+        if Self.soundDisabled { return }
         soundTask?.cancel()
         let engine = build
         let chosenExhaust = exhaust
