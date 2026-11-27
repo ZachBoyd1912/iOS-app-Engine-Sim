@@ -1,4 +1,38 @@
 # Changelog
+## 27/11/2026 @ 23:21:13 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes a VoiceOver label and adds a diagnostic experiment.
+
+**Goal:** undo a VoiceOver regression my earlier change caused, and test a hypothesis about the remaining audit flags before changing any approved screen.
+
+**What run `46077391124`'s element trees showed**
+- Every piece of text visible on the flagged Parts and Car screens is present in the accessibility tree.
+- The "potentially inaccessible text" flags match one-for-one the visible stepper values that contain `:` or `/`:
+  - iPhone Parts: `10.0:1` gave 1 flag.
+  - iPad Parts: `10.0:1`, `700 cc/min` and `320 L/h` gave 3 flags.
+  - iPad Car: `3.55:1` gave 1 flag.
+  - Plain values (`102 mm`, `92 mm`, `255 mm`) were never flagged.
+  - On iPhone Car, `3.55:1` is off screen, and that screen had no flags.
+- The likely cause is the audit's text recognition failing to match punctuated values. It does not look like text missing from the accessibility API.
+- The iPad Dyno flag is still unexplained. The chart axis text (`hp / Nm`, the rpm numbers) is absent from the tree on both devices, yet iPhone Dyno shows it and was not flagged.
+- The iPhone Car "text clipped" flag from run `45938353556` did not recur, so it is treated as flaky.
+
+**Fixed**
+- `PartsScreen.stepper`: removed the `.accessibilityLabel` and `.accessibilityValue` overrides added in `fdf7f62`.
+  - Cause: the override did not replace the stepper's label, it appended to it. VoiceOver read "Compression, 10.0:1, Compression".
+  - The flag it was meant to fix also stayed.
+  - Now the label is "Compression, 10.0:1", matching the Car screen's untouched steppers.
+
+**Added**
+- `testPartsScrolledAuditCount` (iPhone only), an experiment and never a failure.
+  - It scrolls Parts to Injectors, then records the audit's flag count, a screenshot and the element tree.
+  - The hypothesis predicts one flag per `:` or `/` value on screen.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. Check the next tree dump for the stepper label.
+
+**Files Touched:** `Native/App/Screens/PartsScreen.swift`, `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 22:33:28 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

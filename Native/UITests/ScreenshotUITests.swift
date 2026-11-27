@@ -89,6 +89,39 @@ final class ScreenshotUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
+    /// Experiment, not a gate: run 46077391124 flagged "potentially inaccessible text" exactly
+    /// once per visible stepper value containing ':' or '/' (10.0:1, 700 cc/min, 320 L/h, 3.55:1)
+    /// and never for plain ones (102 mm, 92 mm, 255 mm), though all are in the element tree.
+    /// Scrolled to Injectors, it predicts one flag per such value on screen in the screenshot.
+    /// The count is recorded in an attachment; this test never fails on it.
+    func testPartsScrolledAuditCount() throws {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["-screen", "parts", "-preview"]
+        app.launch()
+        let screen = app.descendants(matching: .any)["screen.parts"]
+        XCTAssertTrue(screen.waitForExistence(timeout: 30), "parts did not open")
+        let target = app.staticTexts["Injectors"]
+        for _ in 0..<6 where !(target.exists && target.isHittable) { screen.swipeUp() }
+        Thread.sleep(forTimeInterval: 1)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "experiment-parts-scrolled-\(device)"
+        shot.lifetime = .keepAlways
+        add(shot)
+        var issues: [String] = []
+        try? app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting([.contrast, .dynamicType])) { issue in
+            issues.append("\(issue.compactDescription) (type \(issue.auditType.rawValue))")
+            return true
+        }
+        let report = XCTAttachment(string: "flags: \(issues.count)\n" + issues.joined(separator: "\n") + "\n\n" + app.debugDescription)
+        report.name = "experiment-parts-scrolled-\(device).txt"
+        report.lifetime = .keepAlways
+        add(report)
+        print("EXPERIMENT parts-scrolled flags=\(issues.count)")
+        app.terminate()
+    }
+
     /// Every screen at the largest accessibility text size, screenshot only. This is the evidence
     /// for the audit's "Dynamic Type partially unsupported" findings: what actually truncates.
     func testLargeTextScreens() throws {
