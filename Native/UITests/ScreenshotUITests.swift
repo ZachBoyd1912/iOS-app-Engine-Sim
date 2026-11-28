@@ -3,6 +3,9 @@ import XCTest
 
 /// Screenshots of the screens, exported from the test results in CI (the only way to see the
 /// app without a Mac).
+/// Every launch passes -noEngineSound: screenshots need no sound, and engine-sim's sim and audio
+/// threads starved the 3-core CI runner, giving "Failed to terminate" and "Audit failed to
+/// complete in time" (run 46088889270). LiveAppUITests.testSoundLoads still checks the sound loads.
 @MainActor
 final class ScreenshotUITests: XCTestCase {
     private var device: String { UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone" }
@@ -16,7 +19,7 @@ final class ScreenshotUITests: XCTestCase {
         ]
         for (layout, induction) in cases {
             let app = XCUIApplication()
-            app.launchArguments = ["-screen", "engine", "-layout", layout, "-induction", induction]
+            app.launchArguments = ["-noEngineSound", "-screen", "engine", "-layout", layout, "-induction", induction]
             app.launch()
             XCTAssertTrue(app.staticTexts["label.engineName"].waitForExistence(timeout: 20), "\(layout) did not open")
             // Give RealityKit time to draw and the crank time to turn.
@@ -39,7 +42,7 @@ final class ScreenshotUITests: XCTestCase {
             for orientation in orientations {
                 XCUIDevice.shared.orientation = orientation
                 let app = XCUIApplication()
-                app.launchArguments = ["-screen", screen, "-preview"]
+                app.launchArguments = ["-noEngineSound", "-screen", screen, "-preview"]
                 app.launch()
                 XCTAssertTrue(app.descendants(matching: .any)["screen.\(screen)"].waitForExistence(timeout: 30), "\(screen) did not open")
                 Thread.sleep(forTimeInterval: screen == "engine" ? 3 : 1)
@@ -111,7 +114,7 @@ final class ScreenshotUITests: XCTestCase {
         for screen in ["engine", "parts", "tune", "dyno", "car", "settings", "garage"] {
             let app = XCUIApplication()
             app.launchArguments = [
-                "-screen", screen, "-preview",
+                "-noEngineSound", "-screen", screen, "-preview",
                 "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
             ]
             app.launch()

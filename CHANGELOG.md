@@ -1,4 +1,29 @@
 # Changelog
+## 28/11/2026 @ 01:24:43 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a CI reliability fix.
+
+**Goal:** stop the screenshot tests failing from CPU starvation on the 3-core CI runner.
+
+**Run `46088889270`**
+- The advisory change worked:
+  - The element-detection flags were logged as `AUDIT ADVISORY` (Parts iPhone 1 and iPad 3; Car iPad 1; Dyno iPad 1).
+  - iPad `testEveryScreen` passed.
+- It still failed on load:
+  - iPhone `testEveryScreen` hit "Audit failed to complete in time" (code -56), then "Failed to terminate".
+  - iPad `testEngineLayouts` hit "Failed to terminate", as it did once in run `45938353556`.
+
+**Fixed**
+- Every `ScreenshotUITests` launch now passes `-noEngineSound`.
+- Cause: `GameStore` loads the sound on every launch, preview launches included. That starts engine-sim's simulation thread and its audio rendering thread. Earlier CPU samples on this runner measured 235–280% of a frame for engine-sim.
+- This is the same starvation already fixed for `testLiveApp`. Here it showed up as an audit timeout, and as the app being too busy to terminate.
+- Screenshots need no sound. `LiveAppUITests.testSoundLoads` still checks that the sound loads.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. Expected: all three tests pass on both devices.
+
+**Files Touched:** `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
 ## 28/11/2026 @ 00:37:24 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
