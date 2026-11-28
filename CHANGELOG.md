@@ -1,4 +1,36 @@
 # Changelog
+## 28/11/2026 @ 00:37:24 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a test-suite scope change.
+
+**Goal:** stop the accessibility audit failing CI on two flag types that have proved unactionable, as Zach decided on 28/11/2026 ("Option 1").
+
+**Experiment result (run `46082041421`)**
+- The theory behind the experiment was that values containing `:` or `/` trigger "potentially inaccessible text".
+- The experiment disproved it:
+  - Parts was scrolled so that `700 cc/min`, `320 L/h` and `550 g/s` were on screen.
+  - The theory predicted 3 such flags. The audit raised 0.
+- The run also confirmed the stepper label fix: VoiceOver now reads "Injectors, 700 cc/min".
+
+**Changed**
+- In `testEveryScreen`, `.elementDetection` ("potentially inaccessible text") and `.textClipped` issues are now advisory.
+  - They are printed as `AUDIT ADVISORY <screen>-<device>` and written at the top of that screen's `tree-*.txt` attachment.
+  - They no longer fail the test. Every other audit type still fails it.
+- Why:
+  - Neither flag type ever named an element.
+  - Every visible text on the flagged screens was in the accessibility tree (runs `46077391124` and `46082041421`).
+  - Two fixes based on these flags were wrong (the stepper label and the `:` / `/` theory).
+  - The flags changed with scroll position and from run to run.
+- **Coverage given up, stated plainly:** a genuinely unlabelled text, or text that really clips, no longer fails CI on its own.
+  - The element tree attachments show what VoiceOver can read.
+  - People still review `testLargeTextScreens`' screenshots for clipping.
+- Removed the one-off `testPartsScrolledAuditCount` experiment; it answered its question.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. Expected: `testEveryScreen` passes, with the advisories logged.
+
+**Files Touched:** `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
 ## 27/11/2026 @ 23:21:13 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**

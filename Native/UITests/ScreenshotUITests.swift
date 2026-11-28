@@ -51,6 +51,7 @@ final class ScreenshotUITests: XCTestCase {
                 if orientation == .portrait {
                     // Collect every issue so one run shows them all.
                     var issues: [String] = []
+                    var advisories: [String] = []
                     do {
                         // Contrast is checked from the theme tokens by ci/check_contrast.py instead:
                         // this audit flagged headers and footers on the gradient background that
@@ -59,27 +60,41 @@ final class ScreenshotUITests: XCTestCase {
                         // the audit said text "will not change size" when every flagged text
                         // visibly scaled at AccessibilityXXXL, and it flagged 17 plain Dyno
                         // labels in one run and none in the run before (run 45931568847).
-                        // .textClipped stays on.
                         try app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting([.contrast, .dynamicType])) { issue in
                             // Name the element so the fix can be found without a Mac.
                             var element = "-"
                             if let found = issue.element {
                                 element = "\(found.elementType.rawValue) id='\(found.identifier)' label='\(found.label.prefix(60))' frame=\(found.frame.integral)"
                             }
-                            issues.append("\(issue.compactDescription) (type \(issue.auditType.rawValue): \(issue.detailedDescription)) [\(element)]")
+                            let line = "\(issue.compactDescription) (type \(issue.auditType.rawValue): \(issue.detailedDescription)) [\(element)]"
+                            // Logged, not failed (Zach's call, 28/11/2026). These two never name an
+                            // element, every visible text was in the element tree on the flagged
+                            // screens (runs 46077391124, 46082041421), and two fixes based on them
+                            // were wrong. The tree attachment below still shows what VoiceOver can
+                            // read, and testLargeTextScreens' screenshots cover clipping.
+                            if issue.auditType == .elementDetection || issue.auditType == .textClipped {
+                                advisories.append(line)
+                            } else {
+                                issues.append(line)
+                            }
                             return true
                         }
                     } catch {
                         issues.append("audit error: \(error)")
                     }
-                    if !issues.isEmpty {
-                        // The audit names no element for "potentially inaccessible text" or
-                        // "text clipped", so keep the whole element tree to match the flag
-                        // against what the accessibility API actually exposes.
-                        let tree = XCTAttachment(string: app.debugDescription)
+                    if !issues.isEmpty || !advisories.isEmpty {
+                        // Keep the whole element tree to match flags against what the
+                        // accessibility API actually exposes.
+                        let header = advisories.isEmpty ? "" : "advisory:\n" + advisories.joined(separator: "\n") + "\n\n"
+                        let tree = XCTAttachment(string: header + app.debugDescription)
                         tree.name = "tree-\(screen)-\(device).txt"
                         tree.lifetime = .keepAlways
                         add(tree)
+                    }
+                    if !advisories.isEmpty {
+                        print("AUDIT ADVISORY \(screen)-\(device) (\(advisories.count)): " + advisories.joined(separator: " | "))
+                    }
+                    if !issues.isEmpty {
                         XCTFail("\(screen) accessibility (\(issues.count)): " + issues.joined(separator: " | "))
                     }
                 }
@@ -87,39 +102,6 @@ final class ScreenshotUITests: XCTestCase {
             }
         }
         XCUIDevice.shared.orientation = .portrait
-    }
-
-    /// Experiment, not a gate: run 46077391124 flagged "potentially inaccessible text" exactly
-    /// once per visible stepper value containing ':' or '/' (10.0:1, 700 cc/min, 320 L/h, 3.55:1)
-    /// and never for plain ones (102 mm, 92 mm, 255 mm), though all are in the element tree.
-    /// Scrolled to Injectors, it predicts one flag per such value on screen in the screenshot.
-    /// The count is recorded in an attachment; this test never fails on it.
-    func testPartsScrolledAuditCount() throws {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        XCUIDevice.shared.orientation = .portrait
-        let app = XCUIApplication()
-        app.launchArguments = ["-screen", "parts", "-preview"]
-        app.launch()
-        let screen = app.descendants(matching: .any)["screen.parts"]
-        XCTAssertTrue(screen.waitForExistence(timeout: 30), "parts did not open")
-        let target = app.staticTexts["Injectors"]
-        for _ in 0..<6 where !(target.exists && target.isHittable) { screen.swipeUp() }
-        Thread.sleep(forTimeInterval: 1)
-        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        shot.name = "experiment-parts-scrolled-\(device)"
-        shot.lifetime = .keepAlways
-        add(shot)
-        var issues: [String] = []
-        try? app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting([.contrast, .dynamicType])) { issue in
-            issues.append("\(issue.compactDescription) (type \(issue.auditType.rawValue))")
-            return true
-        }
-        let report = XCTAttachment(string: "flags: \(issues.count)\n" + issues.joined(separator: "\n") + "\n\n" + app.debugDescription)
-        report.name = "experiment-parts-scrolled-\(device).txt"
-        report.lifetime = .keepAlways
-        add(report)
-        print("EXPERIMENT parts-scrolled flags=\(issues.count)")
-        app.terminate()
     }
 
     /// Every screen at the largest accessibility text size, screenshot only. This is the evidence
