@@ -214,9 +214,14 @@ jobs:
             xcrun simctl boot "$udid" || true
             xcrun simctl bootstatus "$udid" -b
             sh ci/cpu_sampler.sh "cpu/$kind" &
+            # One retry per failed test: the shared 3-core runner sometimes fails Xcode's own app
+            # launch or terminate (run 46092990363). A real bug fails twice and still fails the job.
             xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -derivedDataPath build/sim \
-              -destination "id=$udid" -resultBundlePath "build/$kind.xcresult" $only test-without-building || status=1
+              -destination "id=$udid" -resultBundlePath "build/$kind.xcresult" $only \
+              -retry-tests-on-failure -test-iterations 2 test-without-building 2>&1 | tee "build/$kind-test.log" || status=1
             touch "cpu/$kind/stop"
+            # Name every test that only passed on its retry, so flakes stay visible.
+            python3 ci/list_retries.py "build/$kind-test.log" "$kind"
             mkdir -p "shots/$kind"
             xcrun xcresulttool export attachments --path "build/$kind.xcresult" --output-path "shots/$kind" || status=1
             python3 ci/name_attachments.py "shots/$kind"

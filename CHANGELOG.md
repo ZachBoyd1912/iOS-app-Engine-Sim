@@ -1,4 +1,39 @@
 # Changelog
+## 28/11/2026 @ 06:27:24 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a CI reliability change.
+
+**Goal:** stop the shared CI machine's occasional app launch and terminate failures from failing the UI tests. Zach chose this on 28/11/2026 ("Option 1").
+
+**Run `46092990363`**
+- With `-noEngineSound`, Piston Forge used about 7–20% CPU. Before, engine-sim alone needed more than two cores.
+- The audit timeout did not recur.
+- Two failures remained, both inside Xcode's own app control:
+  - iPhone: "Timed out while launching application" (once).
+  - iPad: "Failed to terminate" (once).
+- The busiest processes on the 3-core runner were the simulator's own services: widgets, diagnosticd, apsd, diskimagesiod, each at 20–57% at times.
+- The failures could not be tied to a single busy moment, so the cause is put down to runner flakiness. No trigger was proven.
+- My earlier theory, that our app's CPU use caused these, was wrong: the failures persisted with engine-sim off.
+
+**Changed**
+- The UI test `xcodebuild` now runs with `-retry-tests-on-failure -test-iterations 2`.
+  - A failed test is re-run once.
+  - A real bug fails both times and still fails the job.
+- The test output is teed to `build/<kind>-test.log`.
+- **Cost:** an intermittent bug in our own code could also pass on its retry.
+
+**Added**
+- `Native/ci/list_retries.py` lists every test that failed and then passed, as a GitHub warning ("UI test passed only on retry"). Flakes stay visible in the run summary instead of hidden by the pass.
+- Tested locally on a sample log:
+  - a fail-then-pass test is listed;
+  - a pass-only test is not;
+  - a fail-fail test is not (it fails the job instead).
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices.
+
+**Files Touched:** `.github/workflows/native.yml`, `Native/ci/list_retries.py`, `CHANGELOG.md`.
+
 ## 28/11/2026 @ 01:24:43 IST - "claude-sonnet-5-5"
 
 **Project completion: 17.39%**
