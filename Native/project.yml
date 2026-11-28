@@ -12,22 +12,34 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.2.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.3.1"
+    CURRENT_PROJECT_VERSION: "10"
 targets:
   PistonForge:
     type: application
     platform: iOS
     sources:
       - path: App
+      - path: EngineSimSpike/App/Bridge/esim_bridge.h
+        buildPhase: none
+      # engine-sim's script library (copied in by CI before generating this project)
+      - path: engine-resources/engine
+        type: folder
+        buildPhase: resources
     dependencies:
       - package: PistonForgeKit
+    scheme:
+      testTargets:
+        - PistonForgeUITests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ie.zbautomations.pistonforge
         PRODUCT_NAME: PistonForge
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
+        # Xcode merges this file's keys into the generated Info.plist. Needed because
+        # INFOPLIST_KEY_* only covers keys Xcode knows, and LSSupportsGameMode is not one.
+        INFOPLIST_FILE: AppInfo.plist
         INFOPLIST_KEY_CFBundleDisplayName: Piston Forge
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
@@ -36,3 +48,22 @@ targets:
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.racing-games
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # engine-sim's sound core: built by CMake in CI into engine-libs/<sdk>/, called through a plain C bridge
+        SWIFT_OBJC_BRIDGING_HEADER: App/Sound/Bridging-Header.h
+        HEADER_SEARCH_PATHS: "$(SRCROOT)/EngineSimSpike/App/Bridge"
+        "LIBRARY_SEARCH_PATHS[sdk=iphoneos*]": "$(SRCROOT)/engine-libs/iphoneos"
+        "LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]": "$(SRCROOT)/engine-libs/iphonesimulator"
+        OTHER_LDFLAGS: "-lesim_bridge -lenginesim_core -lscs -lpiranha -lc++"
+  PistonForgeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: PistonForge
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ie.zbautomations.pistonforge.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        TEST_TARGET_NAME: PistonForge

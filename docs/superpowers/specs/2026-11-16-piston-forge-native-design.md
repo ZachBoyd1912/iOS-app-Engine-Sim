@@ -20,7 +20,7 @@ The point is the tinkering. The engine is the star; the driving is the proof.
 
 **Goals**
 - The first screen is a running-ready engine, not a menu **[Zach]**.
-- Wide build choice: I3, I4, V6, V8, V10, V12, W16; 60° and 90° V angles; flat-plane and
+- Wide build choice: I3, I4, I6 (added by Zach 16/11/2026), V6, V8, V10, V12, W16; 60° and 90° V angles; flat-plane and
   cross-plane cranks; naturally aspirated, turbo, supercharger; big injectors; nitrous;
   sensors (MAF, injector and others) that actually change how the engine runs **[Zach]**.
 - A dyno for testing, modifying and upgrading **[Zach]**.
@@ -110,7 +110,7 @@ Rejected order: driving first. The driving is only as good as the engine under i
 
 ### 5.2 Engine model **[call, ranges from research]**
 
-- **Layouts**: I3, I4, V6 60° and 90°, V8 cross-plane and flat-plane, V10, V12 60°, W16. Each
+- **Layouts**: I3, I4, I6 (1-5-3-6-2-4, even 120°), V6 60° and 90°, V8 cross-plane and flat-plane, V10, V12 60°, W16. Each
   carries cylinder count, bank angles, crank pin layout, firing order and firing intervals.
   These drive the model's pulse timing, the 3D crank animation and the sound.
 - **Geometry**: bore, stroke, compression, rod ratio within safe ranges per layout;
@@ -187,7 +187,7 @@ path. No cloud, no account.
 
 | Stage | Done when (CI) | Only Zach's phone can prove |
 |---|---|---|
-| 1 Engine + dyno + sound, **everything at once [Zach]**: all seven layouts (I3, I4, V6 60°/90°, V8 cross/flat-plane, V10, V12, W16), NA/turbo/all three supercharger types, nitrous, the full sensor set, full tune screen | Tests green for every layout and part; screenshots of engine, parts, tune, dyno, car; audit clean; `.ipa` built | Sound quality, frame rate, touch feel |
+| 1 Engine + dyno + sound, **everything at once [Zach]**: all eight layouts (I3, I4, I6, V6 60°/90°, V8 cross/flat-plane, V10, V12, W16), NA/turbo/all three supercharger types, nitrous, the full sensor set, full tune screen | Tests green for every layout and part; screenshots of engine, parts, tune, dyno, car; audit clean; `.ipa` built | Sound quality, frame rate, touch feel |
 | 2 Drag strip | Drag physics tests (times in sensible ranges per build); strip screenshots with markers; `.ipa` | Launch and shift feel, tilt, haptics |
 | 3 Proving ground | Handling tests (skidpad g, cornering); screenshots; `.ipa` | Steering feel, camera, frame rate |
 

@@ -1,4 +1,1211 @@
 # Changelog
+## 28/11/2026 @ 06:27:24 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a CI reliability change.
+
+**Goal:** stop the shared CI machine's occasional app launch and terminate failures from failing the UI tests. Zach chose this on 28/11/2026 ("Option 1").
+
+**Run `46092990363`**
+- With `-noEngineSound`, Piston Forge used about 7–20% CPU. Before, engine-sim alone needed more than two cores.
+- The audit timeout did not recur.
+- Two failures remained, both inside Xcode's own app control:
+  - iPhone: "Timed out while launching application" (once).
+  - iPad: "Failed to terminate" (once).
+- The busiest processes on the 3-core runner were the simulator's own services: widgets, diagnosticd, apsd, diskimagesiod, each at 20–57% at times.
+- The failures could not be tied to a single busy moment, so the cause is put down to runner flakiness. No trigger was proven.
+- My earlier theory, that our app's CPU use caused these, was wrong: the failures persisted with engine-sim off.
+
+**Changed**
+- The UI test `xcodebuild` now runs with `-retry-tests-on-failure -test-iterations 2`.
+  - A failed test is re-run once.
+  - A real bug fails both times and still fails the job.
+- The test output is teed to `build/<kind>-test.log`.
+- **Cost:** an intermittent bug in our own code could also pass on its retry.
+
+**Added**
+- `Native/ci/list_retries.py` lists every test that failed and then passed, as a GitHub warning ("UI test passed only on retry"). Flakes stay visible in the run summary instead of hidden by the pass.
+- Tested locally on a sample log:
+  - a fail-then-pass test is listed;
+  - a pass-only test is not;
+  - a fail-fail test is not (it fails the job instead).
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices.
+
+**Files Touched:** `.github/workflows/native.yml`, `Native/ci/list_retries.py`, `CHANGELOG.md`.
+
+## 28/11/2026 @ 01:24:43 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a CI reliability fix.
+
+**Goal:** stop the screenshot tests failing from CPU starvation on the 3-core CI runner.
+
+**Run `46088889270`**
+- The advisory change worked:
+  - The element-detection flags were logged as `AUDIT ADVISORY` (Parts iPhone 1 and iPad 3; Car iPad 1; Dyno iPad 1).
+  - iPad `testEveryScreen` passed.
+- It still failed on load:
+  - iPhone `testEveryScreen` hit "Audit failed to complete in time" (code -56), then "Failed to terminate".
+  - iPad `testEngineLayouts` hit "Failed to terminate", as it did once in run `45938353556`.
+
+**Fixed**
+- Every `ScreenshotUITests` launch now passes `-noEngineSound`.
+- Cause: `GameStore` loads the sound on every launch, preview launches included. That starts engine-sim's simulation thread and its audio rendering thread. Earlier CPU samples on this runner measured 235–280% of a frame for engine-sim.
+- This is the same starvation already fixed for `testLiveApp`. Here it showed up as an audit timeout, and as the app being too busy to terminate.
+- Screenshots need no sound. `LiveAppUITests.testSoundLoads` still checks that the sound loads.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. Expected: all three tests pass on both devices.
+
+**Files Touched:** `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
+## 28/11/2026 @ 00:37:24 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a test-suite scope change.
+
+**Goal:** stop the accessibility audit failing CI on two flag types that have proved unactionable, as Zach decided on 28/11/2026 ("Option 1").
+
+**Experiment result (run `46082041421`)**
+- The theory behind the experiment was that values containing `:` or `/` trigger "potentially inaccessible text".
+- The experiment disproved it:
+  - Parts was scrolled so that `700 cc/min`, `320 L/h` and `550 g/s` were on screen.
+  - The theory predicted 3 such flags. The audit raised 0.
+- The run also confirmed the stepper label fix: VoiceOver now reads "Injectors, 700 cc/min".
+
+**Changed**
+- In `testEveryScreen`, `.elementDetection` ("potentially inaccessible text") and `.textClipped` issues are now advisory.
+  - They are printed as `AUDIT ADVISORY <screen>-<device>` and written at the top of that screen's `tree-*.txt` attachment.
+  - They no longer fail the test. Every other audit type still fails it.
+- Why:
+  - Neither flag type ever named an element.
+  - Every visible text on the flagged screens was in the accessibility tree (runs `46077391124` and `46082041421`).
+  - Two fixes based on these flags were wrong (the stepper label and the `:` / `/` theory).
+  - The flags changed with scroll position and from run to run.
+- **Coverage given up, stated plainly:** a genuinely unlabelled text, or text that really clips, no longer fails CI on its own.
+  - The element tree attachments show what VoiceOver can read.
+  - People still review `testLargeTextScreens`' screenshots for clipping.
+- Removed the one-off `testPartsScrolledAuditCount` experiment; it answered its question.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. Expected: `testEveryScreen` passes, with the advisories logged.
+
+**Files Touched:** `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 23:21:13 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes a VoiceOver label and adds a diagnostic experiment.
+
+**Goal:** undo a VoiceOver regression my earlier change caused, and test a hypothesis about the remaining audit flags before changing any approved screen.
+
+**What run `46077391124`'s element trees showed**
+- Every piece of text visible on the flagged Parts and Car screens is present in the accessibility tree.
+- The "potentially inaccessible text" flags match one-for-one the visible stepper values that contain `:` or `/`:
+  - iPhone Parts: `10.0:1` gave 1 flag.
+  - iPad Parts: `10.0:1`, `700 cc/min` and `320 L/h` gave 3 flags.
+  - iPad Car: `3.55:1` gave 1 flag.
+  - Plain values (`102 mm`, `92 mm`, `255 mm`) were never flagged.
+  - On iPhone Car, `3.55:1` is off screen, and that screen had no flags.
+- The likely cause is the audit's text recognition failing to match punctuated values. It does not look like text missing from the accessibility API.
+- The iPad Dyno flag is still unexplained. The chart axis text (`hp / Nm`, the rpm numbers) is absent from the tree on both devices, yet iPhone Dyno shows it and was not flagged.
+- The iPhone Car "text clipped" flag from run `45938353556` did not recur, so it is treated as flaky.
+
+**Fixed**
+- `PartsScreen.stepper`: removed the `.accessibilityLabel` and `.accessibilityValue` overrides added in `fdf7f62`.
+  - Cause: the override did not replace the stepper's label, it appended to it. VoiceOver read "Compression, 10.0:1, Compression".
+  - The flag it was meant to fix also stayed.
+  - Now the label is "Compression, 10.0:1", matching the Car screen's untouched steppers.
+
+**Added**
+- `testPartsScrolledAuditCount` (iPhone only), an experiment and never a failure.
+  - It scrolls Parts to Injectors, then records the audit's flag count, a screenshot and the element tree.
+  - The hypothesis predicts one flag per `:` or `/` value on screen.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. Check the next tree dump for the stepper label.
+
+**Files Touched:** `Native/App/Screens/PartsScreen.swift`, `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 22:33:28 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This records an approval and adds a diagnostic to the test suite.
+
+**Goal:** record Zach's approval of the large-text layouts, and find which elements the accessibility audit flags but does not name.
+
+**Approved:** on 27/11/2026 Zach approved the large-text Engine and Dyno layouts from run `45938353556`, so they are no longer a preview.
+
+**Added**
+- In `testEveryScreen`, every screen the audit flags now saves its full element tree (`app.debugDescription`) as the attachment `tree-<screen>-<device>.txt`.
+- Why: run `45938353556` still had 8 flags with no element attached:
+  - "potentially inaccessible text" on Parts (iPhone 1, iPad 3), iPad Dyno and iPad Car;
+  - "text clipped" on iPhone Car.
+- The stepper fix (`fdf7f62`) did not clear the Parts flags, so guessing has stopped working. Comparing what is drawn on screen with what the accessibility tree exposes shows which text is missing from the tree.
+- Test-only change; the app is untouched.
+
+**Verification:** a scoped CI run of `ScreenshotUITests` on both devices. The flagged screens should produce `tree-*.txt` attachments.
+
+**Files Touched:** `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 04:09:36 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is large-text layout fixes (awaiting Zach's approval) and an audit scope change.
+
+**Goal:** fix the two layouts that break at accessibility text sizes, and stop the audit failing on its own false Dynamic Type reports. Zach approved both directions on 27/11/2026. The rendered result is a **preview** for his sign-off under the ZB UX standard.
+
+**Changed (accessibility text sizes only; normal sizes keep the exact current layout)**
+- `EngineScreen`: at `dynamicTypeSize.isAccessibilitySize` the screen becomes one scrolling column: header, PREVIEW tag, the 3D stage (300 pt), then warnings, accessory and controls. Before, the header was an overlay on the fixed 360 pt stage, and at XXXL the name, subtitle and PREVIEW tag drew over each other and the engine, with the name under the status bar. Known trade-off: at these sizes the 3D stage sits inside a scroll view.
+- `DynoScreen.peaks`: the three peak readouts stack vertically at accessibility sizes (`AnyLayout` switch). In three columns, words broke mid-word and figures wrapped one digit per line.
+
+**Audit scope**
+- `testEveryScreen` now audits `.all.subtracting([.contrast, .dynamicType])`. The Dynamic Type check said text "will not change size", when every flagged text visibly scaled in the `AccessibilityXXXL` screenshots. It was also unstable (17 plain Dyno labels flagged in one run, none in the previous one).
+- **Coverage change, stated plainly:** text-size problems are now caught by people reviewing `testLargeTextScreens`' screenshots, not by an automatic failure. That review is what found both layout bugs above.
+- `.textClipped` stays on.
+
+**Verification:** the CI run of `ScreenshotUITests` on both devices produces the after screenshots (before: run `45931568847`). Not merged as approved until Zach signs off the preview.
+
+**Files Touched:** `Native/App/Screens/EngineScreen.swift`, `Native/App/Screens/DynoScreen.swift`, `Native/UITests/ScreenshotUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 03:41:33 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is an accessibility fix plus findings.
+
+**Goal:** expose the Parts steppers' values to VoiceOver, and record what run `45931568847` proved about the rest of the audit.
+
+**Run `45931568847` (ScreenshotUITests, both devices):**
+- Token contrast passed 29/29 in CI. `testEngineLayouts` and `testLargeTextScreens` passed on both devices. `testEveryScreen` still fails on the remaining audit types.
+- **Dynamic Type (type 65536, "User will not be able to change the font size"):** false. The `AccessibilityXXXL` screenshots show every flagged text scaling: the "Rules" captions, the footnotes, "3D quality". It's also flaky: iPhone Dyno flagged 17 plain labels this run and none the run before.
+- **Real layout bugs the screenshots exposed (not yet fixed, needs Zach's approval of a preview):**
+  1. Engine screen: the name, subtitle and PREVIEW tag overlap each other and the 3D engine, and the name runs under the status bar. The header is an overlay in the fixed 360 pt stage.
+  2. Dyno: the three peak readouts stay side by side, so words break mid-word and numbers wrap one digit per line.
+- **Element detection (type 2, "Potentially inaccessible text"):** Parts (iPhone 1, iPad 3), Dyno iPad 1, Car iPad 1.
+
+**Fixed**
+- `PartsScreen.stepper`: the value ("102 mm") was drawn inside the Stepper's label but not exposed as its value. The Stepper now has the title as its label and the formatted number as `accessibilityValue`. No visual change. It's likely the Parts element-detection flags (the iPad shows three steppers and had three flags); unverified until the next run. The Dyno and Car element-detection items are still unidentified.
+
+**Files Touched:** `Native/App/Screens/PartsScreen.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 02:59:06 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is accessibility audit work.
+
+**Goal:** get `testEveryScreen`'s accessibility audit to report only real problems, and fix the real ones.
+
+**Contrast: Xcode's check replaced, not "fixed".**
+- The audit flagged Form section headers and footers that sit on the gradient background ("Units", "Your engines", "Block and crank", footnotes). Text inside the solid cards, in the same colour, was never flagged.
+- Measured from run `45920342777`'s screenshots (iPhone ×3, iPad ×2), worst case against the brightest background pixel beside the text: **every flagged element is 6.55:1 or better** (WCAG needs 4.5:1). Apple's audit misjudges contrast on the gradient.
+- The audit now runs `.all.subtracting(.contrast)`. Contrast is checked instead by new `Native/ci/check_contrast.py`. It reads the tokens straight from `Theme.swift` (so it can't drift) and checks every pairing the screens use: text on the base and on the base blended with each tint at its declared opacity, on `surface`, on Form rows and on `surfaceRaised`; status marks at 3:1; `onAccent` on `accent`.
+- All 29 pairs pass. The tightest are `badInk` on `surface` (4.88:1) and `accent` on the warm tint (5.09:1).
+- The script was shown to fail: with `textSecondary` dimmed to 0.4, it fails 5 pairs and exits 1.
+- It runs first in the macOS `app` job.
+- **Coverage change, stated plainly:** text drawn over the 3D viewport and system colours we don't set are no longer contrast-checked by anything.
+- No colours changed. The screens are approved and measure 6.5:1 or better.
+
+**Fixed**
+- "PREVIEW · sample data" on the iPhone engine screen was reported "Text clipped". It sits in an overlay limited by the fixed 360 pt stage, and unlike the line below it, it had no vertical `fixedSize`. Added.
+
+**Added (evidence, not fixes)**
+- `testLargeTextScreens`: every screen at `AccessibilityXXXL`, screenshot only. The "Dynamic Type partially unsupported" flags (mostly the preview-only "Rules" caption, two footnotes, and the "3D quality" picker row) are judged from what actually truncates, before any layout change.
+- The audit log now includes each issue's type and detailed description, so element-less issues ("Potentially inaccessible text" on Parts, Car and Dyno) can be traced.
+
+**Verification:** the contrast script runs locally (29/29) and fails on purpose with a dimmed token. YAML parses. The UI changes are checked in CI run `only_testing=ScreenshotUITests` on both devices.
+
+**Files Touched:** `.github/workflows/native.yml`, `Native/ci/check_contrast.py`, `Native/UITests/ScreenshotUITests.swift`, `Native/App/Screens/Components.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 01:36:48 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is an accessibility fix found by the UI test.
+
+**Goal:** make each drag-strip pedal a single accessibility element.
+
+**Result of full run `45920342777` (`-noEngineSound` split):** the CI overload is solved.
+- `testLiveApp` ran every step in 115 s (before, it timed out right after Start).
+- `testSoundLoads` passed.
+- `SmokeUITests` passed on **both** iPhone and iPad, which confirms the `c669692` fix.
+- `testEngineLayouts` passed on both.
+
+What's left: `testEveryScreen`'s accessibility audit (known, separate), and one `testLiveApp` failure at line 89: "Multiple matching elements found" for "Gas pedal".
+
+**Fixed**
+- `DriveTab.pedal`: `.accessibilityLabel` sat on a `VStack` with no `.accessibilityElement`, so SwiftUI applied the label to both the icon and the text. VoiceOver read each pedal twice, and the UI test matched two elements. Adding `.accessibilityElement(children: .ignore)` makes each pedal one labelled button.
+- `testLiveApp` now queries `app.buttons["Gas pedal"]` instead of any descendant.
+
+**Verification:** a scoped CI run (`only_testing=LiveAppUITests`, iPhone).
+
+**Files Touched:** `Native/App/Screens/DriveTab.swift`, `Native/UITests/LiveAppUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 01:03:05 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a test-harness change.
+
+**Goal:** let the iPhone live walkthrough (`testLiveApp`) pass on CI without losing the check that engine-sim loads.
+
+**Why:** the bridge fix (`3d900b8`) removed the wedge, but run `45915804981` still timed out right after Start. The 3-core CI simulator can't run engine-sim (235-280% of a frame) and the live UI together fast enough for XCUITest's queries. That's a limit of the CI hardware, not something a phone run shows.
+
+**Added / Changed**
+- `GameStore`: a `-noEngineSound` launch argument skips loading engine-sim. It's only read at launch and only passed by UI tests, so the shipped app never sees it.
+- `LiveAppUITests.testLiveApp` now launches with `-noEngineSound`, and its sound-loaded assertion moved out.
+- New `LiveAppUITests.testSoundLoads`: a normal launch that waits for "Sound load", takes a screenshot and terminates *before* Start. Before Start, the UI stayed responsive in every run so far, so engine-sim's loading keeps its coverage. The `sound-check` job still renders every engine's sound.
+
+**Verification:** unverified until full run `ci-build.ps1 -Full`. The iPad smoke fix (`c669692`) is checked in the same run.
+
+**Files Touched:** `Native/App/Game/GameStore.swift`, `Native/UITests/LiveAppUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 00:49:56 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a test fix.
+
+**Goal:** make the smoke test check the real first screen on both iPhone and iPad.
+
+**Result of full run `45915804981` (the bridge fix in the previous entry):**
+- On iPhone, `testLiveApp` still times out right after Start (`LiveAppUITests.swift:34`). But the cascade is gone. Earlier runs left a process that couldn't be terminated, so every later test failed to launch. This time `testEngineLayouts` and `SmokeUITests` passed on iPhone, and `testEveryScreen` launched every screen; it fails only on its accessibility audit, which is known and separate.
+- So the fix removed the wedge, but the CI simulator still can't run engine-sim plus the live UI fast enough for `testLiveApp`.
+
+**Fixed**
+- `SmokeUITests` waited for `app.tabBars.buttons["Engine"]`. That passed on iPhone and failed on iPad ("Engine tab not shown within 20 s"), because iPadOS 26 draws tabs outside `tabBars`. It now waits for `button.start`, which is on the first screen of both devices.
+
+**Verification:** unverified until the next run that includes iPad.
+
+**Files Touched:** `Native/UITests/SmokeUITests.swift`, `CHANGELOG.md`.
+
+## 27/11/2026 @ 00:15:40 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a performance fix in the sound bridge.
+
+**Goal:** stop engine-sim's simulation thread from taking a whole CPU core when the device can't simulate in real time.
+
+**Evidence (run `45740620196`, 3-core `VirtualMac2,1` runner):**
+- Before Start, the app used 20-30% CPU.
+- After Start, it used **6 min 44 s of CPU in about 8 minutes (~89% of one core)**, with a single thread clearly ahead of the rest.
+- The host sampler loop starved for 8 minutes over the same window.
+- The engine screen showed engine-sim at 235-280% of a frame.
+
+`sample` returned empty call graphs (the host can't read a simulator app's stacks on these runners), so the thread is identified by its behaviour rather than by name. That's the one gap in the evidence.
+
+**Fixed (`esim_bridge.cpp`, `simLoop`)**
+- **Cause:** when a frame overran, the loop set `next = now` and called `sleep_until(next)`, which returns immediately. A device that can't keep up therefore ran this thread at 100% of a core forever, starving the UI and, on CI, the UI tests.
+- **Fix:** when behind, rest for a third of that frame's own work time before the next frame. That caps the thread at about 75% of a core. Sound is already dropping out whenever this branch runs, so no audio is lost that wasn't lost already. A device that keeps up never reaches this branch, so its behaviour is unchanged.
+- **Why not more:** halving the simulation rate or skipping frames would change the sound on devices that are only marginally behind. This is the smallest change that removes the spin.
+
+**Verification:** no unit test is possible for thread timing in this setup, since the bridge only compiles on macOS CI. The check is a full CI run (`ci-build.ps1 -Full`): the bridge compiles, `testLiveApp` gets further or passes, and on-screen "Sound load" stays well above 100% (it measures work time, so it shouldn't change). Phone behaviour is unverified until an on-device run.
+
+**Files Touched:** `Native/EngineSimSpike/App/Bridge/esim_bridge.cpp`, `CHANGELOG.md`.
+
+## 26/11/2026 @ 02:09:47 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes the instrumentation again.
+
+**Goal:** get CPU figures that actually say which threads starve the CI simulator.
+
+**Fixed (`cpu_sampler.sh`)**
+- Run `45737490966` uploaded `top.txt`, but every process showed 0.0%. macOS `top -l 1` has no previous sample to compute a delta from. It now takes `-l 2 -s 2` and keeps the second report.
+- `sample` produced no files, and its errors had been sent to `/dev/null`. Its errors are now kept, and `ps -M` (per-thread CPU) is recorded alongside, so one tool failing doesn't lose the evidence. The core count and model are recorded once in `host.txt`.
+
+**Evidence already in hand:** the 20 s sampling loop had a **7-minute gap** (01:55:44 to 02:02:55) while the app was under test. The whole runner was starved, not just the app. Across three runs `testLiveApp` stopped at three different places (right after Start, line 63, line 44), which points to contention rather than a deterministic bug.
+
+**Files Touched:** `Native/ci/cpu_sampler.sh`, `CHANGELOG.md`.
+
+## 26/11/2026 @ 01:41:25 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes the instrumentation.
+
+**Goal:** get the CPU samples back from CI.
+
+**Fixed**
+- `cpu_sampler.sh` named its stack samples with a `HH:MM:SS` stamp. `upload-artifact` refuses any path containing a colon, so run `45735387185` collected 5 files and uploaded none ("Contains the following character: Colon :"). Sample files are now named `HHMMSS`.
+
+**Observed in that run (no samples, but useful):** `testLiveApp` did *not* freeze this time. It got through Start, revving, Tune, Dyno and two Garage tabs, with single steps taking 40-75 s, before one query timed out at `LiveAppUITests.swift:63`. That fits extreme CPU contention rather than a deadlock.
+
+**Files Touched:** `Native/ci/cpu_sampler.sh`, `CHANGELOG.md`.
+
+## 26/11/2026 @ 01:22:18 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is debugging instrumentation and a test fix.
+
+**Goal:** find out why the iPhone UI tests wedge after Start, from evidence rather than a guess.
+
+**What run `45719432044` showed:** this is not a launch hang. `testLiveApp` launched, sound loaded, and Start was tapped. After that, every UI query timed out. The next test could not terminate that process ("Failed to terminate …:20347"), and every later "Timed out while launching" failure follows from it. The screenshots show engine-sim at **280% of a frame before Start** and **235% after**, so on the CI simulator its sim loop is always behind and never sleeps.
+
+There are two controls:
+- Before Start, with engine-sim pinning a core and the 3D scene static, the UI responded.
+- iPad `testEngineLayouts` passed with the 3D scene animating and no engine-sim (the explicit route never loads sound).
+
+So neither alone wedges the app; the combination does. The open question is which threads take the CPU.
+
+**Added**
+- `Native/ci/cpu_sampler.sh`, run in the background around each simulator's tests: `top` every 20 s, plus up to six `sample` thread stacks of the `PistonForge` process. Uploaded as the `native-cpu-samples` artifact. The result decides the fix: engine-sim's sim and audio threads (fix the bridge loop that never yields when behind), or the main thread and RealityKit (the launch report shows Metal API validation `param_diag_gpu_validation_enable = 1`).
+
+**Fixed**
+- `SmokeUITests` looked for text containing "Piston Forge". A plain launch opens `RootView`, which has no such title (only the explicit test route shows it), so the test failed on iPad even though the app was up. It now waits for the Engine tab.
+
+**Verification:** YAML parses, and `bash -n` passes on the sampler. The smoke fix is unverified until an iPad run, and the sampler output comes from the next dispatch.
+
+**Files Touched:** `.github/workflows/native.yml`, `Native/ci/cpu_sampler.sh`, `Native/UITests/SmokeUITests.swift`, `CHANGELOG.md`.
+
+## 25/11/2026 @ 23:38:23 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is tooling.
+
+**Goal:** let `scripts/ci-build.ps1` start full CI runs, not only IPA-only ones.
+
+**Changed**
+- New `-Full` switch: dispatches with `ipa_only=false`, so CI builds the Simulator app, runs the UI tests and publishes the Simulator zip + `.sha` for the AI testers. Without `-Full` the behaviour is unchanged (fast IPA-only).
+- **Why:** the script hard-coded `ipa_only=true`, so every scripted run skipped the Simulator build. That's how the x86_64 link break (fixed in the previous entry) and the UI test failures it was hiding went unseen from 23/11 to 25/11.
+- The run lookup now filters `--event workflow_dispatch`. A push to the branch also starts a `native.yml` run, and without the filter the "newest run" could be that push run rather than the dispatch. The headSha check would then be comparing against the wrong run.
+
+**Verification:** the PowerShell parser reports 0 errors. `Get-Help` shows `[-Branch] [-Full] [-Wait]`. The `ipa_only=false` dispatch path was exercised by hand in run `45719432044`: the Simulator build passed, and `PistonForge-simulator-app.sha` on the release reads `1189e1d…`.
+
+**Files Touched:** `scripts/ci-build.ps1`, `CHANGELOG.md`.
+
+## 25/11/2026 @ 23:11:15 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is a CI fix.
+
+**Goal:** make the Simulator build link again, so UI tests run and the AI testers get a Simulator app.
+
+**Fixed**
+- **Symptom:** run `45718298659` (the first full, non-IPA-only dispatch since the sound engine was linked in) failed at "Compile app and UI tests once" with `ld: symbol(s) not found for architecture x86_64`, listing every `_esim_*` call in `SoundEngine.o`.
+- **Cause:** the engine-sim bridge is built with `-DCMAKE_OSX_ARCHITECTURES=arm64` for both SDKs. A `generic/platform=iOS Simulator` destination builds the app for arm64 *and* x86_64, so the x86_64 slice had no library to link against. The runs that went green on 23/11 were all dispatched through `scripts/ci-build.ps1`, which sets `ipa_only=true` and skips this step entirely. That's why the break went unnoticed.
+- **Fix:** pass `ARCHS=arm64 ONLY_ACTIVE_ARCH=NO` to the Simulator `build-for-testing`. The macos-26 runners and the AI testers' simulators are all Apple silicon, so x86_64 is never needed. Building a fat engine library instead would double CMake time for an architecture nobody runs.
+
+**Verification:** YAML parses. CI evidence comes from the re-dispatched run.
+
+**Files Touched:** `.github/workflows/native.yml`, `CHANGELOG.md`.
+
+## 25/11/2026 @ 23:02:24 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This is housekeeping only.
+
+**Goal:** keep machine-local editor and Xcode tooling files out of `git status` so they can't be committed by accident.
+
+**Changed**
+- `.gitignore` now ignores `.vscode/`, `buildServer.json` (sourcekit-lsp's build server config for VS Code Swift support), `selfIdentity.plist` (written locally by tooling, not part of the app) and the Capacitor-era `App.xcodeproj/.../xcshareddata/swiftpm/` resolution folder. All four are generated per machine, and none feed CI.
+
+**Verification:** `git status --short` lists none of them after the change.
+
+**Files Touched:** `.gitignore`, `CHANGELOG.md`.
+
+## 25/11/2026 @ 22:56:32 IST - "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked `[x]` in `docs/roadmap.md` (recounted this session). The two previous entries said 10 of 46 (21.74%), but the file holds only 8 ticked boxes, so this is the honest figure, not a regression. This commit is CI plumbing and ticks no roadmap item.
+
+**Goal:** give the AI phone testers (`mobile-agent-testers` template, installed 25/11/2026) a Simulator build of Piston Forge they can download without rebuilding engine-sim or holding a token.
+
+**Added**
+- `native.yml`: new step "Publish Simulator app to the device-test release", placed after the IPA upload. It zips `PistonForge.app` with `ditto` (which keeps the bundle's symlinks and metadata) and uploads `PistonForge-simulator-app.zip` and `PistonForge-simulator-app.sha` to the existing public `device-test` release with `--clobber`.
+- **Why a release asset and not an Actions artifact:** artifacts need an authenticated token to download and count against the storage quota. Release assets are public and don't count.
+- **Why the `.sha` file:** each tester report can name the exact commit it exercised, so a stale asset can't be mistaken for current HEAD.
+- **arm64 guard:** the step checks the binary with `lipo -archs` and skips publishing (with a warning, without failing the job) when there's no arm64 slice, since the testers run on Apple-silicon simulators.
+- Same `ipa_only != 'true'` condition as the Simulator build, so IPA-only runs skip it.
+
+**Verification:** YAML parses (`yaml.safe_load`). It runs for real only on macOS CI. The next dispatched run must show both assets on the `device-test` release before this counts as verified.
+
+**Files Touched:** `.github/workflows/native.yml`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 22:37:26 IST - "deepseek-flash"
+
+**Project completion: 21.74%**
+Basis: 10 of 46 items ticked in `docs/roadmap.md`, unchanged; this wires tested maths into the 3D layer.
+
+**Goal:** connect the valve train to the tested kinematics and get a device build to look at.
+
+**Changed**
+- `EngineAnimationSystem.swift` / `EngineModelBuilder.swift` taken from `wave1-unverified` (256 lines: cams, valves, springs, rockers).
+- `CamLift.fraction` no longer carries its own raised-cosine implementation. It now delegates to `PistonForgeKit.ValveTrainKinematics.normalisedLift`, converting the call site's crank degrees to cam degrees. The two formulas are algebraically identical — `(1 + cos(π·δ/halfDuration))/2` either way — so this is a de-duplication, not a behaviour change, and it means the timing has one tested definition.
+- `import PistonForgeKit` added to that file.
+
+**Why this is still not "verified":** the maths is covered by 16 assertions, but *rendering* cannot be unit-tested. This build exists so the phone can answer three questions: do valves actually move, are they phased to the firing order, and does a W16 still hold frame rate with ~145 entities instead of ~43.
+
+**Files Touched:** `Native/App/Engine3D/EngineAnimationSystem.swift`, `Native/App/Engine3D/EngineModelBuilder.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 22:08:29 IST - "deepseek-flash"
+
+**Project completion: 21.74%**
+Basis: 10 of 46 items ticked in `docs/roadmap.md` — the valve-train timing that item 11 depends on now exists and is tested.
+
+**Goal:** take the valve train through test-first, in the layer where it can actually be proven.
+
+**Why the maths lives in `PistonForgeKit` now.** The parked agent version put lift inside `EngineAnimationSystem`, which only runs on a device — unprovable in CI. `ValveTrainKinematics` is pure: cam speed, lift profile, firing angles, event centres. The RealityKit layer will only *apply* these numbers.
+
+**RED `45274066207`:** `Fatal error: ValveTrainKinematics.camAngle is unimplemented` at `ValveTrainKinematics.swift:12`, thrown inside a named test.
+**GREEN `45275411422`:** `Test Suite 'ValveTrainKinematicsTests' passed`, `143 tests passed`, and `sim-tests`/`sound-check`/`app` all green.
+
+**Two spec errors I caught before implementing** (both mine, both found by re-reading the geometry rather than by the compiler):
+1. A four-stroke cycle is 720 **cam** degrees, so cam angle 350 is *not* equivalent to −10. The wrap test was rewritten as a periodic test (`lift(a) == lift(a + 720)`).
+2. With event centre 240 and duration 240 the window is 120…360, so the value `0` I had asserted as "outside" was inside a different assumption's window. Every lift test now uses one consistent event.
+
+An earlier compile error in my own test (`v8.last` is `Double?`) was fixed before the real RED, so the failing run fails on behaviour, not on syntax.
+
+**Files Touched:** `Native/PistonForgeKit/Sources/PistonForgeKit/Engine/ValveTrainKinematics.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/ValveTrainKinematicsTests.swift`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 20:54:32 IST - "deepseek-flash"
+
+**Project completion: 19.57%**
+Basis: 9 of 46 items ticked in `docs/roadmap.md`, unchanged this entry.
+
+**Goal:** prove the physics tests can fail before trusting them, then get the suite genuinely green.
+
+**Mutation check.** `slidingGripFraction` changed 0.85 → 0.55 (`3b30b3b`). Run `45260125307` failed: `✘ Test theDrivenAxleLosesGripWhileCornering()` — 2 issues, `Test run with 143 tests failed`. The constant was restored in `c851bf7`. So those 24 agent-written tests do bite, even though they were written after the code.
+
+**A correction to my own reporting.** I called the catalogue run `45116946403` green on the strength of its XCTest line. It was not: the swift-testing half was red the whole time, and `sim-tests` had been failing since `0a832f1`. Reading one suite's summary is not reading the run.
+
+**Cause of that red.** Two assertions used exact `==` on `Double`:
+- `#expect(grip == 6600)` failed on `6600.000000000001`
+- `#expect(saturated == 0)` failed on a `9.83e-05` ellipse residue
+
+Both now use tolerances (`< 1e-6`, `< 1e-3`). These tested IEEE rounding, not the tyre model; the physical expectations are unchanged.
+
+**Verified:** run `45263294800` — `sim-tests: success`, `✔ Test run with 143 tests passed`, `sound-check: success`, `app: success`.
+
+**Files Touched:** `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/VehicleDynamics.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/VehiclePhysicsTests.swift`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 05:25:56 IST - "deepseek-flash"
+
+**Project completion: 19.57%**
+Basis: 9 of 46 items ticked in `docs/roadmap.md` — the engine-data family (item 2) now has a sourced, tested catalogue. Item 8 and the device checklist stay open.
+
+**Goal:** replace the "agents wrote it, CI compiled it" approach with test-first development, and prove it on two workstreams.
+
+**Process change.** Wave-1 code was reverted off trunk (preserved on `wave1-unverified`; later agent work on `agents-spike-2`) because it was written before any test existed. Every workstream now starts with a failing test in CI.
+
+**Vehicle dynamics (complete)**
+- RED `45105625631`: stub traps at `VehicleDynamics.swift:35` inside a named test.
+- GREEN `45106348502`: `19 tests, 0 failures`.
+- Five closed-form helpers: grip limit, geometric radius, grip-limited speed, achievable radius, braking distance.
+
+**Engine catalogue (complete)**
+- RED `45114961953`: `XCTAssertEqual failed: ("0") is not equal to ("83")`.
+- GREEN `45116946403`: `31 tests, 0 failures`.
+- 83 rows generated from `docs/research/raw/engines.md` by `tools/gen_engine_catalog.py`; provenance preserved — 23 sourced orders, 6 derived, 41 unsourced, 13 not-applicable.
+
+**Three real modelling bugs the tests found, none of which a compile would have caught**
+1. Turbines, the electric motor and the Wankel were treated as piston engines and given firing orders. Fixed by adding `Architecture` and marking non-piston rows `.notApplicable`.
+2. Row 57 (Wankel 1-rotor) claimed a *sourced* order because its cell read "None (rotary, no firing order)" and the parser only recognised a bare "none".
+3. Row 71 states "Not stated" for cylinder count; the parser turned that into `0`. `cylinders` is now `Int?` — unknown stays unknown instead of rendering as "0 cylinders".
+
+**Also**
+- `tools/gen_engine_catalog.py` is the single writer of `EngineCatalogData.swift`; the data file is generated, never hand-edited.
+- I corrected my own arithmetic in the physics spec (`2.6/tan(0.1)` is 25.913, not 25.946) after the RED run exposed it.
+
+**Not verified:** the parked `agents-spike-2` work (dyno modes, extended handling) stays unmerged; its 24 tests were written after its code and have not been shown to fail.
+
+**Files Touched:** `Native/PistonForgeKit/.../Physics/VehicleDynamics.swift`, `.../Catalog/EngineCatalog.swift`, `.../Catalog/EngineCatalogData.swift` (generated), `Native/PistonForgeKit/Tests/PistonForgeKitTests/{VehicleDynamicsTests,EngineCatalogTests}.swift`, `tools/gen_engine_catalog.py`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 01:02:50 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged.
+
+**Goal:** confirm the Game Mode fix on device and stop the tab bar covering the primary action.
+
+**Verified on device (0.2.6, build 7):**
+- The iOS warning is **gone**. `builds/device/2026-11-23/v026-clean.png` shows the header reading cleanly where the overlay used to be.
+- The Metal HUD now reports **`Game Mode: On`** (it read `On` before too, but the system claimed the key was missing); frame rate 60.01 FPS, GPU 2.07 ms, `dropouts 0`, thermal `Fair`.
+- The engine renders behind the HUD on the Engine screen, at the Inline 2 selection.
+- The sound panel shows **no load error**, which is the first evidence that the impulse-response path fix works: a failed load would print "Engine sound failed to load (4)".
+
+**Cause of the one visible regression.** Moving the controls into a `ScrollView` in 0.2.4 left them scrolling *under* the floating tab bar, so "Start engine" was half covered.
+
+**Fixed**
+- `EngineScreen`: 96 pt bottom padding inside the scroll content, sized to clear the tab bar, with a comment so it is not removed as arbitrary spacing.
+
+**Also changed**
+- `scripts/sideloadly-install.ps1` now terminates the app before installing. A running app makes installd stall at **89% "Installing…"** indefinitely - the 0.2.6 install hung there until `ios kill` was issued, and then completed. Without this the automation can wedge for the full timeout.
+
+**Files Touched:** `Native/App/Screens/EngineScreen.swift`, `Native/project.yml`, `scripts/sideloadly-install.ps1`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 00:45:20 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This removes a system-drawn obstruction from the hero screen and closes a submission requirement; it does not complete a roadmap item.
+
+**Goal:** find out what the giant white text over the 3D engine actually was, and remove it.
+
+**Cause.** It was never SwiftUI and never RealityKit. Enlarging the screenshot showed the sentence:
+
+> "…SupportsGameMode key not found in Info.plist. This key will become required to be eligible for …"
+
+iOS 27.2 draws that warning **over the app** when a game does not declare Game Mode support. It is absent from the accessibility tree because the system, not the app, renders it - which is why every tree dump came back clean and why the string did not exist anywhere in our source. `GCSupportsGameMode` was deprecated in iOS 18.6 and replaced by `LSSupportsGameMode` (Apple: "If you don't include this key in your Info.plist, Game Mode might not turn on for your game"). The project generates its Info.plist from `INFOPLIST_KEY_*` settings, so nothing was ever declaring it.
+
+**Fixed**
+- `Native/AppInfo.plist` (new, outside `Native/App` so it is never copied in as a resource) declares `LSSupportsGameMode`, and `Native/project.yml` sets `INFOPLIST_FILE: AppInfo.plist` so Xcode merges it into the generated plist.
+- First attempt used `INFOPLIST_KEY_LSSupportsGameMode`, which **silently does nothing**: 0.2.5 built and shipped, and unpacking the .ipa showed `LSSupportsGameMode: None`. `INFOPLIST_KEY_*` only covers keys Xcode knows. Caught by inspecting the built bundle rather than trusting the build being green.
+
+**Why it matters beyond the cosmetic:** Apple states the key will become required, and without it Game Mode may not engage - which is precisely the mode that would stop background activity from stealing CPU from the simulator while a pull is running.
+
+**Verified:** the warning is legible in `builds/device/2026-11-23/v024-engine.png`, and Apple's documentation for `LSSupportsGameMode` / deprecated `GCSupportsGameMode` confirms the key name and version. **Not verified:** that 0.2.5 no longer shows the warning - that is the next install.
+
+**Files Touched:** `Native/project.yml`, `CHANGELOG.md`.
+
+## 23/11/2026 @ 00:07:44 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Two P0 audit findings from `docs/audits/2026-11-22-ios-audit.md` are addressed; the rest remain.
+
+**Goal:** make the Engine screen usable at every phone size and stop the 3D stage bleeding into the rest of the UI.
+
+**Cause.** `EngineScreen` was a `ZStack` with an unframed `EngineViewport` that also applied `.ignoresSafeArea(edges: .horizontal)`, and every control sat in a fixed `VStack` with `Spacer(minLength: 0)`. Consequences the audit predicted and the device confirmed: content needs ~645 pt on a screen that offers ~598 pt after chrome, so **Start engine falls off a 4.7" phone**; the viewport had no bounds, so its layer could paint outside its area; and in landscape the header and gear button are clipped off the right edge.
+
+**Changed**
+- `EngineScreen`: the 3D stage is now a fixed 360 pt block with `.frame` + `.clipped()`, the header overlays it, and **everything actionable moved into a `ScrollView`** so Start is reachable on any device. Horizontal safe-area escape removed from the content layer.
+- No behaviour, model or sound changes; purely structural, so it is safe to verify visually.
+
+**Verified:** the pre-fix state is captured in `builds/device/2026-11-23/v023-engine.png` (Start button pinned at the bottom, panels overrunning the tab bar). **Not verified:** that 0.2.4 renders correctly — the next install and screenshot.
+
+**Files Touched:** `Native/App/Screens/EngineScreen.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
+## 22/11/2026 @ 23:55:44 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. This fixes a rendering defect on the app's hero screen; it does not complete a roadmap item.
+
+**Goal:** stop the 3D engine rendering as giant clipped garbage on device (0.2.2, iPhone 13). Evidence: the Engine screen showed enormous white shapes and a giant warning glyph inside the viewport, with `dropouts 8903-10732` and "phone hot" in the sound panel. The accessibility tree contains no such text, which places the artefact inside the RealityKit scene rather than SwiftUI.
+
+**Cause.** `HoseMesh.addTube` normalised the two end-cap tangents without checking their length:
+
+```swift
+let startTangent = simd_normalize(rings[1].0 - first.0)
+let endTangent = simd_normalize(last.0 - rings[rings.count - 2].0)
+```
+
+`catmullRom` can emit consecutive duplicate samples (a control point repeated, or a degenerate span). Every hose, intake runner and exhaust pipe goes through `addTube`, so a single duplicate gives a zero-length delta, `simd_normalize` returns NaN, and the NaN lands in the **normals buffer for the whole merged mesh** - the geometry then draws as runaway shapes and the GPU burns cycles rasterising them, which also starves the audio render thread (hence the dropout counter climbing ~1000/s). `addCylinder` already guarded its axis; `addTube` did not.
+
+**Fixed**
+- `HoseMesh.addTube`: consecutive duplicate samples are dropped before rings are built, and each cap is emitted only when its delta is longer than 1e-6, so no NaN can enter the buffer. Comment records the symptom so it is not "simplified" back.
+
+**Verified so far:** the artefact and the dropout rate were captured in `builds/device/2026-11-22/screen-engine.png` and `verify-234320-*` on 0.2.2. **Not verified:** that 0.2.3 renders a recognisable engine - that needs the next install and a fresh screenshot.
+
+**Files Touched:** `Native/App/Engine3D/HoseMesh.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
+## 22/11/2026 @ 23:25:18 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged: this removes a crash and a broken feature, it does not finish a roadmap item. Item 23 stays open until a build is installed and verified from the phone side.
+
+**Goal:** kill the second crash found on the device (23:04, `std::terminate` in `SoundEngine.load`'s detached task) and fix what the investigation uncovered underneath it.
+
+**Cause (two bugs, one investigation).**
+1. **No exception boundary.** `esim_bridge.cpp` had zero `try`/`catch` and no lock anywhere. engine-sim and piranha throw (`EmptyPort`, `InvalidLiteralType`, `filesystem_error`, `bad_alloc`); every throw unwound out of the `extern "C"` functions into Swift's async thunk, whose cleanup calls `__clang_call_terminate` → `std::terminate` → SIGABRT. That is the 23:04 report exactly: no engine-sim frames, because the unwinder had already popped them.
+2. **Loads could overlap.** `SoundEngine.load` set `isLoading` but never checked it, and the bridge's `esim_start` began with an unlocked `esim_stop()`. Two picker changes ~300 ms apart (the debounce in `GameStore.reloadSound`) put a stop inside a start; two starts in flight both reach `g.thread = std::thread(simLoop)`, and assigning to a joinable `std::thread` is defined to call `std::terminate()` with nothing to catch.
+
+**Fixed**
+- `esim_bridge.cpp`: lifecycle `std::mutex` around start/stop; every public entry point wrapped so no C++ exception crosses the boundary (codes 5 `system_error`, 6 `std::exception`, 7 unknown); teardown inside catch handlers is itself guarded; the sim thread body is wrapped and latches a fault instead of terminating; `esim_read` no longer allocates on the audio thread (fixed 8 KiB buffer, `try`/`catch` → silence + fault); `esim_stats_get` null-checks; new `esim_fault()`.
+- `esim_bridge.h`: declares `esim_fault()`.
+- `SoundEngine.swift`: loads are queued on a `Task` chain so the bridge never sees two at once; `esim_fault()` is polled and surfaced as "Engine sound stopped after an internal fault" instead of a silent death.
+- `SoundEngine.swift`: **impulse-response path fix.** Generated IRs are written to the caches work directory but referenced by a bare filename, and engine-sim resolves it against the read-only bundle folder. `readWav16` therefore missed and **every generated preset returned code 4** — only `.reference` could ever load. The rewrite now emits the absolute path, the same way the reference recording was already handled.
+
+**Verified:** the crash signature was read off the device (`.ips` via `ios crash cp`), and every claim above was traced to a specific file:line by a read-only audit agent. **Not yet verified:** that 0.2.2 compiles and that the presets load and the app survives a rapid preset switch — that is the next device run.
+
+**Files Touched:** `Native/EngineSimSpike/App/Bridge/esim_bridge.cpp`, `Native/EngineSimSpike/App/Bridge/esim_bridge.h`, `Native/App/Sound/SoundEngine.swift`, `Native/project.yml`, `CHANGELOG.md`.
+
+## 22/11/2026 @ 22:22:42 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 23 ("unsigned .ipa produced by CI and installed on Zach's iPhone") is the one this touches, and it still cannot be ticked tonight: the CI can build the IPA but cannot deliver it, for a reason that has nothing to do with the app.
+
+**Goal:** get a build with the audio fix onto the phone. Two failed runs showed the real blocker.
+
+**Cause.** Run 45076156023 and 45076919133 both stopped in `sim-tests` with *"Failed to CreateArtifact: Artifact storage quota has been hit"*. Because `app` declares `needs: sim-tests`, that failure skipped the macOS job entirely — **the audio fix has never been compiled, let alone tested**. Deleting 1.4 GB of stale artifacts (91 of them, oldest first) did not help: GitHub states usage is recalculated only every 6-12 hours, so enforcement stays latched for the rest of the day. The app job was being blocked by an upload of engine-sim *test fixtures*, not by anything in the product.
+
+**Changed**
+- `.github/workflows/native.yml`: every `upload-artifact` step is now `continue-on-error: true`, so a storage-quota failure can no longer skip the macOS build. The `.ipa` is additionally published as a **release asset** on a `device-test` tag, which is not counted against Actions artifact storage, and the workflow gains `contents: write` for that one purpose. Pull it with `gh release download device-test -p "*.ipa" -D builds/device-latest --clobber`.
+- The release is explicitly not user-facing: title "Device test builds", overwritten every run, notes say so.
+
+**Verified:** the two run logs (`gh run view --log-failed`) name the quota error verbatim; the step list for 45076156023 shows `sim-tests: failure` at the two upload steps and `app: skipped`. Not yet verified: that the workflow edit runs green — that is the next dispatch.
+
+**Files Touched:** `.github/workflows/native.yml`, `CHANGELOG.md`.
+
+## 22/11/2026 @ 22:09:38 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 20 (performance verified on a real iPhone) and item 23 stay open — but this entry does settle the first real-device question the iOS plan has been carrying since 15/11: the app crashed on every launch, and now we know why.
+
+**Goal:** stop Piston Forge 0.2.0 crashing on the phone. First real-device session immediately produced three identical crash reports, so the goal became "diagnose from those reports, not from guesswork".
+
+**Cause.** All three crashes are the same: `EXC_BREAKPOINT / SIGTRAP`, faulting thread `AURemoteIO::IOThread`, stack `_dispatch_assert_queue_fail` → `dispatch_assert_queue` → `_swift_task_checkIsolatedSwift` → `closure #2 in SoundEngine.load(build:exhaust:limiter:)`. `SoundEngine` is `@MainActor`, so the `AVAudioSourceNode` render closure written inside it **inherits main-actor isolation**. Core Audio calls that block on its real-time I/O thread, Swift 6 mode inserts a dynamic isolation check on the way in, the check fails, and the process traps the first time audio is pulled. `Native/project.yml` sets `SWIFT_VERSION: "6.0"`; the engine-sim spike app has the identical closure but built in Swift 5 mode, which is exactly why it "sounded perfect" on the phone while the real app dies. This was never a signing or sideloading problem — it would crash the same way from TestFlight.
+
+**Fixed**
+- `Native/App/Sound/SoundEngine.swift`: the render block is now `private nonisolated static func render(...)`, passed as `renderBlock: Self.render` instead of an inline closure. A `nonisolated` static function carries no actor isolation, so no runtime check is inserted and the audio thread can call it. The comment records the crash signature so nobody reintroduces the closure form.
+
+**Verified so far:** the crash reports were pulled off the device with `ios crash cp` and parsed (`EXC_BREAKPOINT`, thread, symbolicated frame). The fix itself is **not yet verified on the phone** — that needs a CI build (macOS) and a Sideloadly re-sign, which is the next step.
+
+**Files Touched:** `Native/App/Sound/SoundEngine.swift`, `CHANGELOG.md`.
+
+## 22/11/2026 @ 22:01:11 IST - "deepseek-flash"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged: this entry adds a testing harness, it does not finish a product feature. Item 23 ("Simulator screenshot and unsigned .ipa produced by CI and installed on Zach's iPhone") is now *half* proven — the installed app was verified on the device — but the item also covers the CI Simulator screenshot, so it stays unticked rather than being credited on a partial. Item 20 (performance on a real iPhone) stays open until numbers are actually sampled.
+
+**Goal:** give this repo a way to install, launch, screenshot and log Piston Forge on Zach's real iPhone from this Windows PC, with no Mac and no jailbreak, so the "cannot be proven from Windows" list in `docs/ios-release.md` can finally be worked through.
+
+**Why this shape.** Zach asked about `ipasimulator/ipasim` (IPA Sim) as a vPhone-style virtual iPhone. It is not one: it is a WinObjC-era UWP emulator whose README states "only simple applications can be emulated", it has no SwiftUI or RealityKit, and its author states he does not plan to continue it. vPhone needs Apple Silicon macOS, touchHLE only covers iPhone OS 2.x–4.x apps, and `vphone-win-port` does not run a VM yet. Since the goal was testing Piston Forge on a *real* iPhone, the harness drives the physical device over USB instead — the same binary a player installs.
+
+**Added**
+- `scripts/device.ps1` — one entry point for `status | start | stop | apps | launch | kill | install | shot | logs | report` plus pass-throughs for taps once a UI driver is signed. `shot` prints a bare absolute path so an agent can read the image back. Tunnel start is idempotent and polls until `apps --list` succeeds rather than sleeping blind.
+- `.opencode/skills/ios-device/SKILL.md` — the agent-facing contract, with the traps that cost time: unsigned IPAs are rejected by `install` (Sideloadly is the signer, not go-ios), always target an explicit UDID, free-account 3-app/7-day limits, and `ios screenshot` vs `ios ui screenshot` needing different prerequisites.
+- `docs/ios-device-testing.md` — runbook: verified device/tool state, daily commands, the one manual signing step, and what the harness still cannot prove (sound quality, haptic feel).
+
+**Changed**
+- `docs/ios-release.md` — the "NOT yet done: an actual install on a phone" line was stale; an install is now confirmed and the PC can drive the device, so it says so and points at the new runbook.
+
+**Verified on the device (not inferred):**
+- iPhone 13 (`iPhone14,5`), iOS 27.2 build 24B5099f, UDID `00008110-001A2D200CDB801E`.
+- go-ios 1.3.2 installed; **userspace tunnel negotiates with no admin rights and no `wintun.dll`** — the kernel path was tried first and correctly refused with "needs elevated privileges", which removed two UAC steps from the plan.
+- `apps` lists `ie.zbautomations.pistonforge  Piston Forge 0.2.0`; that version matches `builds/v2-latest/PistonForge-native-unsigned.ipa` (0.2.0 build 1, min iOS 18.0, arm64 `iphoneos`), so the phone is running the latest build already.
+- `launch` started the process (PID 69407) and a screenshot 9 s later shows the Tune screen with the "288 hp @ 6952, 305 Nm" readout — proving the launch/screenshot loop against the real app.
+- `syslog` streams (2700 lines in 8 s) and filters correctly (18/1154 matched `SpringBoard`).
+- **Not verified:** taps. `ios ui status` has no driver, and the DeviceKit runner IPA is unsigned for this device (`ApplicationVerificationFailed`), so UI automation waits on one Sideloadly signing pass.
+
+**Files Touched:** `scripts/device.ps1`, `.opencode/skills/ios-device/SKILL.md`, `docs/ios-device-testing.md`, `docs/ios-release.md`, `CHANGELOG.md`.
+## 18/11/2026 @ 16:52:00 IST — "claude-sonnet-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged: this entry is research and a throwaway spike, so no roadmap item moves. Item 8 (screens to the ZB UX standard) stays open; the redesign is waiting on the design update.
+
+**Goal:** answer Zach's 17-18/11 direction: replace the engine sound with engine-sim, find the largest engine and gearbox lists, and prove engine-sim can run on an iPhone.
+
+**Added**
+- Research (7 agents): `docs/research/raw/` holds an 83-row engine catalogue, two gearbox and car data files, a free 3D-kit survey, an engine-sim iOS feasibility report, a portrait-cockpit study, and the spike results. Why: Zach wants far more engines (RevLab has 21), many gearboxes and a Tuning-Simulator-style cockpit in portrait; no design can be approved without the real data. Honest gaps (unsourced firing orders, ratios, drive-mode numbers, frontal areas) are tagged in each file.
+- Spike (branch `spike/engine-sim-ios`, not merged): `Native/EngineSimSpike/` builds engine-sim's sound core headless and a phone test app. Why: the feasibility report said "needs a spike". Cause of the many small patches: upstream is written for MSVC and the research missed that piranha needs Boost.
+- `.zb/state.json`: Zach's decisions (engine-sim for sound, write our own engines and exhaust sounds, career later, portrait-first, gearbox list approved).
+
+**Verified:** CI run 44346718049: Linux, macOS arm64 and iOS Simulator render audio; iPhone arm64 libraries and the test app build; V8/V10/V12 ran at 1.0-2.2x real time on shared runners. Not verified: sound quality, phone CPU, heat (needs Zach's phone test).
+
+**Files Touched:** `Native/EngineSimSpike/**`, `.github/workflows/engine-sim-spike.yml`, `docs/research/raw/*`, `.zb/state.json`, `CHANGELOG.md`.
+
+## 17/11/2026 @ 16:44:44 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 8 (screens to the ZB UX standard, previews approved) stays open: Zach rejected the previews.
+
+### Goal
+Record Zach's rejection of the stage 1 previews and the research he asked for: three reference games, licensable 3D engine models and real gearbox behaviour.
+
+### Added
+- **`docs/research/2026-11-17-reference-games.md`:** findings from five research subagents.
+  - Covers RevLab, Engine Simulator (Muhammad Saad Ata) and Tuning Simulator (Scott Busby): listings, features, layouts, strengths and complaints.
+  - Covers 3D model sources, licences, polygon budget and the heat-glow approach.
+  - Gives gearbox figures for 5- and 6-speed manuals, a sequential, a 7-speed dual-clutch and an 8-speed automatic.
+  - Why: Zach wants a game as deep as these, with real 3D models and real gearboxes. Store screenshots are kept privately in `builds/research/` (not committed) as reference only; our look stays our own.
+
+### Changed
+- **`.zb/state.json`:** Zach's decisions.
+  - The previews are not approved, because landscape must use the width.
+  - The game should be as deep as the reference games.
+  - Every engine is fully modelled, with moving valves and heat glow, using internet models where licensable. This reverses the "built in code only" call.
+  - Gearboxes: 5MT, 6MT, sequential, 7-speed dual-clutch and 8-speed automatic.
+
+### Verification
+- Research only; no code changed. The listings and screenshots were read directly. Unverified claims are marked in the document.
+
+### Files Touched
+- `docs/research/2026-11-17-reference-games.md` (new), `.zb/state.json`, `CHANGELOG.md`
+
+## 16/11/2026 @ 15:53:00 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 8 (screens to the ZB UX standard, previews approved) stays open until Zach approves the previews.
+
+### Goal
+Stage 1 plan, Task 11: preview every screen with sample data, for Zach to approve before the game is wired up. This is the ZB UX standard adapted to native iOS, as Zach approved:
+- Native SwiftUI controls instead of the web parts libraries.
+- Dark only.
+- Simulator screenshots on iPhone (portrait and landscape) and iPad, each checked by Xcode's accessibility audit.
+
+### Added
+- **Screens, in `Native/App/Screens/`, all on sample data:**
+  - **Engine:** 3D engine, live rpm, power, AFR and boost, Start (the one accent), rev slider, warnings banner.
+  - **Parts:** grouped by system; every choice says what it changes in plain words.
+  - **Tune:** auto-tune, limits, boost, strategy, nitrous, and the fuel and ignition tables with their numbers.
+  - **Dyno:** power and torque charts with the last pull dashed behind, AFR, boost, knock and EGT traces, crank and wheel figures, and a failure explained in words.
+  - **Car:** each body shows whether the engine fits, as an icon, a word and the millimetres over; gearing; tyres.
+  - **Settings:** includes a reset that can be undone.
+  - **Garage:** swipe to duplicate or delete.
+- **Shared components** (`Components.swift`): status as icon + word + colour, readouts in tabular digits, primary and secondary buttons at least 44 pt, cards, the PREVIEW tag.
+- **Theme tokens:** surfaces, vivid status marks and inks, a 4-point spacing scale, radii, hit target.
+- **`Preview/SampleData.swift`:** real model output (a dyno pull of a twin-turbo V8), not invented numbers. **`Preview/PreviewRoot.swift`:** opens one screen with `-screen <name> -preview`.
+- **`ScreenshotUITests.testEveryScreen`:** every screen, portrait plus landscape on iPhone, with `performAccessibilityAudit`.
+
+### Verification
+- Pending one Mac run that covers both this task and Task 10.
+- Before that run, the advisor caught three problems, now fixed:
+  - **No phone build when a test failed:** the CI skipped the phone build whenever a UI test failed. It now always builds the `.ipa` and fails the job only at the end.
+  - **Name clash:** `Settings` is a SwiftUI type name too, so the screen now names `PistonForgeKit.Settings`.
+  - **Screen identifiers:** each screen's identifier now sits on a containing element, so it doesn't hide its children's identifiers.
+- **Other CI changes:**
+  - Dispatch inputs to run one UI test on one device during fix-up rounds, which saves Mac minutes.
+  - The audit lists every issue in one pass.
+  - The `.xcresult` is always uploaded.
+  - The Simulator `.app` is kept as an artifact, for a live-streaming service if Zach picks one.
+- **Runs 43901298051 and 43902770109:** GitHub never assigned a Mac ("not acquired by Runner" and "capacity constraints" on macOS arm64), twice for 15 minutes; no minutes were charged. A dispatch input now picks the runner (`macos-26`, `macos-15` or `macos-15-intel`) so a capacity shortage doesn't block the work.
+- **Intel run 43908934695:** the 3D engine and all seven screens compiled first time (Xcode 16.4).
+  - Six preview screens rendered.
+  - The engine screens crashed inside RealityKit's own start-up (`re::Engine::init`, a divide-by-zero), read from the crash report in the test results. Intel runners have no GPU; on Apple silicon RealityKit rendered in Task 0.
+  - The accessibility audit flagged contrast and Dynamic Type issues. The audit now names each element, so they can be fixed without a Mac.
+- **Apple-silicon run 43922004468** (`macos-15`): the 3D engine renders on all ten layouts, iPhone and iPad.
+- **That run's audit findings, now fixed:**
+  - System-grey section headings and notes failed contrast, so they now use theme inks.
+  - The engine screen's live readouts clipped, so they are now a 2×2 grid on an opaque panel.
+  - Long titles now wrap.
+- **3D fixes:**
+  - The camera now sits further back, so the engine is no longer cut off.
+  - The W16's banks are spread to 15° so all four show.
+  - The turbo downpipes are shorter.
+
+### Files Touched
+- `Native/App/Screens/*.swift`, `Native/App/Preview/SampleData.swift`, `Native/App/Preview/PreviewRoot.swift` (new), `Native/App/Theme.swift`, `Native/App/PistonForgeApp.swift`, `Native/UITests/ScreenshotUITests.swift`, `.github/workflows/native.yml`, `CHANGELOG.md`
+
+## 16/11/2026 @ 15:44:56 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 15 (3D scenes in RealityKit) stays open until the screenshots are checked and Zach has judged the frame rate on his iPhone 13.
+
+### Goal
+Stage 1 plan, Task 10: the engine in 3D, built entirely in code from its layout and parts. The opening screen shows it idling, with the crank, pistons and rods driven by the simulation. This build then goes to Zach's iPhone 13 for a frame-rate check before more is built on it.
+
+### Added
+- **`Native/App/Engine3D/HoseMesh.swift`:** a mesh builder that merges boxes, cylinders and hoses into one mesh per part group and finish (few draws). Hoses and pipes are swept along Catmull-Rom curves with twist-free frames.
+- **`Native/App/Engine3D/EngineModelBuilder.swift`:**
+  - Block and banks at the layout's bank angle, cut away so the pistons show. A W16 is drawn as four banks.
+  - Heads and valve covers; intake plenum and runners; exhaust headers into collectors.
+  - Turbo, twin turbo and intercooler with charge piping; Roots and twin-screw blowers on top, or a centrifugal one at the side, with belts.
+  - Fuel rails and injectors, the fitted sensors, the wiring loom and the nitrous kit.
+  - A crankshaft whose throws point each cylinder to top dead centre at its firing phase.
+  - Each part group can be tapped.
+- **`Native/App/Engine3D/EngineAnimationSystem.swift`:** one RealityKit `System` that turns the crank and places every piston and rod from the crank angle, using slider-crank geometry.
+- **`Native/App/Engine3D/EngineViewport.swift`:** one-finger orbit (pitch held to 5-80°), pinch zoom, tap to select a part, and a VoiceOver label and hint.
+- **`Native/App/Preview/LaunchRoute.swift`:** `-screen`, `-layout` and `-induction` launch arguments for UI tests and screenshots.
+- **`Native/App/Theme.swift`:** every colour as a token, including the engine finishes.
+- **`Native/UITests/ScreenshotUITests.swift`:** a screenshot of every layout in 3D: twin turbo on the cross-plane V8 and the W16, a Roots blower on the flat-plane V8.
+
+### Changed
+- **`Native/App/PistonForgeApp.swift`:** opens on the cross-plane V8 idling in 3D, with its name and live rpm.
+
+### Removed
+- **`Native/App/LoopTestView.swift`**, the build-loop test screen.
+
+### Verification
+- Pending the Mac run (dispatched after the Linux fix-up run goes green).
+
+### Files Touched
+- `Native/App/Engine3D/*.swift`, `Native/App/Preview/LaunchRoute.swift`, `Native/App/Theme.swift`, `Native/UITests/ScreenshotUITests.swift` (new), `Native/App/PistonForgeApp.swift`, `Native/App/LoopTestView.swift` (deleted), `CHANGELOG.md`
+
+## 16/11/2026 @ 15:38:11 IST — "claude-opus-5-5"
+
+**Project completion: 17.39%**
+Basis: 8 of 46 items ticked in `docs/roadmap.md`. Item 14 (save file with backup and a version-migration path, tested) is newly ticked: Task 9 went green on run 43896721518 with 86 tests. Still open: the 3D engine, the screens, wiring the game, device checks and the store.
+
+### Goal
+Act on the subagent review of Tasks 3-9. It made 13 findings: 1 marked critical, 7 important, 5 minor. Each fix gets a test that fails first.
+
+### Added
+- **`ReviewFixTests.swift`**, run red first:
+  - A reversed nitrous window in a save is treated as corrupt, not a crash. The reviewer called this a crash; I believe Swift's decoder throws instead, and this test settles it.
+  - A failed write never loses a newer-version save, and an existing `save.newer.json` is never overwritten.
+  - A tune that reads a MAF that isn't fitted warns.
+  - Hitting the rev limiter isn't reported as over-revving.
+  - Fitment of a non-number build doesn't trap.
+  - A supercharger making more boost than the fuel can take warns.
+  - Every layout × induction (both pulley ends) × three sensor sets × two fuels is either safe on the auto-base tune or already warns why not.
+  - The sound's non-number guard is never hit.
+- **Warnings** `mafMissing` and `boostTooHighForFuel`, and a non-number counter in `EngineVoice`, so the tests compile.
+
+### Changed
+- **`docs/roadmap.md`:** item 14 ticked. Task 9 GREEN recorded.
+
+### Verification
+- RED: run 43898492775 crashed on the non-number fitment check: "Double value cannot be converted to Int". That confirms the trap, and a crash counts as red.
+- Run 43898772518: 95 of 96 tests passed. The new sweep found four I3 and I4 builds with no knock sensor (two turbo, two Roots-blown) that knocked on the auto-base tune with no warning. A follow-up commit fixes the cause:
+  - The tune guessed each cell's charge temperature as if boost were proportional to load, ignoring how a hot charge holds less air.
+  - It also ignored the knock that very hot intake air adds.
+  - The knock sensor had been hiding both. The tune now solves for the boost behind each load and leaves room for heat knock. The turbo boost cap and the blower warning share that same "usable timing".
+- GREEN: pending.
+
+### Fixed
+- **Fitment** returns "blocked" for an unmeasurable build instead of trapping.
+- **Save store:**
+  - Encodes before touching any file, so a failed write changes nothing.
+  - Moves newer and corrupt saves aside under numbered names, and never overwrites an earlier side file.
+- **Engine sound:**
+  - Each synthesis buffer is allocated on its own, so the audio thread never triggers a copy-on-write allocation.
+  - Counts any sample it has to silence.
+- **Build warnings:**
+  - A MAF tune without a MAF now says so, instead of saying "MAF maxed out".
+  - A supercharger that leaves under 8° of knock-limited timing, or comes within 2 psi of the gasket's limit, warns that the blower boost is too high.
+- **Rev limiter:** hitting it no longer shows "Over-revving"; the limiter state is reported separately.
+- **Tests:**
+  - The part-change test checks that the cam change really moves airflow by more than 5%.
+  - A new test checks that a just-big-enough fuel system warns when the cams and head are raised.
+
+### Not changed (my rulings)
+- **Nitrous window decoding:** the reviewer's crash claim is tested here rather than assumed.
+- **Hand-off to the audio thread:** a lock-free parameter handoff and an `@unchecked Sendable` contract on `EngineVoice` are needed. They belong to Task 12 (`AudioOutput`) and are noted there.
+- **Minor findings left as they are:**
+  - EGT damage counts as lean damage.
+  - The flat-plane/cross-plane test reads the firing schedule rather than the rendered sound.
+
+### Files Touched
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/ReviewFixTests.swift` (new), `EngineSimTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Damage.swift`, `Physics/EngineSim.swift`, `Sound/EngineVoice.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift`, `docs/roadmap.md`, `CHANGELOG.md`
+
+## 16/11/2026 @ 15:26:27 IST — "claude-opus-5-5"
+
+**Project completion: 15.22%**
+Basis: 7 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 14 (save file with backup and a version-migration path) closes when this task is green.
+
+### Goal
+Stage 1 plan, Task 9: our five original car bodies, engine-bay fitment, and the save file. The save keeps a backup, recovers from a corrupt file and never overwrites a save from a newer version of the game.
+
+### Added
+- **`CarSaveTests.swift`**, run red first:
+  - A W16 doesn't fit the hatch; a V8 fits the muscle car; every starter engine fits some car.
+  - A blocked fit reports the worst dimension and the millimetres over (Review Focus 4).
+  - The cars are sane.
+  - Save and load round-trip.
+  - A corrupt save falls back to the backup; corrupt save and backup reset to defaults with that status; an empty file counts as corrupt.
+  - A newer-version save is left untouched and moved aside to `save.newer.json` before the first write (Review Focus 2).
+  - Loaded builds are sanitised.
+  - The default save opens on an assembled engine that fits its car.
+- **`Car/Cars.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift`.**
+
+### Changed
+- **`.gitignore`:** ignores Sideloadly's log, which it writes into the folder it was started from.
+
+### Verification
+- RED: run 43896358156 on the stubs failed the car, fitment and save assertions (52 issues).
+- GREEN: run 43896721518 passed all 86 tests.
+
+### Added (implementation)
+- **Five bodies:**
+  - Pocket Hatch: front-wheel drive, 1050 kg.
+  - Grand Coupe: rear-wheel drive, 1350 kg.
+  - Muscle: rear-wheel drive, 1550 kg.
+  - Pickup: rear-wheel drive, 1850 kg.
+  - Mid-engine Super: all-wheel drive, 1400 kg.
+
+  Engine bays are sized so the small engines fit the hatch, the sixes, V10 and V12 fit the coupe, the V8s fit the muscle car, and only the Super takes the W16.
+- **Save store:** atomic writes with a backup. A corrupt file is moved to `save.corrupt.json` rather than deleted. A newer-version save is moved to `save.newer.json`. There is a place for version migrations. Loaded saves are sanitised.
+- **First launch:** one stock engine of every layout, opening on the cross-plane V8 in the Muscle car.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Car/Cars.swift`, `Car/Fitment.swift`, `Save/SaveStore.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/CarSaveTests.swift` (new), `.gitignore`, `CHANGELOG.md`
+
+## 16/11/2026 @ 15:21:43 IST — "claude-opus-5-5"
+
+**Project completion: 15.22%**
+Basis: 7 of 46 items ticked in `docs/roadmap.md`. Item 2 (engine simulation in PistonForgeKit, tested on Linux) is newly ticked: Tasks 1-7 are green, 65 tests including the dyno. Still open: sound, cars and saving, the 3D engine, the screens, device checks and the store.
+
+### Goal
+Stage 1 plan, Task 8: the engine sound. It is generated in real time from the firing order: one pulse per cylinder firing into its own bank's exhaust, shaped by rpm, load and exhaust, plus turbo whine, supercharger whine and the nitrous hiss. Listening files come out of the Linux CI job so Zach can hear every layout long before the app exists.
+
+### Added
+- **`EngineVoiceTests.swift`**, run red first:
+  - Output stays finite and within ±1 for every layout swept to redline at full boost with nitrous.
+  - An I4 at 3000 rpm pulses at 100 Hz.
+  - A flat-plane V8's bank fires evenly and a cross-plane bank unevenly.
+  - Silence when stopped, and the sound fades after stopping.
+  - Turbo whine shows in the 2-8 kHz band; load makes it louder.
+  - Voice parameters come from the engine state.
+  - Listening WAVs are written when `PF_WAV_DIR` is set: idle, a full-throttle run to the limiter and a lift, six seconds per layout, plus a twin-turbo, a Roots-blown and a nitrous V8.
+- **`Sound/EngineVoice.swift`**, and **`Sound/WavWriter.swift`** (16-bit mono WAV).
+
+### Changed
+- **`docs/roadmap.md`:** item 2 ticked.
+
+### Verification
+- Task 7 GREEN: run 43895061504 passed all 65 tests in 12 s.
+- Task 8 RED: run 43895503974 on the stubs failed the sound assertions (18 issues).
+- Before porting, a Python prototype of the synthesis (scratchpad) checked the main tests:
+  - An I4 at 3000 rpm pulses at 100.0 Hz.
+  - At 15 psi, turbo whine is about 400× stronger in the 2-8 kHz band.
+  - A V8 at full throttle peaks below 0.7.
+  - Heavy load is 4× louder than light load.
+- GREEN: run 43895798734 passed all 74 tests.
+- The 13 WAV files were downloaded and their loudness checked second by second: idle RMS 0.02-0.05, the pull 0.14-0.28, peaks 0.38-0.62, no clipping. A follow-up changes the listening run from a free rev, which hit the limiter in under a second, to a steady three-second pull.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Sound/EngineVoice.swift`, `Sound/WavWriter.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineVoiceTests.swift` (new), `docs/roadmap.md`, `CHANGELOG.md`
+
+## 16/11/2026 @ 15:15:47 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 2 (engine simulation in PistonForgeKit) closes once the dyno is green.
+
+### Goal
+Stage 1 plan, Task 7: the dyno, a live inertia-style sweep at about 400 rpm per second from 2000 rpm to the limiter. It records torque, crank and wheel power, AFR, boost, knock and EGT, and stops with the cause if the engine breaks.
+
+### Added
+- **`DynoTests.swift`**, run red first. It replaces `GoldenFixtureTests.swift` and keeps its two tests.
+  - Every layout × NA, every turbo and every supercharger (fastest pulley) × with and without a 300 hp dry shot × smallest and largest injectors, with the boost target at its maximum, gives only finite numbers. Each run either completes or reports a failure (Review Focus 1).
+  - The old game's street, turbo and big-block presets land within ±45% of its dyno peaks.
+  - Wheel power is 15% under crank power.
+  - Samples rise in rpm from about 2000 to the limiter.
+  - A live run stepped at 60 fps matches a batch run within 2%.
+  - The sweep runs at about 400 rpm/s.
+- **`Dyno/Dyno.swift`.**
+
+### Removed
+- **`GoldenFixtureTests.swift`**, folded into `DynoTests.swift` (its deletion landed in the previous commit).
+
+### Verification
+- Run 43894457582 did not compile. Swift Testing's `#expect` macro rejects a rethrowing call written inside it, so the checks are now computed before the `#expect`. RED: run 43894749845 on the stubs failed on the assertions (330 issues), as expected.
+- GREEN: run 43895061504 passed all 65 tests in 12 s.
+
+### Added (implementation)
+- **`DynoRun`:** holds the engine at 2000 rpm at full throttle for half a second, then lets it climb at 400 rpm/s and samples every 100 rpm. It ends at the limiter, on a failure or stall, or after 60 s.
+  - The holding brake scales with the engine's inertia, so it stays stable at any frame rate.
+  - `EngineSim.inertiaKgM2` is now public for the dyno.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Dyno/Dyno.swift` (new), `Physics/EngineSim.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/DynoTests.swift` (new), `CHANGELOG.md`
+
+## 16/11/2026 @ 15:10:30 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the dyno is in.
+
+### Goal
+Stage 1 plan, Task 6: the running engine. Crank speed from torque and inertia at a fixed 480 Hz; idle control; the rev limiter; turbo spool; closed-loop fuel; damage with plain-words causes; warnings.
+
+### Added
+- **`EngineSimTests.swift`**, run red first:
+  - Idle holds within 80 rpm from an I3 to a W16.
+  - The limiter caps free revving within 150 rpm.
+  - A lean run on boost melts a piston, gives its cause, and won't restart until repaired.
+  - A 30-second step moves the engine no more than a 0.1 s step, and bad inputs stay finite (Review Focus 3).
+  - A cam change never seizes the engine without a warning (Review Focus 5 and the old game's bug).
+  - Riskier parts on an old tune warn that the map is out of date.
+  - A blower on a stock fuel system warns that the fuel system is too small.
+  - The crank angle matches rpm; a stopped engine spins down.
+  - Knock warnings need a knock sensor.
+- **`Physics/Damage.swift`:** failures with explanations, warnings with messages.
+- **`Physics/EngineSim.swift`:** `EngineState` and `EngineSim`.
+
+### Verification
+- RED: run 43893546445 on the stubs failed the idle, limiter, failure, warning and crank assertions (23 issues).
+- Run 43893830298: 58 of 59 passed. The one failure was in the test itself: Swift Testing's `#expect` mis-read a negated optional-chain expression, although the explanation text was there. A fix-up rewrites it as a plain variable.
+- GREEN: run 43894162563 passed all 57 tests. The count fell by 2 because the fixture tests move to the dyno test file in the next commit.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/EngineSim.swift`, `Physics/Damage.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineSimTests.swift` (new), `Catalog/Layouts.swift` (layout table built once, because the 480 Hz loop reads it constantly), `CHANGELOG.md`
+
+## 16/11/2026 @ 15:01:31 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 5: the tune (ECU map), combustion, knock and nitrous. The engine now makes torque from its air, fuel and timing; knocks when timing, boost, heat or a lean mixture push it; and takes a nitrous shot that needs fuel and less timing.
+
+### Added
+- **`CombustionTests.swift`:**
+  - The auto-base map is safe (no knock, safe AFR, EGT under 950 °C) for every layout × NA, every turbo and every supercharger × every fuel, on a matched fuel system.
+  - The auto-base map caps turbo boost to the installed fuel system.
+  - Timing past or short of MBT loses torque, and late timing heats the exhaust.
+  - The knock sensor pulls timing; with no sensor, the engine detonates.
+  - A 100 hp wet shot adds 80-120 hp; a dry shot on an unchanged map detonates or runs lean; nitrous does nothing below its arming rpm or outside its throttle window.
+  - Map lookup is bilinear and clamped at the edges.
+  - A malformed map from a bad save never traps and is rebuilt.
+- **`PublicAPITests.swift`** uses only the public interface, as the app will. Why: a missing `public` passes on Linux but breaks the Mac build much later (advisor's catch).
+
+### Verification
+- RED: run 43891959121 failed to compile, on the missing operating-point, load, MBT, nitrous and fuel-system functions, as expected.
+- Run 43892681781: the compiler timed out type-checking one long arithmetic line. A fix-up commit splits the long expressions into typed steps.
+- GREEN: run 43893106111 passed all 49 tests on Linux, including the full safety matrix.
+
+### Added (implementation)
+- **`Model/ECUMap.swift`:** 16 × 12 fuel and ignition tables with a bilinear, edge-clamped lookup that never traps. It also holds the boost target, rev and launch limits, fuel strategy, nitrous throttle window, dry-kit enrichment and nitrous timing retard.
+  - `autoBase(for:)`: a safe tune. λ 0.86 at full throttle, richening to 0.78 on boost.
+  - Timing is MBT, or 2° under the knock limit where that is lower.
+  - Turbo boost is capped by knock, the head gasket and the installed fuel system.
+  - Speed-density is used when the MAF would clip.
+- **`Physics/Combustion.swift`:** load, MBT, the knock limit (octane, rpm, compression, boost, charge heat, nitrous), and torque from the burnt fuel × efficiency (compression, timing vs MBT, over-rich). It also gives knock with knock-sensor retard, and EGT.
+- **`Physics/Nitrous.swift`:** a shot adds about 0.7 g/s of air-equivalent oxygen per rated hp; a wet kit brings its own fuel.
+- **`Physics/OperatingPoint.swift`:** one chain shared by the tests, the tune, the simulation and the dyno: charge temp → airflow → load → map → fuel → combustion → friction and supercharger drag. It also holds `fuelSystemNeeds` and `withFuelSystemSized()`.
+- **`chargeTempC`** (intercooler levels) and **`steadyBoostPsi`** in `Physics/Induction.swift`. The fuel heat value, gasket boost limits and intercooler cooling are in `Catalog/Parts.swift`.
+
+### Changed
+- **`EngineBuild.starter`** now loads the auto-base tune. **`sanitized()`** validates the tune (shape, finite numbers, rising axes) and rebuilds a malformed one; it no longer builds a whole starter to find fallbacks.
+- **Volumetric efficiency base raised from 0.88 to 0.93**, after calibrating against the old game in a local model. The stock I4 2.0 makes about 131 hp, the V8 6.0 about 363 hp and the W16 about 506 hp. The old game's street, turbo and big-block presets come out within about 10%.
+- **`deliverFuel`** takes an optional extra fuel amount (dry-nitrous enrichment through the injectors).
+
+### Files Touched
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/CombustionTests.swift`, `PublicAPITests.swift` (new), `CHANGELOG.md`
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Model/ECUMap.swift`, `Physics/Combustion.swift`, `Physics/Nitrous.swift`, `Physics/OperatingPoint.swift` (new), `Physics/Induction.swift`, `Physics/Breathing.swift`, `Physics/Fuel.swift`, `Catalog/Parts.swift`, `Model/EngineBuild.swift`
+
+## 16/11/2026 @ 14:52:04 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged.
+
+### Goal
+Act on the subagent review of Tasks 1 and 2 (layouts and the engine build). It found no critical problems, but four tests would have passed on wrong code.
+
+### Changed
+- **`LayoutTests.swift`:**
+  - Every layout's firing order is now pinned, along with the V10, V12 and W16 bank assignment. Before, a swapped V12 order would have passed.
+  - The crank phase of every cylinder is checked against its firing angle. Task 10 builds the 3D crank from it.
+- **`EngineBuildTests.swift`:**
+  - Non-numbers must fall back to the exact stock values, not just to any finite number.
+  - The I4 redline is pinned at 6950 rpm.
+  - A supercharged build also round-trips through save and load.
+- **`GoldenFixtureTests.swift`:** also checks the cylinder count of each mapped layout.
+- **`Layouts.swift`:** a comment wrongly said the odd-fire V6 uses common crank pins; it uses offset pins.
+- **Task 4 entry:** GREEN result recorded.
+
+### Verification
+- These tests pin behaviour that already exists, so they are expected to pass at once; the CI result is recorded in the next entry.
+
+### Files Touched
+- `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift`, `EngineBuildTests.swift`, `GoldenFixtureTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift`, `CHANGELOG.md`
+
+## 16/11/2026 @ 14:49:20 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 4: fuel delivery and the sensors that feed it, so injector size, pump size, fuel type, the MAF limit and the wideband all change how the engine runs.
+
+### Added
+- **`FuelSensorTests.swift`**, run red first:
+  - Airflow rises with rpm and boost and falls with heat and a closed throttle.
+  - Small injectors run out of duty and lean out at the top.
+  - A MAF past its maximum clips and leans the engine on MAF strategy, but not on speed-density.
+  - A wideband's correction works only when it is fitted.
+  - A small pump starves a big engine.
+  - E85 needs about 1.5 times the fuel mass of pump 98.
+  - No input gives a non-number (Review Focus 1).
+- **`Physics/Fuel.swift`, `Physics/Sensors.swift`.**
+- **`airflowGps`** in `Physics/Breathing.swift`. Why: the plan has Tasks 4 and 5 consume airflow "from Task 3", but no task defined it.
+- **`FuelResult.deliveredFuelGps`**, because combustion and the E85 check need the fuel mass.
+
+### Verification
+- RED: run 43889803624 on the stubs failed the airflow, MAF, injector, wideband, pump and E85 assertions.
+- GREEN: run 43890036544 passed all 36 tests on Linux.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Fuel.swift`, `Physics/Sensors.swift` (new), `Physics/Breathing.swift`, `Native/PistonForgeKit/Tests/PistonForgeKitTests/FuelSensorTests.swift` (new), `CHANGELOG.md`
+
+## 16/11/2026 @ 14:46:06 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 3: how the engine breathes. Volumetric efficiency from the head, cams, intake and exhaust, and boost from each induction type: turbo spool with lag and a wastegate, and three supercharger shapes with their drive loss.
+
+### Added
+- **`InductionTests.swift`**, run red first:
+  - VE stays in 0.35-1.15 with one peak below redline, for every layout at every cam and head level.
+  - Bigger cams move the peak up and lose low-rpm fill.
+  - Turbos lag, and a large turbo spools later than a small one; the wastegate holds the target.
+  - A Roots blower is flat, a centrifugal one rises with rpm, and a smaller pulley makes more boost.
+  - Superchargers cost crank power; NA engines make no boost.
+  - NaN or infinite inputs never produce a non-number (Review Focus 1).
+- **`Physics/Breathing.swift`, `Physics/Induction.swift`.**
+
+### Verification
+- RED: run 43889226392 on the stubs failed the breathing and boost assertions. The NA-no-boost and finite-input guards passed on the zero stub, as they should.
+- GREEN: run 43889526201 passed all 29 tests on Linux.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Physics/Breathing.swift`, `Physics/Induction.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/InductionTests.swift` (new), `CHANGELOG.md`
+
+## 16/11/2026 @ 14:39:38 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged; item 2 (engine simulation) stays open until the whole model is in.
+
+### Goal
+Stage 1 plan, Task 2: the parts catalogue and the engine build, the one record every screen, the dyno, the sound and the save file read.
+
+### Added
+- **`Catalog/Parts.swift`:** turbo sizes, supercharger types with a pulley ratio, four fuels with stoichiometry, safe AFR range, density and octane, dry and wet nitrous kits (50-300 hp), MAF sizes with a maximum airflow, the sensor set, and part levels 0-3 (Stock, Street, Sport, Race) with injector and pump sizes.
+- **`Model/EngineBuild.swift`:** the build record with a stock starter per layout, `sanitized()` and the derived geometry (displacement, mean piston speed, mechanical redline, engine envelope for car fitment).
+- **`Model/ECUMap.swift`:** placeholder, filled in by Task 5.
+- **`EngineBuildTests.swift`**, run red first. Beyond the plan, two tests pin the first Review Focus item: `sanitized()` replaces NaN and infinity with safe values, and clamps nitrous shot, arming rpm and supercharger pulley. Why: a corrupt save or a slider bug must never feed non-numbers into the model.
+
+### Verification
+- RED: run 43888069232 on the stubs failed on the assertions (starter sizes, sanitising, envelope), as expected.
+- GREEN: run 43888893361 passed all 18 tests on Linux.
+
+### Changed
+- **`.github/workflows/native.yml`:** only the Mac job cancels an older run on the same branch. Why: a quick second push was cancelling the Linux result of the first, so a commit could go untested.
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Parts.swift`, `Model/EngineBuild.swift`, `Model/ECUMap.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/EngineBuildTests.swift` (new), `.github/workflows/native.yml`, `CHANGELOG.md`
+
+## 16/11/2026 @ 14:32:12 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged. Item 2 (engine simulation in PistonForgeKit) stays open until the whole model is in. Still open: all native game code, previews, device checks and the store.
+
+### Goal
+Stage 1 plan, Task 1: the table of engine layouts the whole game reads (cylinder count, banks, bank angle, firing order, firing angles and crank pins), for I3, I4, I6, V6 60° and 90°, V8 cross-plane and flat-plane, V10, V12 and W16.
+
+### Added
+- **`Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift`**, written first and run red against an empty stub: every layout fires each cylinder once; even intervals for all even-fire layouts; the 90° V6 alternates 90/150; the flat-plane V8 alternates banks; the cross-plane V8 has the exact L,R,R,L,R,L,L,R pattern; known firing orders; the W16 makes no manufacturer claim; bank angles.
+- **`Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift`:** `EngineLayout` and `LayoutSpec`.
+
+### Changed
+- **`GoldenFixtureTests.swift`:** maps the old game's layout ids to the new ones and skips the rotary, which the new game drops. Why: the fixtures stay a plausibility check without forcing the old layout list back in.
+- **`Native/App/LoopTestView.swift`:** reads the cylinder count from the new table (the old `EngineConfig` is gone).
+
+### Removed
+- **`Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift`**, the temporary loop-test model, replaced by the layout table.
+
+### Verification
+- RED: run 43886763674 on the empty stub failed on the layout assertions (no compile error), as expected.
+- GREEN: run 43887402282 passed all 10 tests on Linux (Swift 6.1).
+
+### Files Touched
+- `Native/PistonForgeKit/Sources/PistonForgeKit/Catalog/Layouts.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/LayoutTests.swift` (new), `Native/PistonForgeKit/Tests/PistonForgeKitTests/GoldenFixtureTests.swift`, `Native/PistonForgeKit/Sources/PistonForgeKit/Engine.swift` (deleted), `Native/App/LoopTestView.swift`, `CHANGELOG.md`
+
+## 16/11/2026 @ 14:30:56 IST — "claude-opus-5-5"
+
+**Project completion: 13.04%**
+Basis: 6 of 46 items ticked in `docs/roadmap.md`, unchanged. This commit sets up the test pipeline; item 3 (UI tests drive the real loop) and item 22 (native CI green) stay open until the game exists and its runs are green. Still open: all native game code, previews, device checks and the store.
+
+### Goal
+Stage 1 plan, Task 0: split the native CI so cheap Linux tests run on every push to the work branch, while the expensive Mac job compiles once and runs UI tests on both an iPhone and an iPad simulator, only when asked or on `main`.
+
+### Added
+- **`Native/UITests/SmokeUITests.swift`:** launches the app, waits up to 20 s for text containing "Piston Forge" and saves a screenshot named `smoke-iphone` or `smoke-ipad`. Why: with no Mac, UI test screenshots are the only way to see the screens. This is the first one, and it proves the pipeline before real screens exist.
+- **`Native/ci/pick_sim.py`:** picks the newest iPhone 17-class and iPad Pro 13-inch simulator, falling back to any iPhone or iPad so a runner image change doesn't break the job.
+- **`Native/ci/name_attachments.py`:** renames exported screenshots to the names the tests gave them. It works loosely, because the export format on Xcode 26 is unverified (see `docs/research/2026-11-16-uitest.md`).
+- **Decisions from Zach, 16/11/2026, recorded in the spec, plan and `.zb/state.json`:**
+  - The main session writes the Swift; Haiku subagents review each task.
+  - Fix-up commits for a plan task share that task's changelog entry.
+  - An inline six (I6) joins the stage 1 layouts.
+
+### Changed
+- **`.github/workflows/native.yml`:**
+  - `sim-tests` now runs on every branch push touching `Native/` and uploads any engine sound files the tests write (from Task 8).
+  - The `app` job runs only on demand or on `main`, as one job, because Mac minutes cost about ten times Linux and are rounded up per job.
+  - It runs `build-for-testing` once, so a compile error fails in minutes, then `test-without-building` on each simulator, exports screenshots with `xcresulttool`, and keeps the `.xcresult` on failure for diagnosis.
+- **`Native/project.yml`:** adds the `PistonForgeUITests` target to the PistonForge scheme.
+- **`.gitignore`:** ignores `.superpowers/`, the plan-execution ledger.
+
+### Verification
+- Pushed to `native-stage-1`; the result of the Mac run is recorded in the next entry. Neither job has been run on this commit yet.
+
+### Files Touched
+- `.github/workflows/native.yml`, `Native/project.yml`, `Native/UITests/SmokeUITests.swift` (new), `Native/ci/pick_sim.py` (new), `Native/ci/name_attachments.py` (new)
+- `docs/superpowers/specs/2026-11-16-piston-forge-native-design.md`, `docs/superpowers/plans/2026-11-16-piston-forge-stage-1.md`, `.zb/state.json`, `.gitignore`, `CHANGELOG.md`
+
 ## 16/11/2026 @ 03:18:49 IST — "claude-opus-5-5"
 
 **Project completion: 13.04%**

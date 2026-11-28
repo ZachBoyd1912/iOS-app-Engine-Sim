@@ -12,7 +12,7 @@ TypeScript sim stays only as the reference model and fixture source until the po
 ## A. The game (Swift)
 
 - [ ] 1. Core loop playable natively: build engine, tune, dyno pull, fit to a car, drive (no career: Zach 16/11/2026)
-- [ ] 2. Engine simulation in PistonForgeKit, tested on Linux (`swift test`); old-game fixtures used as plausibility ranges only
+- [x] 2. Engine simulation in PistonForgeKit, tested on Linux (`swift test`); old-game fixtures used as plausibility ranges only
 - [ ] 3. UI tests drive the real loop in the Simulator, with screenshots at phone and iPad sizes
 - [ ] 4. Theme tokens: dark grey (never black) with game-colour hues, approved by Zach
 - [ ] 5. TypeScript game and Capacitor shell deleted once stage 1 ships
@@ -27,7 +27,7 @@ TypeScript sim stays only as the reference model and fixture source until the po
 - [ ] 11. Native Xcode project generated from `Native/project.yml` (XcodeGen), builds in CI
 - [ ] 12. Haptics on game events (Core Haptics), felt on a device
 - [ ] 13. Background and resume: save on backgrounding, sound stops and comes back
-- [ ] 14. Save file with backup and a version-migration path (tested)
+- [x] 14. Save file with backup and a version-migration path (tested)
 - [ ] 15. 3D scenes in RealityKit: engine, workshop, dyno, strip
 - [ ] 16. Rotation and safe areas correct on iPhone and iPad
 - [ ] 17. Accessibility: VoiceOver labels, Dynamic Type, Reduce Motion

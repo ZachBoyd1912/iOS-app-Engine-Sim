@@ -79,7 +79,10 @@ PC is on and the phone is reachable by USB or Wi-Fi. AltStore is the alternative
 companion app on the phone and a server on the PC, so it is more moving parts for one app.
 
 Proven so far: `** BUILD SUCCEEDED **` for `iphoneos` and the .ipa contents were unpacked and
-checked. NOT yet done: an actual install on a phone.
+checked. An actual install on the phone is now also done, and the PC can drive the device:
+on 22/11/2026 Piston Forge 0.2.0 was confirmed installed on Zach's iPhone 13 (iOS 27.2) and
+launched, screenshotted and log-sampled from Windows over USB. See `docs/ios-device-testing.md`.
+The manual Sideloadly signing step above still applies to every new build and every 7 days.
 
 ## Must be checked on a real iPhone (cannot be proven from Windows)
 

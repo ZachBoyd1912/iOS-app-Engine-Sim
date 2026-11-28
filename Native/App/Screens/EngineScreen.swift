@@ -1,0 +1,154 @@
+import PistonForgeKit
+import SwiftUI
+
+/// Home: the engine in 3D, its live readings, start/stop and the rev slider.
+struct EngineScreen: View {
+    let build: EngineBuild
+    let state: EngineState
+    let warnings: [Warning]
+    @Binding var throttle: Double
+    var preview = false
+    var onStartStop: () -> Void = {}
+    var onSelectPart: (PartGroup) -> Void = { _ in }
+    var onOpenGarage: () -> Void = {}
+    var onOpenSettings: () -> Void = {}
+    /// Extra panel above the readouts (the exhaust and rev-limiter choices live here).
+    var accessory: () -> AnyView = { AnyView(EmptyView()) }
+
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private static let previewRules = "Rules: one accent (Start), status = icon + word, 44 pt targets, persistent banner for warnings"
+
+    var body: some View {
+        ZStack {
+            Theme.background.ignoresSafeArea()
+            if typeSize.isAccessibilitySize { largeTextLayout } else { standardLayout }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screen.engine")
+    }
+
+    /// Accessibility text sizes: one scrolling column. The standard layout overlays the header on
+    /// the fixed 360 pt stage, and at these sizes the name, subtitle and PREVIEW tag drew over
+    /// each other and the engine, with the name under the status bar (largetext-engine,
+    /// run 45931568847).
+    private var largeTextLayout: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.m) {
+                header
+                if preview { PreviewTag(rules: Self.previewRules) }
+                EngineViewport(build: build, state: state, onSelect: onSelectPart)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 300)
+                    .clipped()
+                WarningBanner(warnings: warnings)
+                accessory()
+                controls
+            }
+            .padding(.horizontal, Theme.Space.l)
+            .padding(.top, Theme.Space.s)
+            // Clear the floating tab bar.
+            .padding(.bottom, 96)
+        }
+    }
+
+    private var standardLayout: some View {
+            VStack(spacing: 0) {
+                // Fixed-height, clipped 3D stage. It used to be an unframed ZStack child that
+                // ignored the horizontal safe area, which let content bleed and pushed the
+                // primary action off a 4.7" screen.
+                ZStack(alignment: .top) {
+                    EngineViewport(build: build, state: state, onSelect: onSelectPart)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 360)
+                        .clipped()
+                    VStack(spacing: Theme.Space.s) {
+                        header
+                        if preview { PreviewTag(rules: Self.previewRules) }
+                    }
+                    .padding(.horizontal, Theme.Space.l)
+                    .padding(.vertical, Theme.Space.s)
+                }
+                // Everything actionable scrolls, so Start is always reachable.
+                ScrollView {
+                    VStack(spacing: Theme.Space.m) {
+                        WarningBanner(warnings: warnings)
+                        accessory()
+                        controls
+                    }
+                    .padding(.horizontal, Theme.Space.l)
+                    .padding(.top, Theme.Space.m)
+                    // Clear the floating tab bar; without this the primary action sits under it.
+                    .padding(.bottom, 96)
+                }
+            }
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: Theme.Space.m) {
+            Button(action: onOpenGarage) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(build.name)
+                        .font(.title2.weight(.heavy))
+                        .foregroundStyle(Theme.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("label.engineName")
+                    Text("\(build.layout.spec.name) · \(build.induction.displayName) · \(Int(build.displacementCc.rounded())) cc")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, minHeight: Theme.hitTarget, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens your saved engines")
+            Button(action: onOpenSettings) {
+                Image(systemName: "gearshape.fill")
+                    .font(.title3)
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: Theme.hitTarget, height: Theme.hitTarget)
+                    .background(Theme.surface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Settings")
+        }
+    }
+
+    private var controls: some View {
+        VStack(spacing: Theme.Space.m) {
+            Grid(horizontalSpacing: Theme.Space.m, verticalSpacing: Theme.Space.s) {
+                GridRow {
+                    Readout(label: "Engine speed", value: "\(Int(state.rpm.rounded()))", unit: "rpm")
+                        .accessibilityIdentifier("label.rpm")
+                    Readout(label: "Power", value: "\(Int(max(state.powerHp, 0).rounded()))", unit: "hp")
+                }
+                GridRow {
+                    Readout(label: "Air-fuel", value: state.afr > 0 ? String(format: "%.1f", state.afr) : "–", unit: "AFR", status: afrStatus)
+                    Readout(label: "Boost", value: String(format: "%.1f", state.boostPsi), unit: "psi")
+                }
+            }
+            if state.isRunning {
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text("Rev: \(Int((throttle * 100).rounded()))% throttle")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                    Slider(value: $throttle, in: 0...1)
+                        .tint(Theme.accent)
+                        .frame(minHeight: Theme.hitTarget)
+                        .accessibilityLabel("Throttle")
+                        .accessibilityIdentifier("slider.throttle")
+                }
+            }
+            PrimaryButton(title: state.isRunning ? "Stop engine" : "Start engine", systemImage: state.isRunning ? "stop.fill" : "power", action: onStartStop)
+                .accessibilityIdentifier("button.start")
+        }
+        .padding(Theme.Space.l)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.l))
+    }
+
+    private var afrStatus: Status? {
+        guard state.isRunning, state.afr > 0, state.loadKpa > 90 else { return nil }
+        return build.fuel.spec.safeAfr.contains(state.afr) ? .good : .bad
+    }
+}

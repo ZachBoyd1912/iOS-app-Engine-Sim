@@ -117,6 +117,71 @@
       "date": "2026-11-16T03:11:24+00:00",
       "decision": "\"design approved\": approved docs/superpowers/specs/2026-11-16-piston-forge-native-design.md. Simulation and physics code may start; each stage's screen code waits for its previews to be approved.",
       "who": "zach"
+    },
+    {
+      "date": "2026-11-16T14:28:30+00:00",
+      "decision": "Agent's reading of Zach's answers (1: 'your recommendation', 2: 'yes', 4: 'yes add inline six'): execute the stage 1 plan; main session writes the Swift, Haiku subagents review each task, advisor at key points.",
+      "who": "agent"
+    },
+    {
+      "date": "2026-11-16T14:28:30+00:00",
+      "decision": "Changelog rule change approved: compile-fix commits on the same plan task share (amend) that task's changelog entry.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-16T14:28:30+00:00",
+      "decision": "Add an inline six (I6) to the stage 1 layouts.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Stage 1 previews NOT approved. iPhone landscape layouts 'absolutely terrible': landscape must use the width to show more detail and data.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Research three reference games (Rev Lab Engine Simulator by Guy Coller/Vibilize OU; Engine Simulator by Mohammed Said ATA; Tuning Simulator by Scott Busby) for depth and presentation. Game must be full and in-depth, not rudimentary.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Every engine fully 3D-modelled with moving pistons, valves/rockers and exhaust heat glow under load; use existing internet models where licensable (reverses the 'built in code only' call).",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-17T16:32:17+00:00",
+      "decision": "Gearboxes: 5- and 6-speed manuals plus several automatics: sequential, 7-speed dual-clutch, 8-speed torque-converter automatic.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-18T02:54:59+00:00",
+      "decision": "Engine sound will be powered by engine-sim (AngeTheGreat, MIT), not the hand-made voice or enginesound. Needs exhaust parts (headers, pipes, cats, resonators, mufflers), rev limiters and pops, turbo/blower sounds. Sound-only role; our Swift model keeps the numbers unless the feasibility spike says otherwise.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-18T02:54:59+00:00",
+      "decision": "3D engines: one consistent kit covering every engine's internals and externals at all rpm, with correct timing and firing orders; use free/open kits wherever licensable. Career: later. Orientation: portrait is the default and preferred; landscape allowed. Gearbox list approved (5MT, 6MT, 6-speed sequential, 7-speed dual-clutch, 8-speed automatic).",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-18T02:54:59+00:00",
+      "decision": "Wants the LARGEST engine list (RevLab has 21; aim far above) and the largest gearbox, car and drive-mode (Comfort/Eco/Sport/Sport+) lists. Garage/tuning side to follow Tuning Simulator's dense cockpit, fitted into portrait. Five research agents dispatched 18/11.",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-18T15:03:00+00:00",
+      "decision": "Run the engine-sim test (throwaway spike branch, free CI) and write our own engine definitions and exhaust sounds from our catalogue instead of shipping upstream's engines/IRs (licence unstated).",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-18T17:16:00+00:00",
+      "decision": "Stage cut declined: build as much as possible tonight for a full build (sound, 16 layouts, tabs, dyno, gearboxes, drive). Every component documented with a percentage of completion (docs/implementation-status.md) so rushed parts can be redone properly later. C++ (engine-sim) inside the Swift app approved. Phone ran the engine sound test fine (no heat or stutter problems reported).",
+      "who": "zach"
+    },
+    {
+      "date": "2026-11-18T16:30:00+00:00",
+      "decision": "Spike result (agent): engine-sim's sound core builds and renders on Linux, macOS arm64, iOS Simulator and as iPhone arm64 libraries (after small clang patches; Boost was needed by piranha, research missed it). CI runners: 1.0-2.2x real time, ~1.3-1.9 cores, ~45 MB. Phone test app built; verdict pending Zach's listening and heat test.",
+      "who": "agent"
     }
   ],
   "legacy_pricing": false,

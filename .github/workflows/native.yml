@@ -1,81 +1,262 @@
 name: Native iOS (Swift)
 
 # The native Swift app. Two jobs:
-#  - sim-tests (Linux, cheap): `swift test` on PistonForgeKit, the pure-Swift simulation,
-#    checked against golden fixtures exported from the TypeScript sim.
-#  - app (macOS, billed at a higher rate on private repos): generate the Xcode project,
-#    build for the Simulator, launch it and screenshot it (the only way to see the UI without
-#    a Mac), then build an unsigned .ipa for sideloading with a free Apple ID.
-# macOS runs only when Native/** or this file changes, or on demand.
+#  - sim-tests (Linux, cheap): `swift test` on PistonForgeKit, the pure-Swift simulation.
+#    Runs on every push to any branch that touches Native/ or this file.
+#  - app (macOS, about ten times the Linux price per minute): generate the Xcode project,
+#    compile once, run the UI tests on an iPhone and an iPad simulator from that one build,
+#    export their screenshots (the only way to see the screens without a Mac), then build an
+#    unsigned .ipa for sideloading. Runs only on demand or on main, and as one job, because
+#    macOS minutes are rounded up per job.
 
 on:
   workflow_dispatch:
+    inputs:
+      only_testing:
+        description: 'Run only this UI test (e.g. PistonForgeUITests/ScreenshotUITests/testEveryScreen); empty runs all'
+        required: false
+        default: ''
+      devices:
+        description: 'Simulators to test on'
+        required: false
+        default: 'both'
+        type: choice
+        options: [both, iphone, ipad]
+      ipa_only:
+        description: 'Skip the Simulator build and UI tests; only build the phone .ipa (faster)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      runner:
+        description: 'macOS runner (GitHub sometimes has no arm64 capacity; Intel is the fallback)'
+        required: false
+        default: 'macos-26'
+        type: choice
+        options: [macos-26, macos-15, macos-15-intel]
   push:
-    branches: [main]
     paths:
       - 'Native/**'
       - '.github/workflows/native.yml'
 
-concurrency:
-  group: native-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
-  contents: read
+  # write: the IPA is published as a release asset (Actions artifact storage is
+  # quota-capped per account and blocked device testing on 22/11/2026).
+  contents: write
 
 jobs:
   sim-tests:
     runs-on: ubuntu-latest
     container: swift:6.1
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: swift test
         working-directory: Native/PistonForgeKit
+        env:
+          PF_WAV_DIR: ${{ github.workspace }}/engine-sounds
+          PF_SCRIPT_DIR: ${{ github.workspace }}/engine-scripts
         run: swift test
+      - name: Upload engine-sim scripts
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-scripts
+          path: engine-scripts/
+          if-no-files-found: ignore
+
+      - name: Upload engine sounds
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-sounds
+          path: engine-sounds/
+          if-no-files-found: ignore
+
+  # Loads every generated engine in engine-sim and checks it revs freely (so its firing order, cams
+  # and bank offsets are consistent). Also keeps the audio for listening.
+  sound-check:
+    needs: sim-tests
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ES_PIN: 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-scripts
+          path: scripts
+      - name: Tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake ninja-build bison flex
+      - name: Fetch and patch engine-sim
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+          sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+      - name: Build
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/build" -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/build" --target esim_render > "$RUNNER_TEMP/build.log" 2>&1 || { grep -E "error:|FAILED|undefined" "$RUNNER_TEMP/build.log" | head -40; exit 1; }
+      - name: Free-run every engine
+        working-directory: ${{ runner.temp }}/es/assets
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          : > "$GITHUB_WORKSPACE/out/summary.txt"
+          for sign in pos neg; do
+            for dir in "$GITHUB_WORKSPACE"/scripts/$sign/*/; do
+              layout=$(basename "$dir")
+              "$RUNNER_TEMP/build/esim_render" "$dir/sport/main.mr" "$GITHUB_WORKSPACE/out/$sign-$layout.wav" "$sign-$layout" free 2>&1 \
+                | grep -E "FREERUN|ENGINE|COMPILE|cannot|script" | tee -a "$GITHUB_WORKSPACE/out/summary.txt" || echo "$sign-$layout: NO OUTPUT (crash or compile error)" | tee -a "$GITHUB_WORKSPACE/out/summary.txt"
+            done
+          done
+          cat "$GITHUB_WORKSPACE/out/summary.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: engine-sim-render-check
+          path: out/
+          if-no-files-found: ignore
 
   app:
     needs: sim-tests
-    runs-on: macos-26
-    timeout-minutes: 40
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ${{ github.event.inputs.runner || 'macos-26' }}
+    timeout-minutes: 60
+    # Only the Mac job cancels an older run on the same branch; Linux runs are cheap and each
+    # commit's result is kept.
+    concurrency:
+      group: native-app-${{ github.ref }}
+      cancel-in-progress: true
     defaults:
       run:
         working-directory: Native
     steps:
       - uses: actions/checkout@v4
 
+      # Contrast is checked from the colour tokens here, not by Xcode's audit, which misjudged
+      # text on the gradient background (every flagged element measured >= 6.55:1).
+      - name: Colour contrast (tokens)
+        run: python3 ci/check_contrast.py App/Theme.swift
+
       - name: Tools
         run: |
           brew install xcodegen
           xcodebuild -version
+          uname -m
 
+
+      - name: Build engine-sim for iPhone and Simulator
+        env:
+          ES_PIN: 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
+          IPA_ONLY: ${{ github.event.inputs.ipa_only }}
+        run: |
+          brew install cmake ninja bison
+          export PATH="$(brew --prefix bison)/bin:$PATH"  # flex: Apple's own 2.6.4 (brew's 2.6.9 breaks the old scanner)
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+          sh EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+          sdks="iphoneos"
+          [ "$IPA_ONLY" != "true" ] && sdks="iphoneos iphonesimulator"
+          for sdk in $sdks; do
+            cmake -S EngineSimSpike -B "$RUNNER_TEMP/b-$sdk" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$sdk -DCMAKE_OSX_ARCHITECTURES=arm64 \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+              -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+            cmake --build "$RUNNER_TEMP/b-$sdk" --target esim_bridge > "$RUNNER_TEMP/$sdk.log" 2>&1 \
+              || { grep -E "error:|FAILED" "$RUNNER_TEMP/$sdk.log" | head -40; exit 1; }
+            mkdir -p "engine-libs/$sdk"
+            cp "$RUNNER_TEMP/b-$sdk"/*.a "engine-libs/$sdk/"
+          done
+          # The engine-sim script library and its sample exhaust recordings (the personal-test
+          # "reference" exhaust only); engine/assets is the working folder engine-sim starts in.
+          mkdir -p engine-resources/engine/assets
+          cp -R "$RUNNER_TEMP/es/es" engine-resources/engine/es
+          find engine-resources -name '*.bak' -delete
+          echo "working folder for engine-sim" > engine-resources/engine/assets/README.txt
+          ls -R engine-libs | head -20; du -sh engine-resources
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build for iOS Simulator
-        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build
+      - name: Compile app and UI tests once
+        if: ${{ github.event.inputs.ipa_only != 'true' }}
+        # ARCHS=arm64: the engine-sim library above is built arm64-only, and a generic Simulator
+        # destination otherwise also links x86_64, which fails with undefined _esim_* symbols.
+        # Runners and the AI testers both use Apple-silicon simulators, so x86_64 is never needed.
+        run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build-for-testing
 
-      - name: Launch in the Simulator and screenshot
+      - name: UI tests on iPhone and iPad
+        if: ${{ github.event.inputs.ipa_only != 'true' }}
+        id: uitests
+        env:
+          ONLY_TESTING: ${{ github.event.inputs.only_testing }}
+          DEVICES: ${{ github.event.inputs.devices || 'both' }}
         run: |
-          set -x
+          set -o pipefail
           xcrun simctl list devices available
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r,l in d.items() if 'iOS' in r for x in l if x['name'].startswith('iPhone')))")
-          xcrun simctl boot "$DEVICE"
-          xcrun simctl bootstatus "$DEVICE" -b
-          xcrun simctl install "$DEVICE" build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
-          xcrun simctl launch "$DEVICE" ie.zbautomations.pistonforge
-          sleep 12
-          mkdir -p shots
-          xcrun simctl io "$DEVICE" screenshot shots/iphone-portrait.png
-          ls -l shots
+          status=0
+          kinds="iphone ipad"
+          [ "$DEVICES" = "iphone" ] && kinds="iphone"
+          [ "$DEVICES" = "ipad" ] && kinds="ipad"
+          only=""
+          [ -n "$ONLY_TESTING" ] && only="-only-testing:$ONLY_TESTING"
+          for kind in $kinds; do
+            udid=$(xcrun simctl list devices available -j | python3 ci/pick_sim.py "$kind")
+            xcrun simctl boot "$udid" || true
+            xcrun simctl bootstatus "$udid" -b
+            sh ci/cpu_sampler.sh "cpu/$kind" &
+            # One retry per failed test: the shared 3-core runner sometimes fails Xcode's own app
+            # launch or terminate (run 46092990363). A real bug fails twice and still fails the job.
+            xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -derivedDataPath build/sim \
+              -destination "id=$udid" -resultBundlePath "build/$kind.xcresult" $only \
+              -retry-tests-on-failure -test-iterations 2 test-without-building 2>&1 | tee "build/$kind-test.log" || status=1
+            touch "cpu/$kind/stop"
+            # Name every test that only passed on its retry, so flakes stay visible.
+            python3 ci/list_retries.py "build/$kind-test.log" "$kind"
+            mkdir -p "shots/$kind"
+            xcrun xcresulttool export attachments --path "build/$kind.xcresult" --output-path "shots/$kind" || status=1
+            python3 ci/name_attachments.py "shots/$kind"
+            xcrun simctl shutdown "$udid" || true
+          done
+          ls -lR shots
+          # The phone build below still runs when a test fails; the last step fails the job.
+          echo "status=$status" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Simulator screenshot
+      - name: Upload screenshots
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: native-simulator-screenshot
+          name: native-screenshots
           path: Native/shots/
           if-no-files-found: warn
+
+      - name: Upload CPU samples
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-cpu-samples
+          path: Native/cpu/
+          if-no-files-found: ignore
+
+      - name: Upload test results
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-xcresult
+          path: Native/build/*.xcresult
+          if-no-files-found: ignore
 
       - name: Build for iPhone (unsigned)
         run: xcodebuild -project PistonForge.xcodeproj -scheme PistonForge -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
@@ -89,8 +270,57 @@ jobs:
           unzip -l PistonForge-native-unsigned.ipa | grep -E "PrivacyInfo|Assets.car|PistonForge$"
 
       - name: Upload unsigned .ipa
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: PistonForge-native-unsigned-ipa
           path: Native/build/ipa/PistonForge-native-unsigned.ipa
           if-no-files-found: error
+
+      - name: Publish unsigned .ipa to the device-test release
+        # Actions artifact storage is capped per account and the quota is recalculated
+        # only every 6-12 hours, so once it is hit every upload fails for the rest of
+        # the day - that is exactly what blocked device testing on 22/11/2026.
+        # Release assets are not counted against that quota. Pull it on the PC with:
+        #   gh release download device-test -p "*.ipa" -D builds/device-latest --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IPA="$GITHUB_WORKSPACE/Native/build/ipa/PistonForge-native-unsigned.ipa"
+          ls -lh "$IPA"
+          gh release view device-test >/dev/null 2>&1 || gh release create device-test \
+            --title "Device test builds" \
+            --notes "Unsigned Piston Forge IPA for sideloading from Windows. Overwritten on every device build; not a user-facing release."
+          gh release upload device-test "$IPA" --clobber
+          gh release view device-test --json assets -q '.assets[] | .name + " " + (.size|tostring) + " bytes"'
+
+      - name: Publish Simulator app to the device-test release
+        # For the AI testers repo (mobile-agent-testers template): it downloads this public
+        # asset with no token instead of rebuilding engine-sim, and release assets do not count
+        # against the artifact quota. The .sha asset ties each tester report to a commit.
+        if: ${{ github.event.inputs.ipa_only != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APP=build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
+          archs=$(lipo -archs "$APP/PistonForge")
+          echo "Simulator app archs: $archs"
+          case " $archs " in *" arm64 "*) ;; *) echo "::warning::no arm64 slice, not publishing"; exit 0 ;; esac
+          mkdir -p build/simzip
+          ditto -c -k --keepParent "$APP" build/simzip/PistonForge-simulator-app.zip
+          echo "$GITHUB_SHA" > build/simzip/PistonForge-simulator-app.sha
+          gh release upload device-test build/simzip/PistonForge-simulator-app.zip build/simzip/PistonForge-simulator-app.sha --clobber
+          ls -lh build/simzip
+
+      - name: Upload Simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: PistonForge-simulator-app
+          path: Native/build/sim/Build/Products/Debug-iphonesimulator/PistonForge.app
+          if-no-files-found: warn
+
+      - name: Fail if any UI test failed
+        if: steps.uitests.outputs.status != '' && steps.uitests.outputs.status != '0'
+        run: |
+          echo "UI tests failed: see the native-xcresult artifact and the screenshots."
+          exit 1

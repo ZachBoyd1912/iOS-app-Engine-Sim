@@ -1,0 +1,121 @@
+  XCUIElementTypeApplication | L=Tuning Simulator | V= | r=-454,454 844x390
+                      XCUIElementTypeOther | L=Tuning Simulator | V= | r=-454,454 844x390
+                        XCUIElementTypeOther | L=navigation | V= | r=-454,454 105x390
+                          XCUIElementTypeStaticText | L=TUNING | V=TUNING | r=-392,496 27x10
+                          XCUIElementTypeStaticText | L=SIMULATOR | V=SIMULATOR | r=-398,503 39x10
+                          XCUIElementTypeButton | L=Garage | V= | r=-404,519 51x46
+                          XCUIElementTypeButton | L=Tune | V= | r=-404,568 51x46
+                          XCUIElementTypeButton | L=Dyno | V= | r=-404,617 51x46
+                          XCUIElementTypeButton | L=Logs | V= | r=-404,666 51x46
+                          XCUIElementTypeButton | L=Learn | V= | r=-404,715 51x46
+                          XCUIElementTypeButton | L=Career | V= | r=-404,764 51x46
+                          XCUIElementTypeButton | L=Setup | V= | r=-404,817 51x46
+                        XCUIElementTypeOther | L=banner | V= | r=-349,454 584x36
+                          XCUIElementTypeButton | L=Turbo Four | V= | r=-339,463 70x17
+                          XCUIElementTypeButton | L=Base map | V= | r=-262,459 75x25
+                          XCUIElementTypeStaticText | L=KNOCK | V=KNOCK | r=-154,465 30x14
+                          XCUIElementTypeStaticText | L=LEAN | V=LEAN | r=-109,465 24x14
+                          XCUIElementTypeStaticText | L=FUEL | V=FUEL | r=-70,465 24x14
+                          XCUIElementTypeStaticText | L=BOOST | V=BOOST | r=-154,506 30x14
+                          XCUIElementTypeButton | L=Daily | V= | r=5,458 65x27
+                          XCUIElementTypeStaticText | L=OFF | V=OFF | r=85,463 21x17
+                          XCUIElementTypeButton | L=X-ray | V= | r=121,458 50x27
+                          XCUIElementTypeButton | L=View | V= | r=178,458 47x27
+                        XCUIElementTypeOther | L=main | V= | r=-349,490 584x354
+                          XCUIElementTypeOther | L=WIDEBAND | V= | r=-332,633 48x13
+                            XCUIElementTypeStaticText | L=WIDEBAND | V=WIDEBAND | r=-332,633 48x13
+                          XCUIElementTypeStaticText | L=-- | V=-- | r=-332,646 29x34
+                          XCUIElementTypeStaticText | L=AFR target 14.8 | V=AFR target 14.8 | r=-298,660 91x15
+                          XCUIElementTypeOther | L=POWER | V= | r=-332,726 91x13
+                            XCUIElementTypeStaticText | L=POWER | V=POWER | r=-332,726 29x13
+                          XCUIElementTypeStaticText | L=0 | V=0 | r=-332,738 11x26
+                          XCUIElementTypeStaticText | L=hp | V=hp | r=-319,747 13x14
+                          XCUIElementTypeOther | L=TORQUE | V= | r=-219,726 92x13
+                            XCUIElementTypeStaticText | L=TORQUE | V=TORQUE | r=-219,726 35x13
+                          XCUIElementTypeStaticText | L=0 | V=0 | r=-219,738 12x26
+                          XCUIElementTypeStaticText | L=Nm | V=Nm | r=-205,747 16x14
+                          XCUIElementTypeOther | L=TIMING | V= | r=-332,779 91x13
+                            XCUIElementTypeStaticText | L=TIMING | V=TIMING | r=-332,779 35x13
+                          XCUIElementTypeStaticText | L=0.0 | V=0.0 | r=-332,791 26x21
+                          XCUIElementTypeStaticText | L=° | V=° | r=-304,796 5x14
+                          XCUIElementTypeOther | L=KNOCK | V= | r=-219,779 92x13
+                            XCUIElementTypeStaticText | L=KNOCK | V=KNOCK | r=-219,779 29x13
+                          XCUIElementTypeStaticText | L=0.0 | V=0.0 | r=-219,791 26x21
+                          XCUIElementTypeStaticText | L=° | V=° | r=-191,796 6x14
+                          XCUIElementTypeOther | L=EGT | V= | r=-332,827 91x13
+                            XCUIElementTypeStaticText | L=EGT | V=EGT | r=-332,827 18x13
+                          XCUIElementTypeStaticText | L=25 | V=25 | r=-332,839 17x21
+                          XCUIElementTypeStaticText | L=°C | V=°C | r=-313,844 12x14
+                          XCUIElementTypeOther | L=IAT | V= | r=-219,827 92x13
+                            XCUIElementTypeStaticText | L=IAT | V=IAT | r=-219,827 18x13
+                          XCUIElementTypeStaticText | L=31 | V=31 | r=-219,839 18x21
+                          XCUIElementTypeStaticText | L=°C | V=°C | r=-199,844 12x14
+                          XCUIElementTypeOther | L=COOLANT | V= | r=-332,875 91x13
+                            XCUIElementTypeStaticText | L=COOLANT | V=COOLANT | r=-332,875 40x13
+                          XCUIElementTypeStaticText | L=53 | V=53 | r=-332,887 17x21
+                          XCUIElementTypeStaticText | L=°C | V=°C | r=-313,892 12x14
+                          XCUIElementTypeOther | L=FUEL | V= | r=-219,875 92x13
+                            XCUIElementTypeStaticText | L=FUEL | V=FUEL | r=-219,875 24x13
+                          XCUIElementTypeStaticText | L=0.0 | V=0.0 | r=-219,887 26x21
+                          XCUIElementTypeStaticText | L=psi | V=psi | r=-191,892 14x14
+                          XCUIElementTypeStaticText | L=sensor | V=sensor | r=-219,907 33x14
+                          XCUIElementTypeOther | L=INJ DUTY | V= | r=-332,936 91x13
+                            XCUIElementTypeStaticText | L=INJ DUTY | V=INJ DUTY | r=-332,936 46x13
+                          XCUIElementTypeStaticText | L=0 | V=0 | r=-332,948 9x21
+                          XCUIElementTypeStaticText | L=% | V=% | r=-321,953 10x14
+                          XCUIElementTypeOther | L=OIL | V= | r=-219,936 92x13
+                            XCUIElementTypeStaticText | L=OIL | V=OIL | r=-219,936 18x13
+                          XCUIElementTypeStaticText | L=0 | V=0 | r=-219,948 9x21
+                          XCUIElementTypeStaticText | L=psi | V=psi | r=-208,953 15x14
+                          XCUIElementTypeStaticText | L=51°C | V=51°C | r=-219,968 23x14
+                          XCUIElementTypeOther | L=TANK | V= | r=-332,997 91x13
+                            XCUIElementTypeStaticText | L=TANK | V=TANK | r=-332,997 23x13
+                          XCUIElementTypeStaticText | L=E0 | V=E0 | r=-332,1009 17x21
+                          XCUIElementTypeStaticText | L=25 L · 41°C | V=25 L · 41°C | r=-332,1029 60x14
+                          XCUIElementTypeOther | L=HEALTH | V= | r=-219,997 92x13
+                            XCUIElementTypeStaticText | L=HEALTH | V=HEALTH | r=-219,997 35x13
+                          XCUIElementTypeStaticText | L=100 | V=100 | r=-219,1009 26x21
+                          XCUIElementTypeStaticText | L=% | V=% | r=-191,1014 11x14
+                          XCUIElementTypeStaticText | L=tap for detail | V=tap for detail | r=-219,1029 77x14
+                          XCUIElementTypeButton | L=Power | V= | r=-101,649 78x21
+                          XCUIElementTypeButton | L=Mixture | V= | r=-21,649 78x21
+                          XCUIElementTypeButton | L=Boost | V= | r=59,649 78x21
+                          XCUIElementTypeButton | L=Timing | V= | r=139,649 78x21
+                          XCUIElementTypeButton | L=Records | V= | r=-100,616 58x25
+                          XCUIElementTypeButton | L=Events | V= | r=-39,616 52x25
+                          XCUIElementTypeButton | L=Expand | V= | r=16,616 29x25
+                          XCUIElementTypeButton | L=Hide | V= | r=48,616 29x25
+                          XCUIElementTypeButton | L=Pull | V= | r=80,613 44x30
+                          XCUIElementTypeButton | L=239 hp Run 20 · Base map | V= | r=-104,787 163x24
+                          XCUIElementTypeButton | L=237 hp Run 21 · Base map | V= | r=63,787 161x24
+                          XCUIElementTypeButton | L=283 hp Run 22 · Base map | V= | r=228,787 163x24
+                          XCUIElementTypeButton | L=282 hp Run 23 · Base map | V= | r=395,787 163x24
+                          XCUIElementTypeButton | L=291 hp Run 24 · Base map | V= | r=562,787 163x24
+                          XCUIElementTypeButton | L=288 hp Run 25 · Base map | V= | r=729,787 162x24
+                          XCUIElementTypeButton | L=285 hp Run 26 · Base map | V= | r=896,787 163x24
+                          XCUIElementTypeButton | L=288 hp Run 27 · Base map | V= | r=1063,787 162x24
+                          XCUIElementTypeButton | L=285 hp Run 28 · Base map | V= | r=1229,787 163x24
+                          XCUIElementTypeButton | L=163 hp Run 29 · Base map | V= | r=1396,787 163x24
+                        XCUIElementTypeOther | L=complementary | V= | r=235,454 155x390
+                          XCUIElementTypeButton | L=KEY | V= | r=243,465 47x30
+                          XCUIElementTypeButton | L=START | V= | r=294,459 42x42
+                          XCUIElementTypeOther | L=THR | V= | r=254,505 20x12
+                            XCUIElementTypeStaticText | L=THR | V=THR | r=254,505 20x12
+                            XCUIElementTypeStaticText | L=0% | V=0% | r=257,520 14x16
+                          XCUIElementTypeOther | L=DYNO | V= | r=291,505 45x12
+                            XCUIElementTypeStaticText | L=DYNO | V=DYNO | r=301,505 25x12
+                          XCUIElementTypeButton | L=Free | V= | r=294,524 39x22
+                          XCUIElementTypeButton | L=Hold | V= | r=294,548 39x22
+                          XCUIElementTypeButton | L=Pull | V= | r=294,572 39x22
+                          XCUIElementTypeButton | L=Increase | V= | r=291,601 45x40
+                          XCUIElementTypeStaticText | L=3000 | V=3000 | r=299,646 29x17
+                          XCUIElementTypeStaticText | L=rpm | V=rpm | r=305,666 17x10
+                          XCUIElementTypeButton | L=Decrease | V= | r=291,681 45x40
+                          XCUIElementTypeButton | L=0 | V= | r=243,793 29x26
+                          XCUIElementTypeButton | L=50 | V= | r=275,793 29x26
+                          XCUIElementTypeButton | L=WOT | V= | r=307,793 29x26
+              XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=323.333333333333,501.33 30x295.34
+              XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=-406.67,811 749.34x30
+              XCUIElementTypeOther | L=Vertical scroll bar, 1 page | V=0% | r=323.333333333333,501.33 30x295.34
+              XCUIElementTypeOther | L=Horizontal scroll bar, 1 page | V=0% | r=-406.67,811 749.34x30
+

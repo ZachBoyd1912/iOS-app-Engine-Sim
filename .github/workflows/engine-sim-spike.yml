@@ -1,0 +1,203 @@
+name: engine-sim spike (throwaway)
+
+# Branch spike/engine-sim-ios. Proves, in order, that engine-sim's sound core:
+#  1. builds and renders audio on Linux (cheap, fast to iterate),
+#  2. builds for macOS arm64, the iOS Simulator and a real iPhone (arm64 static library),
+#  3. and how much CPU it costs (real-time factor, cores used, memory).
+# Nothing here ships. Upstream is fetched at a pinned commit and patched by prepare.sh.
+
+# Dispatch only works for workflows on the default branch, so this branch triggers on push.
+# The Mac job (costs more) runs only when the commit message contains [mac].
+on:
+  push:
+    branches: [spike/engine-sim-ios]
+    paths:
+      - 'Native/EngineSimSpike/**'
+      - '.github/workflows/engine-sim-spike.yml'
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: 'Also run the macOS / iOS job'
+        required: false
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+      runner:
+        description: 'macOS runner'
+        required: false
+        default: 'macos-15'
+        type: choice
+        options: [macos-26, macos-15]
+
+permissions:
+  contents: read
+
+env:
+  ES_PIN: 85f7c3b959a908ed5232ede4f1a4ac7eafe6b630
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake ninja-build bison flex
+      - name: Fetch pinned engine-sim
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+      - name: Prepare
+        run: sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+      - name: Build
+        run: |
+          set -o pipefail
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/build" -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/build" -- -k 0 > "$RUNNER_TEMP/build.log" 2>&1 || { grep -E "error:|FAILED|undefined|multiple definition" "$RUNNER_TEMP/build.log" | sort -u | head -80; exit 1; }
+      - name: Render engines
+        working-directory: ${{ runner.temp }}/es/assets
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          B="$RUNNER_TEMP/build/esim_render"
+          run() { timeout 600 "$B" "main_$1.mr" "$GITHUB_WORKSPACE/out/linux-$1.wav" "$1" "$2" || { echo "FAILED $1"; cat error_log.log 2>/dev/null; true; }; }
+          run 01_subaru_ej25_eh    "900:0.05:2,3000:0.3:4,6000:1.0:4"
+          run 08_ferrari_f136_v8   "1000:0.05:2,3000:0.3:4,6000:1.0:4"
+          run 10_lfa_v10           "1000:0.05:2,4000:0.3:4,8000:1.0:4"
+          run 12_ferrari_412_t2    "3000:0.1:2,8000:0.5:4,12000:1.0:4"
+          ls -l "$GITHUB_WORKSPACE/out"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-sim-linux
+          path: out/
+          if-no-files-found: ignore
+
+  mac:
+    needs: linux
+    if: github.event.inputs.mac == 'true' || contains(github.event.head_commit.message, '[mac]')
+    runs-on: ${{ github.event.inputs.runner || 'macos-15' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          brew install cmake ninja bison flex
+          uname -m
+          xcodebuild -version
+      - name: Fetch pinned engine-sim
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+      - name: Prepare (host bison/flex generate the parser)
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+
+      - name: Build for macOS arm64 and render
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/b-mac" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/b-mac" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
+          mkdir -p out
+          cd "$RUNNER_TEMP/es/assets"
+          run() { "$RUNNER_TEMP/b-mac/esim_render" "main_$1.mr" "$GITHUB_WORKSPACE/out/mac-$1.wav" "$1" "$2" || { echo "FAILED $1"; cat error_log.log 2>/dev/null; true; }; }
+          run 08_ferrari_f136_v8 "1000:0.05:2,3000:0.3:4,6000:1.0:4"
+          run 12_ferrari_412_t2  "3000:0.1:2,8000:0.5:4,12000:1.0:4"
+
+      - name: Build for the iOS Simulator (arm64)
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/b-sim" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/b-sim" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
+
+      - name: Run inside the iOS Simulator
+        continue-on-error: true
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 "iPhone" | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          echo "simulator $UDID"
+          xcrun simctl boot "$UDID" || true
+          export SIMCTL_CHILD_ES_ASSETS="$RUNNER_TEMP/es/assets"
+          xcrun simctl spawn "$UDID" "$RUNNER_TEMP/b-sim/esim_render" \
+            main_08_ferrari_f136_v8.mr "$GITHUB_WORKSPACE/out/ios-sim-08_ferrari_f136_v8.wav" 08_ferrari_f136_v8 \
+            "1000:0.05:2,3000:0.3:4,6000:1.0:4"
+
+      - name: Build for an iPhone (arm64, static library plus link check)
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/b-dev" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/b-dev" 2>&1 | tail -40; test "${PIPESTATUS[0]}" = 0
+          find "$RUNNER_TEMP/b-dev" -name '*.a' -exec ls -l {} \; -exec lipo -info {} \;
+          lipo -info "$RUNNER_TEMP/b-dev/esim_render"
+          echo "undefined symbols that mention delta/SDL/boost (should be none):"
+          nm -u "$RUNNER_TEMP/b-dev/esim_render" | grep -iE "delta|sdl|boost|ys[A-Z]" || echo none
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-sim-mac
+          path: out/
+          if-no-files-found: ignore
+
+  phone:
+    needs: linux
+    if: github.event.inputs.mac == 'true' || contains(github.event.head_commit.message, '[phone]')
+    runs-on: ${{ github.event.inputs.runner || 'macos-15' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: brew install xcodegen cmake ninja bison flex
+      - name: Fetch pinned engine-sim
+        run: |
+          git clone -q https://github.com/ange-yaghi/engine-sim.git "$RUNNER_TEMP/es"
+          git -C "$RUNNER_TEMP/es" checkout -q "$ES_PIN"
+          git -C "$RUNNER_TEMP/es" submodule update --init --depth 1 \
+            dependencies/submodules/simple-2d-constraint-solver dependencies/submodules/piranha
+      - name: Prepare
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          sh Native/EngineSimSpike/prepare.sh "$RUNNER_TEMP/es" "$RUNNER_TEMP/gen"
+      - name: Build the sound core for an iPhone
+        run: |
+          cmake -S Native/EngineSimSpike -B "$RUNNER_TEMP/b-dev" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DES_SRC="$RUNNER_TEMP/es" -DES_GEN="$RUNNER_TEMP/gen"
+          cmake --build "$RUNNER_TEMP/b-dev" --target esim_bridge > "$RUNNER_TEMP/dev.log" 2>&1 || { grep -E "error:|FAILED" "$RUNNER_TEMP/dev.log" | head -40; exit 1; }
+      - name: Assemble the app
+        working-directory: Native/EngineSimSpike/App
+        run: |
+          mkdir -p libs Resources/engine
+          cp "$RUNNER_TEMP"/b-dev/*.a libs/
+          cp -R "$RUNNER_TEMP/es/assets" Resources/engine/assets
+          cp -R "$RUNNER_TEMP/es/es" Resources/engine/es
+          find Resources -name '*.bak' -delete
+          ls libs; du -sh Resources/engine
+          xcodegen generate
+      - name: Build the app (unsigned, for sideloading)
+        working-directory: Native/EngineSimSpike/App
+        run: |
+          xcodebuild -project EngineSoundTest.xcodeproj -scheme EngineSoundTest -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > "$RUNNER_TEMP/xcb.log" 2>&1 \
+            || { grep -E "error:|warning: Undefined|ld:" "$RUNNER_TEMP/xcb.log" | head -40; exit 1; }
+          tail -3 "$RUNNER_TEMP/xcb.log"
+      - name: Package unsigned .ipa
+        working-directory: Native/EngineSimSpike/App
+        run: |
+          rm -rf ipa && mkdir -p ipa/Payload
+          cp -R build/Build/Products/Release-iphoneos/EngineSoundTest.app ipa/Payload/
+          (cd ipa && zip -qry EngineSoundTest-unsigned.ipa Payload && ls -lh EngineSoundTest-unsigned.ipa)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EngineSoundTest-unsigned-ipa
+          path: Native/EngineSimSpike/App/ipa/EngineSoundTest-unsigned.ipa
